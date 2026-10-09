@@ -3,11 +3,13 @@
 Timeline from the proposal (Table 4), expanded into concrete steps.
 
 ## 10-16 Oct: data and features
-- [ ] Both members accept terms for `changelinglab/vaani-hi-geo` and `ARTPARK-IISc/Vaani` on Hugging Face.
+- [x] Accept terms for `ARTPARK-IISc/Vaani` (Mohit; auto-approved).
+- [ ] Vaani-Hi access (Mohit requested; manual approval pending). Nidhi to request on her account too.
+- [x] Download W2V2P-LV60, ZIPA-CTC-NS (.pth) and Whisper-small checkpoints; clone PRiSM into `external/prism`.
+- [x] Check Vaani district folder names and metadata (`scripts/vaani_districts.py`; results in `docs/data.md`).
 - [ ] Run `scripts/vaani_check.py`; record total hours, Haryana counts per district, language labels in `docs/data.md`.
-- [ ] Clone PRiSM; set `data.hf_repo=changelinglab/vaani-hi-geo` (its default `shikhar7ssu/vaani-hi-geo` is unreleased).
-- [ ] Download Vaani folders `audio/Haryana/{Rohtak,Jhajjar,CharkhiDadri}` and `audio/Delhi/NewDelhi` (transcribed part only).
-      Check exact folder names on the HF file tree first.
+- [ ] In PRiSM, set `data.hf_repo=changelinglab/vaani-hi-geo` (its default `shikhar7ssu/vaani-hi-geo` is unreleased).
+- [ ] Download Vaani folders `audio/Haryana/{Rohtak,Jhajjar,CharkhiDadri}` and `audio/Delhi/NewDelhi` (92.3 GB; keep the 55.9 h transcribed part).
 - [ ] Transcribe Vaani-Hi with W2V2P-LV60 and ZIPA-CTC-NS (greedy CTC); save transcripts as JSONL keyed by metadata_idx.
 - [ ] Extract last-layer features (fp16) and time-averaged vectors for every layer (layer sweep input).
 

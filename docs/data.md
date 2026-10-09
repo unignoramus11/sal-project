@@ -3,7 +3,7 @@
 Facts checked on 9 Oct 2026, with their sources.
 
 ## Vaani-Hi (GEO-v task)
-- Hugging Face: `changelinglab/vaani-hi-geo` (gated, CC BY 4.0, 6.61 GB parquet).
+- Hugging Face: `changelinglab/vaani-hi-geo` (gated with manual approval by the authors, CC BY 4.0, 6.61 GB parquet).
   The PRiSM README and `configs/data/vaanigeo.yaml` still point to `shikhar7ssu/vaani-hi-geo`; override `data.hf_repo`.
 - Columns: audio (WAV bytes), pincode, latitude, longitude, split, metadata_idx, lang_sym, language, gender,
   state, district. No speaker ID, no transcript (`vaanihindi_upload.py` Features dict).
@@ -18,6 +18,19 @@ Facts checked on 9 Oct 2026, with their sources.
 - Audio is stored as `audio/{State}/{District}/train-xxxxx-of-*.parquet`; HF configs are per language.
 - Districts we need (audio h / transcribed h): Rohtak 199.5 / 16.6, Jhajjar 199.2 / 15.1,
   Charkhi Dadri 194.8 / 13.9, New Delhi 204.5 / 10.4.
+- Each file carries language, duration, speakerID, gender, pincode, isTranscriptionAvailable and transcript
+  (`scripts/vaani_districts.py`, run 9 Oct 2026). Transcribed rows are mixed with the rest, so the whole
+  folders must be downloaded (92.3 GB for the four districts).
+
+| District | Files | Audio h | Transcribed h (utts) | Labelled Haryanvi | Speakers | Rows with speaker ID | Pincodes |
+|---|---|---|---|---|---|---|---|
+| Haryana/Rohtak | 55 | 200.5 | 16.6 (11,607) | 7.1% (13.6 h) | 537 | 23% | 15 |
+| Haryana/Jhajjar | 62 | 200.3 | 15.1 (10,461) | 9.0% (18.7 h) | 536 | 22% | 20 |
+| Haryana/CharkhiDadri | 44 | 195.7 | 13.9 (9,716) | 3.5% (6.0 h) | 528 | 21% | 9 |
+| Delhi/NewDelhi | 40 | 205.1 | 10.4 (7,359) | 0 | 524 | 31% | 20 |
+
+Only 165 transcribed utterances across the three Haryana districts are labelled Haryanvi; nearly all
+Haryana speech is labelled Hindi. Compare districts, not language labels.
 
 ## Models
 | Model | Checkpoint | Notes |
