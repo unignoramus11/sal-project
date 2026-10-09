@@ -10,6 +10,7 @@ Timeline from the proposal (Table 4), expanded into concrete steps.
 - [ ] Run `scripts/vaani_check.py`; record total hours, Haryana counts per district, language labels in `docs/data.md`.
 - [ ] In PRiSM, set `data.hf_repo=changelinglab/vaani-hi-geo` (its default `shikhar7ssu/vaani-hi-geo` is unreleased).
 - [ ] Download Vaani folders `audio/Haryana/{Rohtak,Jhajjar,CharkhiDadri}` and `audio/Delhi/NewDelhi` (92.3 GB; keep the 55.9 h transcribed part).
+- [ ] Download transcripts of the four districts (`scripts/vaani_transcripts.py`, ~5 min, no audio).
 - [ ] Transcribe Vaani-Hi with W2V2P-LV60 and ZIPA-CTC-NS (greedy CTC); save transcripts as JSONL keyed by metadata_idx.
 - [ ] Extract last-layer features (fp16) and time-averaged vectors for every layer (layer sweep input).
 
@@ -28,7 +29,14 @@ Show: reproduced baselines, TP-Shuffle vs TP-GRU, DPR by state.
 ## 4-17 Nov: order-aware RP + gemination (O2, O3)
 - [ ] Layer sweep on pooled vectors -> pick 2-3 layers per model; cache their frame sequences.
 - [ ] RP-Attn+PE, RP-GRU, RP-Transformer, RP-ChunkShuffle; each on last layer and weighted selected layers; 5 seeds.
-- [ ] Praat: ~200 doubled + ~200 single tokens (Haryana vs New Delhi), closure durations, two-annotator agreement on a shared subset.
+- [ ] Closure check (RQ2), automatic with a manual audit:
+      - Words: single voiceless stop between vowels in standard spelling, >= 10 tokens in both regions (110 words; `scripts/stop_words.py`).
+      - Locate each word with the PR model's alignment (approximate position only), then take a fixed window around it,
+        so the window does not depend on whether the model wrote one consonant or two.
+      - Praat script: closure = end of preceding vowel's voicing to the release burst. Reject tokens with no clear gap; log the rejection rate.
+      - Normalise by the following vowel's duration (gemination can shorten the preceding vowel, so do not use that one).
+      - Both members hand-measure the same 50 tokens (balanced Haryana/Delhi): script error (MAE) and inter-annotator agreement.
+      - If script error is close to the Haryana-Delhi difference, fall back to a smaller hand-measured set.
 - [ ] Frame-level geminate probe at every layer.
 - [ ] Start the RP sweep on Ada by mid-November (queue fills late Nov).
 

@@ -32,6 +32,14 @@ Facts checked on 9 Oct 2026, with their sources.
 Only 165 transcribed utterances across the three Haryana districts are labelled Haryanvi; nearly all
 Haryana speech is labelled Hindi. Compare districts, not language labels.
 
+### Candidate words for the closure check (`scripts/stop_words.py`)
+Transcribed rows only (39,143 utterances; 461k Haryana and 116k Delhi word tokens). A candidate has a single
+voiceless stop between vowels in the spoken Devanagari form.
+- 110 words occur >= 10 times in both regions: 34,880 Haryana / 7,567 Delhi tokens; ~1,050 / ~380 speakers with ID.
+- Top: दिखाई, रखी, फोटो, रखा, काफी, दुकान, रखे, लिखा, सकते, पीछे, नीचे (image-prompted speech favours these).
+- Transcribers write standard spelling: Haryana रखा 1,728 vs रक्खा 3; रखी 1,905 vs रक्खी 1; कूलर 73 vs कुल्लर 4.
+  So the text does not mark the dialect doubling; selection by spelling is independent of it.
+
 ## Models
 | Model | Checkpoint | Notes |
 |---|---|---|
