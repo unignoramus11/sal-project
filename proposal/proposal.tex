@@ -92,7 +92,7 @@ Our goal is to find out which phonetic information the two probes use to place a
 
 \begin{description}[leftmargin=0pt,labelindent=0pt,itemsep=2pt]
   \item[RQ1 (Order).] Is the TP--RP gap caused by phone order? We test this with a $2\times2$ design: \{transcript, representation\} $\times$ \{order-aware, order-free\} probes, with layer choice held fixed.
-  \item[RQ2 (Duration).] Do PR models and their probes detect consonant gemination in Haryanvi, e.g., \textipa{[ku:lar]} $\rightarrow$ \textipa{[kullar]} \citep{devi2021haryanvi}? Does the detected doubling match a longer acoustic closure?
+  \item[RQ2 (Duration).] Do PR models and their probes detect consonant gemination in Haryanvi, e.g., \textipa{[ku:lar]} $\rightarrow$ \textipa{[kullar]} \citep{devi2021haryanvi}? Does detected doubling match a longer acoustic closure?
   \item[RQ3 (Melody).] Does adding pitch and energy contours to the transcript probe improve geolocation, or are segmental cues enough \citep{gumperz1958}?
 \end{description}
 
@@ -119,8 +119,8 @@ Table~\ref{tab:data} lists the data and pretrained models we need. All are publi
 \toprule
 \textbf{Resource} & \textbf{Role} & \normalfont\footnotesize\textbf{Hugging Face / GitHub ID} & \textbf{Licence, access} & \textbf{Size} & \textbf{Down\-loaded?} \\
 \midrule
-Vaani-Hi & \geov{} task & changelinglab/vaani-hi-geo & CC BY 4.0, gated & 6.61\,GB & Yes \\
-Vaani (4 districts) & Gemination check & ARTPARK-IISc/Vaani & CC BY 4.0, gated & 55.9\,h & No \\
+Vaani-Hi & \geov{} task & changelinglab/vaani-hi-geo & CC BY 4.0, gated & 6.61\,GB & No$^\dagger$ \\
+Vaani (4 districts) & Gemination check & ARTPARK-IISc/Vaani & CC BY 4.0, gated & 92.3\,GB & No \\
 W2V2P-LV60 & PR model & facebook/wav2vec2-lv-60-espeak-cv-ft & Apache-2.0 & 317M params & Yes \\
 ZIPA-CTC-NS & PR model & anyspeech/zipa-large-crctc-ns-800k & MIT & 300M params & Yes \\
 Whisper-small & RP baseline & openai/whisper-small & Apache-2.0 & 244M params & Yes \\
@@ -128,11 +128,11 @@ PRiSM code & Probe recipes & github.com/changelinglab/prism & public & -- & Yes 
 Parselmouth & F0, duration & pypi: praat-parselmouth & GPL & -- & Yes \\
 \bottomrule
 \end{tabular}
-\caption{Datasets, models, and tools; availability checked on 9 October 2026. Vaani-Hi splits are 19,780 / 2,668 / 3,985 utterances (train / validation / test; Table~5 of \citealp{bharadwaj2026prism}). The full Vaani Phase~1 release is 7.21\,TB of audio, of which we need only the transcribed speech (55.9\,h) of four districts: Rohtak (16.6\,h), Jhajjar (15.1\,h), Charkhi Dadri (13.9\,h), and New Delhi (10.4\,h). Vaani stores audio in one folder per state and district, so we download only these four folders. The PRiSM README still lists Vaani-Hi as \texttt{shikhar7ssu/vaani-hi-geo} (``to be released''); the released copy is the one above.}
+\caption{Datasets, models, and tools; availability checked on 9 October 2026. $^\dagger$Access requested; approval pending. Vaani-Hi splits are 19,780 / 2,668 / 3,985 utterances (train / validation / test; Table~5 of \citealp{bharadwaj2026prism}). The full Vaani Phase~1 release is 7.21\,TB of audio, of which we need only the transcribed speech (55.9\,h) of four districts: Rohtak (16.6\,h), Jhajjar (15.1\,h), Charkhi Dadri (13.9\,h), and New Delhi (10.4\,h). Vaani stores audio in one folder per state and district, so we download only these four folders (92.3\,GB). The PRiSM README still lists Vaani-Hi as \texttt{shikhar7ssu/vaani-hi-geo} (``to be released''); the released copy is the one above.}
 \label{tab:data}
 \end{table*}
 
-Each Vaani-Hi utterance carries its pincode, coordinates, state, district, gender, and spoken-language label, but no speaker ID or transcript. The Phase~1 Vaani release adds transcribed speech from three Haryana districts (Rohtak, Jhajjar, and Charkhi Dadri), which we compare against New Delhi in the gemination analysis of \S\ref{sec:ling}. The PRiSM toolkit already ships \geov{} probing recipes for all three of our models, loaded from the checkpoints in Table~\ref{tab:data}.
+Each Vaani-Hi utterance carries its pincode, coordinates, state, district, gender, and spoken-language label, but no speaker ID or transcript. The Phase~1 Vaani release adds transcribed speech from three Haryana districts (Rohtak, Jhajjar, and Charkhi Dadri), which we compare against New Delhi in the gemination analysis of \S\ref{sec:ling}. Unlike Vaani-Hi, these files give speaker IDs for 21--31\% of utterances, so this analysis can hold out whole speakers. The PRiSM toolkit already ships \geov{} probing recipes for all three of our models, loaded from the checkpoints in Table~\ref{tab:data}.
 
 We pick W2V2P-LV60 \citep{xu2022simple} because the PRiSM attribution analysis shows it outputs doubled phones for Haryanvi speech (Figure~\ref{fig:attr}). We pick ZIPA-CTC-NS \citep{zhu2025zipa} because it is the strongest model overall in PRiSM. Whisper-small \citep{radford2023whisper} has the best last-layer RP on \geov{} (35.0) but drops to 24.0 with a weighted layer sum, the only model to do so; we keep it to study this anomaly.
 
@@ -173,7 +173,7 @@ TP-Shuffle is the cheapest and most decisive test: each TP run takes at most 15 
 \subsection{Segment duration: gemination (RQ2)}
 Hindi contrasts single and doubled (geminate) consonants, and geminates have significantly longer closures than singletons \citep{ohala2007geminates}. In the Bangru dialect of Haryanvi, speakers double consonants that are single in standard Hindi \citep{devi2021haryanvi}, e.g., \textipa{[r@.k\super{h}a:]} $\rightarrow$ \textipa{[r@k.k\super{h}a:]} (``kept''). PRiSM shows one such utterance where W2V2P-LV60 outputs \textipa{[ll]} and \textipa{[kk]}, and the TP attributes its decision to one of the doubled phones (Figure~\ref{fig:attr}). The authors leave a detailed analysis to future work. We will:
 \begin{enumerate}
-  \item \textbf{Count doubling in model output.} Compute a doubled-phone rate (DPR) per utterance: the share of consonants written twice or with a length mark. Compare DPR across states and test whether Haryana is higher than its neighbours.
+  \item \textbf{Count doubling in model output.} Compute a doubled-phone rate (DPR) per utterance: the share of consonants written twice or with a length mark. Compare DPR across states and test if Haryana is higher than its neighbours.
   \item \textbf{Check it acoustically.} Sample about 200 doubled and 200 single tokens from Haryana and Delhi speech, verify them by listening, and measure closure duration in Praat \citep{boersma2024praat}. This tells us whether model doubling tracks a real duration difference.
   \item \textbf{Find where it is encoded.} Train a frame-level linear probe for geminate vs.\ single closure at every layer, following layer-wise analysis of speech models \citep{pasad2021layerwise}. \citet{wells2022phonetic} found that the closure and release of a plosive are often represented by different HuBERT units. If gemination is clearest in middle layers, this would also explain why the weighted layer sum helps on \geov.
   \item \textbf{Attribute.} Repeat the integrated-gradients analysis of PRiSM \citep{sundararajan2017axiomatic} over the whole Haryana test set, and report how often top-attributed phones are doubled consonants.
@@ -221,7 +221,7 @@ TP+Prosody $>$ TP (significant) & Intonation adds dialect information. \\
 \label{tab:outcomes}
 \end{table}
 
-\paragraph{Timeline.} Table~\ref{tab:timeline} maps the work to the course calendar.
+\paragraph{Timeline.} Table~\ref{tab:timeline} maps the work to the calendar.
 
 \begin{table}[t]
 \centering
@@ -247,10 +247,10 @@ TP+Prosody $>$ TP (significant) & Intonation adds dialect information. \\
 
 \paragraph{Compute.} We freeze all PR models and train only small probes. PRiSM reports at most 15 minutes per TP run and 3 hours per RP run on one 40\,GB GPU. Storage, not GPU time, is the main cost: one layer of W2V2P-LV60 (24 layers, 1024 dimensions) over Vaani-Hi takes 10--20\,GB in half precision, and all 25 layers would take hundreds of GB. So we first average each layer over time into one vector per utterance and run a cheap layer sweep, then cache full frame sequences only for the last layer and the two or three most informative layers. Weighted-layer probes use this selected set. Transcription, TP runs, and the phonetic analyses fit on a single consumer GPU; the RP sweep (about 150 runs) runs on the institute GPU cluster.
 
-\paragraph{Risks.} (i) Both PR vocabularies can mark consonant length (e.g., \textipa{[k:]}), but a model may still rarely use it on this speech; RQ2 then relies on W2V2P-LV60 and the acoustic measurements. (ii) If Vaani transcripts are too sparse for the four districts, the acoustic check uses Vaani-Hi audio with tokens located by the CTC alignments of the PR models. (iii) If compute is short, we drop RP-Transformer and keep RP-GRU as the order-aware representation probe.
+\paragraph{Risks.} (i) Both PR vocabularies can mark consonant length (e.g., \textipa{[k:]}), but a model may still rarely use it on this speech; RQ2 then relies on W2V2P-LV60 and the acoustic measurements. (ii) If Vaani-Hi access is delayed, we rebuild an approximate copy with the PRiSM sampling script. (iii) If compute is short, we drop RP-Transformer and keep RP-GRU as the order-aware RP.
 
 \section*{Limitations}
-Vaani-Hi labels a recording by location and language, not by dialect, so a speaker living in Haryana may not speak Haryanvi. Speaker overlap between splits can only be estimated, not removed exactly. Our gemination analysis covers one documented feature of one dialect group. The manual check of 400 tokens is small, and we will report agreement between the two members on a shared subset.
+Vaani-Hi labels a recording by location and language, not by dialect, so a speaker living in Haryana may not speak Haryanvi (only 4--9\% of our Haryana utterances are labelled Haryanvi). Speaker overlap between splits can only be estimated, not removed exactly. Our gemination analysis covers one documented feature of one dialect group. The manual check of 400 tokens is small, and we will report agreement between the two members on a shared subset.
 
 \section*{Ethics Statement}
 Locating a speaker from their voice can be misused, e.g., for profiling. We use only public data under its licence, report results at the state and pincode level, and do not attempt to identify individuals. We follow the ethics statement of the base paper.
