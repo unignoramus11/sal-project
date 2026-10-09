@@ -15,17 +15,17 @@ and suggests phone order as the reason without testing it. We test three explana
 
 ## Layout
 
-| Path | Contents |
-|---|---|
-| `proposal/` | ACL-format LaTeX source and PDF of the proposal |
-| `docs/` | Experiment plan, data and model notes, compute and storage |
-| `scripts/` | Standalone utilities (e.g., `vaani_check.py`, a metadata check of Vaani-Hi) |
+| Path        | Contents                                                                    |
+| ----------- | --------------------------------------------------------------------------- |
+| `proposal/` | ACL-format LaTeX source and PDF of the proposal                             |
+| `docs/`     | Experiment plan, data and model notes, compute and storage                  |
+| `scripts/`  | Standalone utilities (e.g., `vaani_check.py`, a metadata check of Vaani-Hi) |
 
 Datasets, extracted features and checkpoints are not tracked (see `.gitignore`).
 
 ## Build
 
-```
+```sh
 make proposal   # latexmk, writes proposal/proposal.pdf
 make plot       # regenerates proposal/figs/geov_gap.* from PRiSM Tables 4 and 7
 ```
