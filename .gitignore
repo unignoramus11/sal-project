@@ -230,3 +230,32 @@ $RECYCLE.BIN/
 *.lnk
 
 internal/
+
+### Project ###
+# Datasets, features, checkpoints, run outputs
+data/
+features/
+checkpoints/
+outputs/
+logs/
+wandb/
+*.parquet
+*.wav
+*.flac
+*.npy
+*.npz
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.safetensors
+
+# LaTeX build files
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.out
+*.synctex.gz
+*.toc
