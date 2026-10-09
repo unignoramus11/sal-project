@@ -259,3 +259,6 @@ wandb/
 *.out
 *.synctex.gz
 *.toc
+
+# Third-party code
+external/
