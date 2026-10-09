@@ -109,7 +109,7 @@ Our goal is to find out which phonetic information the two probes use to place a
 \section{Datasets}
 \label{sec:data}
 
-Table~\ref{tab:data} lists the data and pretrained models we need. All are public; the two datasets are gated on Hugging Face. The main dataset is Vaani-Hi, released by the PRiSM authors. It covers 12 Hindi-belt states, including Haryana and every state that borders it. Each location is a pincode with more than 450 utterances; the label is the pincode's mean latitude and longitude. Splits are made within each pincode (75/10/15), and audio is resampled to 16\,kHz and clipped to 20\,s.
+Table~\ref{tab:data} lists the data and pretrained models we need. All are public; the two datasets are gated on Hugging Face. The main dataset is Vaani-Hi, released by the PRiSM authors. It covers 12 Hindi-belt states, including Haryana and every state that borders it. Each location is a pincode with more than 450 utterances; the label is the pincode's mean latitude and longitude. Splits are made within each pincode (75/10/15).
 
 \begin{table*}[t]
 \centering
@@ -132,7 +132,7 @@ Parselmouth & F0, duration & pypi: praat-parselmouth & GPL & -- & Yes \\
 \label{tab:data}
 \end{table*}
 
-Each Vaani-Hi utterance carries its pincode, coordinates, state, district, gender, and spoken-language label, but no speaker ID or transcript. For the gemination analysis (\S\ref{sec:ling}) we also use the source Vaani corpus, which has transcripts and, for 21--31\% of utterances, speaker IDs. Vaani covers three Haryana districts (Rohtak, Jhajjar, and Charkhi Dadri) and one Delhi district (New Delhi); we use all four. The PRiSM toolkit already ships \geov{} probing recipes for all three of our models, loaded from the checkpoints in Table~\ref{tab:data}.
+Each Vaani-Hi utterance carries its pincode, coordinates, state, district, gender, and spoken-language label, but no speaker ID or transcript. For the gemination analysis (\S\ref{sec:ling}) we also use the source Vaani corpus, which has transcripts and, for 21--31\% of utterances, speaker IDs. Vaani covers three Haryana districts (Rohtak, Jhajjar, and Charkhi Dadri) and one Delhi district (New Delhi); we use all four. The PRiSM toolkit ships \geov{} recipes for all three of our models.
 
 We pick W2V2P-LV60 \citep{xu2022simple} because it has the best \geov{} TP (45.7) and outputs doubled phones in the PRiSM attribution example (Figure~\ref{fig:attr}). We pick ZIPA-CTC-NS \citep{zhu2025zipa} because PRiSM finds that it performs well in all settings. Whisper-small \citep{radford2023whisper} has the best last-layer RP on \geov{} (35.0) but drops to 24.0 with a weighted layer sum, the only model to do so; we keep it to study this anomaly.
 
@@ -140,10 +140,10 @@ We pick W2V2P-LV60 \citep{xu2022simple} because it has the best \geov{} TP (45.7
 \section{Linguistic Aspects and Analysis Plan}
 \label{sec:ling}
 
-The \geov{} task asks one linguistic question: which properties of speech mark where a Hindi-belt speaker is from? \citet{gumperz1958} described phonological differences between Hindi dialects. Dialects can also share a phone inventory but differ in how often phones occur and in which order \citep{shim2024phonotactic}. We study four levels of this question: phone order, segment duration, syllable structure, and intonation.
+The \geov{} task asks one linguistic question: which properties of speech mark where a Hindi-belt speaker is from? \citet{gumperz1958} described phonological differences between Hindi dialects. Dialects can also share a phone inventory but differ in how often phones occur and in which order \citep{shim2024phonotactic}. By \emph{Haryanvi} we mean the Hindi-belt variety of Haryana, of which Bangru is one dialect \citep{devi2021haryanvi}. Vaani's language labels are self-reported and list Haryanvi beside Hindi; only 4--9\% of utterances from our Haryana districts are labelled Haryanvi. So we compare speech by recording district, not by label. We study four levels: phone order, segment duration, syllable structure, and intonation.
 
 \subsection{Phonotactics and phone order (RQ1)}
-If order matters, a probe must see \emph{which phone follows which}. Attention pooling computes a weighted average of frames, so it cannot model such sequences. Adding positional encodings \citep{vaswani2017attention} before the pooling does not fix this: the pooled vector then only carries an average position. Order sensitivity needs frames to interact \emph{before} pooling. Table~\ref{tab:probes} lists the probes we compare. We keep the number of trainable parameters similar across probes and run each RP variant on both the last layer and a weighted layer sum.
+If order matters, a probe must see \emph{which phone follows which}. Attention pooling computes a weighted average of frames, so it cannot model such sequences. Adding positional encodings \citep{vaswani2017attention} before the pooling does not fix this: the pooled vector then only carries an average position. Order sensitivity needs frames to interact \emph{before} pooling. Table~\ref{tab:probes} lists the probes we compare. We keep the number of trainable parameters similar across probes.
 
 \begin{table}[t]
 \centering
@@ -168,17 +168,6 @@ RP-ChunkShuffle & permuted 200\,ms chunks & local only \\
 \label{tab:probes}
 \end{table}
 
-TP-Shuffle is the cheapest and most direct test: each TP run takes at most 15 minutes in PRiSM. If TP-Shuffle stays close to TP-GRU, the transcript probe mostly relies on \emph{which phones occur and how often}, and the order hypothesis is weakened. If it drops sharply, and RP-GRU and RP-Transformer beat RP-Attn, the hypothesis is supported.
-
-\subsection{Segment duration: gemination (RQ2)}
-Hindi contrasts single and doubled (geminate) consonants, and geminates have significantly longer closures than singletons \citep{ohala2007geminates}. In the Bangru dialect of Haryanvi, speakers double consonants that are single in standard Hindi (e.g., \textipa{[R@.k\super{h}a:]} $\rightarrow$ \textipa{[R@k.k\super{h}a:]}, ``kept''; \citealp{devi2021haryanvi}). PRiSM shows one such utterance where W2V2P-LV60 outputs \textipa{[ll]} and \textipa{[kk]}, and the TP attributes its decision to one of the doubled phones (Figure~\ref{fig:attr}). The authors leave a detailed analysis to future work. We will:
-\begin{enumerate}
-  \item \textbf{Count doubling in model output.} Compute a doubled-phone rate (DPR) per utterance: the share of consonants written twice or with a length mark. Compare DPR across states and test if Haryana is higher than its neighbours.
-  \item \textbf{Check it acoustically.} We select words spelled with a single voiceless stop between vowels (e.g., \textit{rakh\=a}); 110 occur at least 10 times in both regions of the Vaani transcripts, which rarely write the doubling. A Praat script \citep{boersma2024praat} measures each closure from the audio and normalizes it by the next vowel's duration. Both members hand-measure the same 50 tokens to estimate script error and agreement. This tells us whether model doubling tracks a real duration difference.
-  \item \textbf{Find where it is encoded.} Train a frame-level linear probe for geminate vs.\ single consonants at every layer, following layer-wise analysis of speech models \citep{pasad2021layerwise}. \citet{wells2022phonetic} found that the closure and release of a plosive are often represented by different HuBERT units. If gemination is clearest in middle layers, this would partly explain why the weighted layer sum helps on \geov.
-  \item \textbf{Attribute.} Repeat the integrated-gradients analysis of PRiSM \citep{sundararajan2017axiomatic} over the whole Haryana test set, and report how often top-attributed phones are doubled consonants.
-\end{enumerate}
-
 \begin{figure}[t]
   \centering
   \includegraphics[width=\columnwidth]{figs/prism_attribution.png}
@@ -186,8 +175,19 @@ Hindi contrasts single and doubled (geminate) consonants, and geminates have sig
   \label{fig:attr}
 \end{figure}
 
+TP-Shuffle is the cheapest and most direct test. If TP-Shuffle stays close to TP-GRU, the transcript probe mostly relies on \emph{which phones occur and how often}, and the order hypothesis is weakened. If it drops sharply, and RP-GRU and RP-Transformer beat RP-Attn, the hypothesis is supported.
+
+\subsection{Segment duration: gemination (RQ2)}
+Hindi contrasts single and doubled (geminate) consonants, and geminates have significantly longer closures than singletons \citep{ohala2007geminates}. In the Bangru dialect of Haryanvi, speakers double consonants that are single in standard Hindi (e.g., \textipa{[R@.k\super{h}a:]} $\rightarrow$ \textipa{[R@k.k\super{h}a:]}, ``kept''; \citealp{devi2021haryanvi}). PRiSM shows one such utterance where W2V2P-LV60 outputs \textipa{[ll]} and \textipa{[kk]}, and the TP attributes its decision to one of the doubled phones (Figure~\ref{fig:attr}). The authors leave a detailed analysis to future work. We will:
+\begin{enumerate}
+  \item \textbf{Count doubling in model output.} Compute a doubled-phone rate (DPR) per utterance: the share of consonants written twice or with a length mark. Compare DPR across states and test if Haryana is higher than its neighbours.
+  \item \textbf{Check it acoustically.} We select words spelled with a single voiceless stop between vowels (e.g., \textit{rakh\=a}); 110 occur at least 10 times in both regions of the Vaani transcripts, which rarely write the doubling. A Praat script \citep{boersma2024praat} measures each closure from the audio and normalizes it by the next vowel's duration. Both members hand-measure the same 50 tokens to estimate script error and agreement. We then test whether these closures are longer in Haryana, and whether model doubling tracks them.
+  \item \textbf{Find where it is encoded.} Train a frame-level linear probe for geminate vs.\ single consonants at every layer, following layer-wise analyses of speech models \citep{pasad2021layerwise,wells2022phonetic}. If gemination is clearest in middle layers, this would partly explain why the weighted layer sum helps on \geov.
+  \item \textbf{Attribute.} Repeat the integrated-gradients analysis of PRiSM \citep{sundararajan2017axiomatic} over the whole Haryana test set, and report how often top-attributed phones are doubled consonants.
+\end{enumerate}
+
 \subsection{Syllable structure}
-Gemination also moves a syllable boundary: \textipa{[R@.k\super{h}a:]} has an open first syllable, and \textipa{[R@k.k\super{h}a:]} has a closed one. We will syllabify the predicted transcripts with a sonority-based rule and compute the share of closed syllables per utterance. This gives a second, syllable-level view of the same dialect feature, and links our study to syllabification, which is part of this course.
+Gemination also moves a syllable boundary: \textipa{[R@.k\super{h}a:]} has an open first syllable, and \textipa{[R@k.k\super{h}a:]} has a closed one. We will syllabify the predicted transcripts with a sonority-based rule and compute the share of closed syllables per utterance. This gives a syllable-level view of the same feature and links our study to syllabification, which this course covers.
 
 \subsection{Intonation (RQ3)}
 Listeners use intonation to tell dialects apart \citep{vicenik2013intonation}, and intonation differs across regional varieties \citep{grabe2002intonational}. Transcripts remove this signal. \citet{bernhard2022stress} detect stress from pitch, intensity, and duration relative to neighbouring syllables. In the same spirit, we extract F0 (in semitones relative to the utterance median), intensity, and voiced-segment durations with Parselmouth \citep{jadoul2018parselmouth}. A small bi-GRU encodes these contours. We compare TP alone, prosody alone, and their late fusion.
@@ -248,7 +248,7 @@ TP+Prosody $>$ TP (significant) & Intonation adds dialect information. \\
 \paragraph{Risks.} (i) Both PR vocabularies can mark consonant length (e.g., \textipa{[k:]}), but a model may still rarely use it on this speech; RQ2 then relies on W2V2P-LV60 and the acoustic measurements. (ii) If Vaani-Hi access is delayed, we rebuild an approximate copy with the PRiSM sampling script. (iii) If compute is short, we drop RP-Transformer and keep RP-GRU as the order-aware RP.
 
 \section*{Limitations}
-Vaani-Hi labels a recording by location and language, not by dialect, so a speaker living in Haryana may not speak Haryanvi (in our Vaani districts, only 4--9\% of Haryana utterances are labelled Haryanvi). Speaker overlap between splits can only be estimated, not removed exactly. Our gemination analysis covers one documented feature of one dialect group. The acoustic check covers only voiceless stops between vowels, and the closure script may fail on noisy recordings; we report its error and the share of rejected tokens.
+Recording location does not fix dialect: a speaker recorded in Haryana may not speak Haryanvi. Speaker overlap between splits can only be estimated, not removed exactly. Our gemination analysis covers one documented feature of one dialect group. The acoustic check covers only voiceless stops between vowels, and the closure script may fail on noisy recordings; we report its error and the share of rejected tokens.
 
 \section*{Ethics Statement}
 Locating a speaker from their voice can be misused (e.g., for profiling). We use only public data under its licence, report results at the state and pincode level, and do not attempt to identify individuals. We follow the ethics statement of the base paper.
