@@ -241,7 +241,7 @@ TP+Prosody $>$ TP (significant) & Intonation adds dialect information. \\
 \label{tab:timeline}
 \end{table}
 
-\paragraph{Division of work.} \emph{Mohit Kumar Singh} leads the modelling side: feature extraction, probe variants, and RQ1. \emph{Nidhi Vaidya} leads the phonetic side: DPR, Praat measurements, syllabification, and prosodic features (RQ2, RQ3). Both members reproduce the baselines together, and each checks the other's results.
+\paragraph{Division of work.} Mohit will work on the modelling side: feature extraction, probe variants, and RQ1. Nidhi will work on the phonetic side: DPR, Praat measurements, syllabification, and prosodic features (RQ2, RQ3). Both members plan to reproduce the baselines together, and each will check the other's results.
 
 \paragraph{Compute.} We freeze all PR models and train only small probes. PRiSM reports at most 15 minutes per TP run and 3 hours per RP run on one 40\,GB GPU. Storage, not GPU time, is the main cost: one layer of W2V2P-LV60 (24 layers, 1024 dimensions) over Vaani-Hi takes 10--20\,GB in half precision, and all 25 layers would take hundreds of GB. So we first average each layer over time into one vector per utterance and run a cheap layer sweep, then cache full frame sequences only for the last layer and the two or three most informative layers. Weighted-layer probes use this selected set. Transcription, TP runs, and the phonetic analyses fit on a single consumer GPU; the RP sweep (about 150 runs) runs on the institute GPU cluster.
 
