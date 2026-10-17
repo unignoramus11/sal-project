@@ -80,3 +80,17 @@ def test_capacity_matching_within_10_percent():
         for kind in ("gru", "transformer", "chunkshuffle"):
             s = M.match_size(kind, dim)
             assert abs(s["params"] - s["target"]) <= 0.10 * s["target"], (kind, dim, s)
+
+
+def test_prosody_gru_shapes_and_padding():
+    m = M.ProsodyGRU().eval()
+    x = torch.randn(3, 103, 4)
+    lengths = torch.tensor([103, 40, 3])
+    y = x.clone()
+    y[1, 40:] = 50.0
+    assert m(x, lengths).shape == (3, 3)
+    # padding beyond the length must not change row 1 (the pooled group that straddles the end is
+    # averaged with padding, so compare against zero padding, which is what the batcher produces)
+    x0 = x.clone(); x0[1, 40:] = 0.0
+    y0 = y.clone(); y0[1, 40:] = 0.0
+    assert torch.allclose(m(x0, lengths)[1], m(y0, lengths)[1])

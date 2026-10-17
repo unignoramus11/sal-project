@@ -268,3 +268,30 @@ class VectorMLP(nn.Module):
 
     def forward(self, x: torch.Tensor, lengths: torch.Tensor | None = None) -> torch.Tensor:
         return self.f(x)
+
+
+class ProsodyGRU(nn.Module):
+    """Probe on frame-level prosodic contours (B, T, F) at 100 Hz.
+
+    Frames are averaged in groups of `pool` (100 Hz -> 25 Hz), projected, encoded by a 2-layer biGRU, mean
+    pooled, normalised and mapped to 3 outputs (same back end as TPGRU).
+    """
+
+    def __init__(self, n_feats: int = 4, pool: int = 4, proj: int = 64, hidden: int = 128, dropout: float = 0.1):
+        super().__init__()
+        self.pool = pool
+        self.proj = nn.Sequential(nn.Linear(n_feats, proj), nn.LayerNorm(proj), nn.GELU())
+        self.rnn = BiGRUEncoder(proj, hidden, 2, dropout)
+        self.norm = nn.LayerNorm(self.rnn.out_dim)
+        self.drop = nn.Dropout(dropout)
+        self.out = nn.Linear(self.rnn.out_dim, 3)
+
+    def forward(self, x: torch.Tensor, lengths: torch.Tensor) -> torch.Tensor:
+        b, t, f = x.shape
+        pad = (-t) % self.pool
+        if pad:
+            x = F.pad(x, (0, 0, 0, pad))
+        x = x.reshape(b, -1, self.pool, f).mean(2)
+        lengths = torch.div(lengths + self.pool - 1, self.pool, rounding_mode="floor").clamp(min=1)
+        h = self.rnn(self.proj(x), lengths)
+        return self.out(self.drop(self.norm(masked_mean(h, lengths))))
