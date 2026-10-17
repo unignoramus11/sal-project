@@ -1,16 +1,18 @@
 """Count candidate words for the closure-duration check in Vaani transcripts.
 
-A candidate is a spoken word form with a single voiceless stop between vowels in Devanagari
-(e.g., रखा). Uses the spoken form: `{...}` corrections and `<...>` tags are dropped.
-Run: uv run --with pyarrow python scripts/stop_words.py data/vaani_transcripts.parquet
+A candidate is a spoken word form with a single voiceless stop (or affricate) between vowels in
+Devanagari (e.g., रखा); फ is left out because it is often pronounced [f]. Uses the spoken form: `{...}` corrections and `<...>` tags are dropped.
+Run: uv run python scripts/stop_words.py data/vaani_districts/transcripts.parquet results/gemination/candidate_words.csv
 """
 import collections
 import re
 import sys
 
+import pandas as pd
 import pyarrow.parquet as pq
 
-STOPS = set("कखचछटठतथपफ")
+# फ is excluded: it is often realised as the fricative [f] (e.g. काफी, फोटो), which has no closure.
+STOPS = set("कखचछटठतथप")
 MATRA = set("ािीुूृेैोौ")
 INDEP = set("अआइईउऊऋएऐओऔ")
 CONS = {chr(c) for c in range(0x915, 0x93A)}
@@ -71,3 +73,12 @@ print("top words:", ", ".join(f"{w}({H[w]}/{D[w]})" for w in top[:30]))
 WH, WD = words["Haryana"], words["Delhi"]
 for a, b in [("रखा", "रक्खा"), ("रखी", "रक्खी"), ("रखे", "रक्खे"), ("कूलर", "कुल्लर"), ("पता", "पत्ता")]:
     print(f"{a} / {b}: Haryana {WH[a]} / {WH[b]}, Delhi {WD[a]} / {WD[b]}")
+
+# Save the candidate list used by the closure-duration check (>= 10 tokens in both regions).
+if len(sys.argv) > 2:
+    rows = []
+    for w in sorted((w for w in H if H[w] >= 10 and D[w] >= 10), key=lambda w: -(H[w] + D[w])):
+        stops = [w[i] for i in range(1, len(w) - 1) if n_single_stops(w[i - 1:i + 2]) and w[i] in STOPS]
+        rows.append({"word": w, "haryana": H[w], "delhi": D[w], "stops": "".join(stops)})
+    pd.DataFrame(rows).to_csv(sys.argv[2], index=False)
+    print(f"wrote {len(rows)} candidate words to {sys.argv[2]}")
