@@ -73,3 +73,10 @@ def test_prism_tp_size():
     m = M.TPGRU(30)
     gru = sum(p.numel() for p in m.rnn.parameters())
     assert gru == 2 * (3 * 256 * (128 + 256) + 6 * 256) + 2 * (3 * 256 * (512 + 256) + 6 * 256)
+
+
+def test_capacity_matching_within_10_percent():
+    for dim in (768, 1024, 512):
+        for kind in ("gru", "transformer", "chunkshuffle"):
+            s = M.match_size(kind, dim)
+            assert abs(s["params"] - s["target"]) <= 0.10 * s["target"], (kind, dim, s)

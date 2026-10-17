@@ -18,7 +18,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from sal.paths import DATA, OUTPUTS
+from sal.paths import DATA, OUTPUTS, RESULTS
 from sal.probes import models as M
 from sal.probes import tp_data as T
 from sal.probes.train import TrainConfig, save_run, train_probe
@@ -67,6 +67,6 @@ for seed in args.seeds:
         make = lambda: M.BagMLP(x.shape[1])  # noqa: E731
     name = f"tp_{model_tag}_{args.tokens}_{args.probe}_{args.protocol}{args.tag}_s{seed}"
     res = train_probe(make, batcher, targets, splits, cfg)
-    out = OUTPUTS / "runs" / name
+    out = RESULTS / "runs" / name
     save_run(res, out, meta=df[["metadata_idx", "speaker", "pincode", "state", "district"]])
     print(name, json.dumps(res["metrics"]["test"]))

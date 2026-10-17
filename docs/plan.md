@@ -37,55 +37,41 @@ now has a prior step: how much of GEO-v is dialect, and how much is the speaker?
 
 Every comparison is run under both protocols; the speaker-disjoint one is primary.
 
-## 3. Work plan
+## 3. Work plan (compressed 17 Oct: aim to finish the whole study before the 3 Nov mid evaluation)
 
-### Phase 0: data (17-19 Oct)
-- [x] Rebuild script, tests (splits identical to PRiSM's code), pinned Vaani commit.
-- [ ] Finish download; assemble; manifest with counts and checksum.
-- [ ] Dataset report: utterances, hours, pincodes, speakers per pincode, utterances per speaker,
-      leakage under the random split, language labels, gender. Figure: map of pincodes.
-- [ ] Speaker-disjoint split fixed and saved (seed 42); split report.
-- [ ] Rebuild rerun on Ada with Nidhi's login: checksum must match (reproducibility).
+At the mid evaluation we present what the proposal promised (baselines, first RQ1 result, DPR) and hold
+the full analysis for the end evaluation. Three machines run in parallel:
 
-### Phase 1: transcripts and transcript probes (19-27 Oct)
-- [ ] PRiSM inference environment on the PC; transcribe with W2V2P-LV60 and ZIPA-CTC-NS; first 50
-      utterances must equal PRiSM's runner output.
-- [ ] Training loop (Adam, LinearLR warm-up, clip 1.0, 4 validations per epoch, early stopping on val km,
-      best checkpoint); predictions saved for every run.
-- [ ] Baselines: train-centroid and nearest-majority-location (naive), per-state prior.
-- [ ] TP-GRU, character tokens (PRiSM anchor) and phone tokens; random and speaker-disjoint; 5 seeds.
-- [ ] TP-Shuffle (phones), TP-Bigram, TP-Unigram (inventory only).
-- [ ] DPR per utterance and per state from both recognizers.
-- [ ] Speaker baseline: ECAPA embeddings + MLP, both splits.
+| Machine | Owner | Jobs |
+|---|---|---|
+| Ada (SLURM) | Nidhi | rebuild checksum check; feature extraction (3 models); layer sweep; all RP runs |
+| PC (RTX 4050, 25 W) | Mohit | transcription (2 models); all transcript-probe runs; ECAPA speaker embeddings |
+| Mac (M1 Pro) | Mohit | data and split reports; DPR; prosody (Parselmouth); syllables; closure script; statistics; figures |
 
-### Phase 2: representations (24 Oct-2 Nov)
-- [ ] Feature extraction (PC): time-averaged vector for every layer of W2V2P, ZIPA, Whisper-small;
-      full frames (fp16) for the last layer.
-- [ ] Layer sweep on pooled vectors (validation only); pick 2-3 layers per model; cache their frames.
-- [ ] RP-Attn (PRiSM anchor) on the last layer, both splits, on the PC.
+### Week 1 (17-24 Oct): data, transcripts, baselines
+- [x] Rebuilt Vaani-Hi (22,551 utt, 40.3 h); speaker-disjoint split; dataset and leakage report.
+- [x] Probe library (PRiSM-faithful TP and RP, order-aware variants with matched capacity), tests.
+- [ ] Transcription, W2V2P and ZIPA (PC; first 50 per model identical to PRiSM's runner).
+- [ ] Ada: environment, rebuild checksum, feature extraction, layer sweep.
+- [ ] TP: GRU (char, phone) x 2 models x 2 protocols x 5 seeds; Shuffle; Unigram; Bigram (PC, Mac overflow).
+- [ ] Naive baselines (train centroid, majority location); ECAPA speaker baseline (RQ0).
+- [ ] DPR per utterance and state, both recognizers.
+- [ ] RP-Attn last layer, 3 models x 2 protocols x 5 seeds (Ada).
 
-### Mid evaluation (3 Nov)
-Dataset and leakage report; TP baselines and RP-Attn under both splits; TP-Shuffle/Bigram; speaker
-baseline; DPR by state; layer sweep curves.
+### Week 2 (24-31 Oct): main experiments
+- [ ] RP sweep on Ada: attn, attn_pe, gru, transformer, chunkshuffle x {last, weighted top layers} x 3 models
+      x 2 protocols x 3-5 seeds.
+- [ ] Gemination: transcripts of the four Vaani districts, forced alignment (MMS), closure script,
+      50 shared hand-measured tokens (both members), mixed-effects model with speaker as random effect.
+- [ ] Frame-level geminate probe by layer; integrated gradients on the Haryana test set.
+- [ ] Prosody stream and late fusion (RQ3); syllabification and closed-syllable share.
+- [ ] MDL (online coding) for the key comparisons; cluster bootstrap over speakers; control tasks.
 
-### Phase 3: main experiments (4-17 Nov)
-- [ ] RP sweep on Ada: RP-Attn, +PE, GRU, Transformer, ChunkShuffle × {last, weighted selected layers}
-      × 3 models × 5 seeds × 2 splits (SLURM array; scripts and guide in `slurm/`, run by Nidhi).
-- [ ] Gemination: download the four Vaani districts' transcribed audio; word alignment with the
-      MMS forced aligner (romanised Devanagari); closure-duration script on intervocalic voiceless stops;
-      50 tokens hand-measured by both members (agreement, script error); Haryana vs Delhi model with
-      speaker as a random effect.
-- [ ] Frame-level geminate probe at every layer; integrated gradients on the Haryana test set.
+### 1-2 Nov: mid-evaluation package
+Slides with the proposal's promised results; full results tables and figures generated from `results/`.
 
-### Phase 4: prosody, depth, statistics (18-28 Nov)
-- [ ] Parselmouth F0 (semitones re utterance median), intensity, voicing; prosody BiGRU; late fusion.
-- [ ] Syllabification and closed-syllable share.
-- [ ] Minimum description length (online coding, Voita and Titov 2020) for the key TP and RP
-      comparisons, as a check that accuracy differences are not probe-capacity effects.
-- [ ] Cluster bootstrap over speakers for all CIs and paired tests; control tasks.
-
-### Phase 5: writing (28 Nov-4 Dec)
-- [ ] ACL-format report; every number generated from `results/`; code and data-build release.
+### After the mid evaluation (to 4 Dec)
+Write-up in ACL format, extra robustness checks suggested at the mid evaluation, code and data-build release.
 
 ## 4. Compute
 

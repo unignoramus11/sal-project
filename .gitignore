@@ -265,3 +265,7 @@ $RECYCLE.BIN/
 
 # Third-party code
 external/
+
+# Run results are small and versioned
+!/results/**/*.parquet
+/slurm/ada.env

@@ -3,7 +3,7 @@ name = "sal"
 version = "0.1.0"
 description = "Order, duration, or melody? Probing what phone recognizers use to geolocate Haryanvi and Hindi-belt speech"
 readme = "README.md"
-requires-python = ">=3.12,<3.13"
+requires-python = ">=3.10,<3.13"
 authors = [
     { name = "Mohit Kumar Singh" },
     { name = "Nidhi Vaidya" },
@@ -24,8 +24,6 @@ dependencies = [
     "tqdm>=4.66",
     "matplotlib>=3.9",
     "praat-parselmouth>=0.4.5",
-    "onnxruntime>=1.19",
-    "kaldi-native-fbank>=1.20",
     "panphon>=0.22",
 ]
 
@@ -48,7 +46,7 @@ addopts = "-q"
 
 [tool.ruff]
 line-length = 110
-target-version = "py312"
+target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]

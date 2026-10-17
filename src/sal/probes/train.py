@@ -146,11 +146,15 @@ def train_probe(
     return result
 
 
-def save_run(result: dict, out_dir: Path, meta: pd.DataFrame | None = None) -> None:
-    """Write metrics.json, history.csv and predictions.parquet (one row per evaluated example)."""
+def save_run(result: dict, out_dir: Path, meta: pd.DataFrame | None = None,
+             keep_splits: tuple[str, ...] = ("val", "test")) -> None:
+    """Write metrics.json, history.csv and predictions.parquet (one row per example of `keep_splits`;
+    metrics for every split are kept in metrics.json)."""
     out_dir.mkdir(parents=True, exist_ok=True)
     rows = []
     for split, (idx, p) in result["predictions"].items():
+        if split not in keep_splits:
+            continue
         for i, v in zip(idx, p):
             rows.append({"split": split, "example": int(i), "x": float(v[0]), "y": float(v[1]), "z": float(v[2])})
     pred = pd.DataFrame(rows)

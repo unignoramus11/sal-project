@@ -212,3 +212,43 @@ def shuffle_chunks(x: torch.Tensor, lengths: torch.Tensor, chunk: int, generator
         else:
             out[b, :, :n] = x[b, :, idx]
     return out
+
+
+# ---------------------------------------------------------------- capacity matching
+
+def build_rp(kind: str, dim: int, n_layers: int = 1, size: dict | None = None) -> nn.Module:
+    """Construct a representation probe. `size` holds proj/hidden for the order-aware probes."""
+    size = size or {}
+    if kind in ("attn", "chunkshuffle_attn"):
+        return RPAttn(dim, n_layers=n_layers)
+    if kind == "attn_pe":
+        return RPAttn(dim, n_layers=n_layers, pe=True)
+    if kind in ("gru", "chunkshuffle"):
+        return RPGRU(dim, proj=size["proj"], hidden=size["hidden"], n_layers=n_layers)
+    if kind == "transformer":
+        return RPTransformer(dim, proj=size["proj"], layers=size.get("layers", 2), n_layers=n_layers)
+    raise ValueError(kind)
+
+
+def match_size(kind: str, dim: int, n_layers: int = 1, tol: float = 0.10) -> dict:
+    """Pick proj/hidden so the probe's trainable parameters are within `tol` of RPAttn(dim).
+
+    Searches a fixed grid and returns the closest configuration; raises if none is within tol.
+    """
+    target = n_params(RPAttn(dim, n_layers=n_layers))
+    if kind in ("attn", "attn_pe", "chunkshuffle_attn"):
+        return {"params": target, "target": target}
+    grid = []
+    if kind in ("gru", "chunkshuffle"):
+        for proj in range(128, 801, 64):
+            for hidden in range(128, 513, 32):
+                grid.append({"proj": proj, "hidden": hidden})
+    elif kind == "transformer":
+        for proj in range(128, 801, 32):          # multiples of 32, divisible by the 4 heads
+            for layers in (2, 3):                 # at least 2 layers so frames interact in depth
+                grid.append({"proj": proj, "layers": layers})
+    best = min(grid, key=lambda s: abs(n_params(build_rp(kind, dim, n_layers, s)) - target))
+    p = n_params(build_rp(kind, dim, n_layers, best))
+    if abs(p - target) > tol * target:
+        raise ValueError(f"{kind}: closest size {p} not within {tol:.0%} of {target}")
+    return {**best, "params": p, "target": target}
