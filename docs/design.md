@@ -82,3 +82,21 @@ the trainable parameter count within ±10% of it.
 - A district comparison is not a dialect comparison (Vaani language labels are self-reported).
 - Results on the rebuilt Vaani-Hi are compared with PRiSM's published numbers only as a sanity check;
   the comparison of probes is always made within one dataset and one split.
+
+## 7. Pre-registered predictions for RQ0 (written 18 Oct 2026, before the TP-GRU and RP results)
+
+Why PRiSM's transcript probe can beat its representation probe under a leaky split even though only the
+RP hears the voice: the last layer of a CTC phone recognizer is trained to discard speaker identity, and the
+RP head L2-normalises frames and pools with one query. The TP, in turn, can identify a speaker without
+hearing them, through topic (68% of utterances describe district-specific pictures, several per speaker),
+habitual wording, and recognition errors that are consistent for one voice and microphone.
+
+Predictions:
+- P1. Under the speaker-disjoint split, TP Recall@1 drops by a large margin, and drops further on test
+  utterances about shared (GENERIC) pictures.
+- P2. RP on the last layer drops less than TP between splits (it has less speaker information to lose).
+- P3. The weighted-layer gain of the RP (PRiSM App. F: +8.8 to +14.0) shrinks under the speaker-disjoint
+  split, because lower layers re-admit speaker and channel information. If the gain survives, middle layers
+  carry more location information that generalises to new speakers.
+- P4. The speaker-embedding probe (ECAPA) is near the majority baseline under the speaker-disjoint split
+  (observed: 10.1 vs 10.0).
