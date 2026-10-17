@@ -252,3 +252,19 @@ def match_size(kind: str, dim: int, n_layers: int = 1, tol: float = 0.10) -> dic
     if abs(p - target) > tol * target:
         raise ValueError(f"{kind}: closest size {p} not within {tol:.0%} of {target}")
     return {**best, "params": p, "target": target}
+
+
+class VectorMLP(nn.Module):
+    """Probe on one fixed vector per utterance (speaker embeddings, time-averaged layers).
+
+    LayerNorm -> Linear(D, hidden) -> GELU -> Dropout -> Linear(hidden, 3). Takes and ignores `lengths`
+    so it fits the shared training loop.
+    """
+
+    def __init__(self, dim: int, hidden: int = 256, dropout: float = 0.1):
+        super().__init__()
+        self.f = nn.Sequential(nn.LayerNorm(dim), nn.Linear(dim, hidden), nn.GELU(), nn.Dropout(dropout),
+                               nn.Linear(hidden, 3))
+
+    def forward(self, x: torch.Tensor, lengths: torch.Tensor | None = None) -> torch.Tensor:
+        return self.f(x)

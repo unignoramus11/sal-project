@@ -74,3 +74,14 @@ def test_char_vocab_matches_prism_order():
     assert list(v)[:4] == ["<pad>", "<unk>", "<s>", "</s>"]
     assert list(v)[4:] == sorted(set("kʰab"))
     assert T.encode(list("z"), v).tolist() == [T.UNK]
+
+
+def test_vector_mlp_trains_in_loop():
+    rng = np.random.default_rng(0)
+    y = rng.integers(0, 4, 400)
+    x = (np.eye(4)[y] + 0.1 * rng.normal(size=(400, 4))).astype(np.float32)
+    t = LOCS[y]
+    sp = _split(400)
+    cfg = TrainConfig(lr=3e-3, batch_size=32, min_epochs=3, max_epochs=40, patience=15, val_per_epoch=2)
+    r = train_probe(lambda: M.VectorMLP(4, hidden=16), T.DenseBatcher(x, t), t, sp, cfg, log=lambda s: None)
+    assert r["metrics"]["test"]["recall1"] > 90

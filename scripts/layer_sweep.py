@@ -13,9 +13,9 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import torch.nn as nn
 
 from sal.paths import DATA, RESULTS
+from sal.probes.models import VectorMLP
 from sal.probes.tp_data import DenseBatcher
 from sal.probes.train import TrainConfig, train_probe
 
@@ -41,10 +41,6 @@ targets = np.radians(meta[["latitude", "longitude"]].to_numpy(np.float64))
 splits = {s: np.flatnonzero(meta[args.protocol].to_numpy() == s) for s in ("train", "val")}
 
 
-def mlp(d):
-    return nn.Sequential(nn.LayerNorm(d), nn.Linear(d, 256), nn.GELU(), nn.Dropout(0.1), nn.Linear(256, 3))
-
-
 rows = []
 for l, name in enumerate(meta_f["layers"]):
     w = meta_f["widths"][l]
@@ -52,7 +48,7 @@ for l, name in enumerate(meta_f["layers"]):
     for seed in args.seeds:
         cfg = TrainConfig(lr=1e-3, batch_size=256, min_epochs=5, max_epochs=60, patience=8, val_per_epoch=1,
                           seed=seed, device=args.device)
-        r = train_probe(lambda: mlp(w), DenseBatcher(x, targets), targets, splits, cfg, log=lambda s: None)
+        r = train_probe(lambda: VectorMLP(w), DenseBatcher(x, targets), targets, splits, cfg, log=lambda s: None)
         m = r["metrics"]["val"]
         rows.append({"layer": l, "name": name, "seed": seed, "val_recall1": m["recall1"],
                      "val_mean_km": m["mean_km"], "val_median_km": m["median_km"], "epochs": r["epochs_run"]})

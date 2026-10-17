@@ -1,0 +1,46 @@
+"""Geolocation probe on one fixed-size vector per utterance (e.g. ECAPA speaker embeddings).
+
+MLP: LayerNorm -> Linear(D, 256) -> GELU -> Dropout(0.1) -> Linear(256, 3), angular loss, Adam 1e-3,
+batch 256, 10-200 epochs, early stopping patience 20 validation checks (4 per epoch).
+
+Run: uv run python scripts/run_dense.py --features outputs/features/ecapa_rebuild --protocol prism --seeds 42 43 44 45 46
+"""
+import argparse
+import json
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+from sal.paths import DATA, RESULTS
+from sal.probes.models import VectorMLP
+from sal.probes.tp_data import DenseBatcher
+from sal.probes.train import TrainConfig, save_run, train_probe
+
+ap = argparse.ArgumentParser()
+ap.add_argument("--features", type=Path, required=True)
+ap.add_argument("--file", default="emb.npy")
+ap.add_argument("--protocol", choices=["prism", "speaker_split"], default="prism")
+ap.add_argument("--seeds", type=int, nargs="+", default=[42])
+ap.add_argument("--device", default="cpu")
+args = ap.parse_args()
+
+meta = pd.read_parquet(DATA / "vaani_hi_rebuild" / "vaani_hi_rebuild.parquet", columns=["metadata_idx", "latitude", "longitude"])
+meta = meta.merge(pd.read_parquet(DATA / "vaani_hi_rebuild" / "splits.parquet"), on="metadata_idx")
+index = pd.read_parquet(args.features / "index.parquet")
+x_all = np.load(args.features / args.file).astype(np.float32)
+row = {mi: k for k, mi in enumerate(index["metadata_idx"])}
+meta = meta.sort_values("metadata_idx").reset_index(drop=True)
+x = x_all[[row[mi] for mi in meta["metadata_idx"]]]
+targets = np.radians(meta[["latitude", "longitude"]].to_numpy(np.float64))
+splits = {s: np.flatnonzero(meta[args.protocol].to_numpy() == s) for s in ("train", "val", "test")}
+d = x.shape[1]
+
+for seed in args.seeds:
+    cfg = TrainConfig(lr=1e-3, batch_size=256, min_epochs=10, max_epochs=200, patience=20, val_per_epoch=4,
+                      seed=seed, device=args.device, extra={"features": str(args.features), "dim": d})
+    make = lambda: VectorMLP(d)  # noqa: E731
+    res = train_probe(make, DenseBatcher(x, targets), targets, splits, cfg, log=lambda s: None)
+    name = f"dense_{args.features.name}_{args.protocol}_s{seed}"
+    save_run(res, RESULTS / "runs" / name, meta=meta[["metadata_idx", "speaker", "pincode", "state", "district"]])
+    print(name, json.dumps({k: round(v, 2) for k, v in res["metrics"]["test"].items()}), flush=True)
