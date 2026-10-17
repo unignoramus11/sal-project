@@ -75,6 +75,7 @@ def main():
     ap.add_argument("--check", type=int, default=50)
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--chunk", type=int, default=2000)
+    ap.add_argument("--id-col", default="metadata_idx", help="column identifying an utterance (e.g. audio_path)")
     args = ap.parse_args()
 
     runner, units = build(args.model, args.device)
@@ -83,7 +84,7 @@ def main():
     pf = pq.ParquetFile(args.data)
     done = {int(p.stem) for p in parts_dir.glob("*.parquet")}
     t0, n_done, buf, chunk_id, row = time.time(), 0, [], 0, 0
-    for batch in pf.iter_batches(batch_size=args.chunk, columns=["metadata_idx", "audio"]):
+    for batch in pf.iter_batches(batch_size=args.chunk, columns=[args.id_col, "audio"]):
         if args.limit is not None and row >= args.limit:
             break
         if chunk_id in done:
@@ -91,7 +92,7 @@ def main():
             row += batch.num_rows
             continue
         b = batch.to_pydict()
-        for mi, audio in zip(b["metadata_idx"], b["audio"]):
+        for mi, audio in zip(b[args.id_col], b["audio"]):
             if args.limit is not None and row >= args.limit:
                 break
             wav, sr = sf.read(io.BytesIO(audio), dtype="float32")
@@ -101,7 +102,7 @@ def main():
                 ref = runner(torch.from_numpy(wav))[0]["processed_transcript"]
                 if ref != text:
                     raise AssertionError(f"mismatch at {mi}: {ref!r} vs {text!r}")
-            buf.append({"metadata_idx": mi, "processed_transcript": text, "tokens": toks,
+            buf.append({args.id_col: mi, "processed_transcript": text, "tokens": toks,
                         "frame_ids": fids.tolist(), "n_frames": len(fids), "seconds": len(wav) / sr})
             row += 1
             n_done += 1
