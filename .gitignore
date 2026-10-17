@@ -229,16 +229,19 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
-internal/
+/internal/
 
 ### Project ###
 # Datasets, features, checkpoints, run outputs
-data/
-features/
-checkpoints/
-outputs/
-logs/
-wandb/
+# (anchored to the repo root so that e.g. src/sal/data/ is not ignored)
+/data/
+/features/
+/checkpoints/
+/outputs/
+/logs/
+/wandb/
+/envs/
+/external/
 *.parquet
 *.wav
 *.flac
