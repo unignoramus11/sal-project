@@ -41,7 +41,15 @@ TP-GRU and representation-probe results are still running; this file is updated 
   control R@1 10.1-16.0 under the random split against a control majority of 14.0 (lifts -4.0 to +1.9). In
   km, with the speaker-disjoint control runs as the no-speaker-information reference, the random split
   lowers the control error by 29-47 km for bigrams (e.g., ZIPA phone bigram 515 -> 470 km) and by 308 km for
-  ECAPA (556 -> 248 km). Transcripts carry a little speaker identity, voices carry a lot.
+  ECAPA (556 -> 248 km). Trained regression probes on transcripts exploit little speaker identity.
+- Transcripts are nonetheless speaker-identifiable. A 1-nearest-neighbour matcher (TF-IDF over character
+  1-4-grams, no location learning; scripts/knn_transcripts.py) reaches 39.6 R@1 [37.1, 42.0] on W2V2
+  transcripts under the random split (ZIPA 39.0) and 18.2 [14.5, 22.2] under the speaker-disjoint split
+  (ZIPA 22.6). For 25% of random-split test utterances the nearest training transcript comes from the same
+  speaker (chance 0.3%; 8.6% even for a matcher that already knew the pincode). Speakers repeat recognisable
+  content across utterances; a memorising matcher turns that into +21 R@1 of leakage, while the trained
+  probes (bigram MLP 27.9, TP-GRU ~21) stay well below it. A TP that fits its training set more tightly
+  than ours would move toward the matcher, which is one candidate explanation for PRiSM's 45.7.
 - MDL: under the random split the bag probes save 15.7-21.0 kbits over the location prior, against 5.0-7.9
   kbits on unseen speakers (ZIPA phone bigram 21.0 ± 0.3 vs 7.9 ± 1.0): leakage makes location about three
   times cheaper to code.

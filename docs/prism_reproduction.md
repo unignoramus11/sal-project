@@ -96,7 +96,11 @@ Leads, not yet tested:
   sampling selects different utterances, possibly more per speaker. On our data a voice-only embedding
   (ECAPA) reaches 41.6 Recall@1 and 197 km under the random split, close to PRiSM's TP; a TP that could
   recognise speakers through their transcripts would land in the same place. Our control task shows that
-  on our data transcript bags barely recognise speakers (control lift +2.1 vs ECAPA +19.1).
+  on our data trained transcript bags barely recognise speakers (control lift +2.1 vs ECAPA +19.1), but a
+  1-nearest-neighbour transcript matcher reaches 39.6 Recall@1 under the random split (18.2 speaker-disjoint)
+  and finds a same-speaker neighbour for 25% of test utterances (chance 0.3%). So the transcripts do allow
+  speaker memorisation; a TP that fits training data more tightly than ours (e.g., more utterances per
+  speaker in PRiSM's sample) would approach the matcher.
 - Once access arrives: rerun the TP-GRU on the official data (same code), measure speaker leakage there with
   the file-name speaker codes if the official rows can be matched to Vaani files (metadata_idx), and compare
   utterances per speaker.
