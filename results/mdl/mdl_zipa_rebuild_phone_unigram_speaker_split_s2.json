@@ -1,0 +1,66 @@
+{
+ "config": "mdl_zipa_rebuild_phone_unigram_speaker_split",
+ "seed": 2,
+ "n": 16753,
+ "classes": 26,
+ "online_kbits": 70.67558112186349,
+ "prior_kbits": 77.98415402673989,
+ "uniform_kbits": 78.7464665980177,
+ "compression": 1.1141962379090717,
+ "gain_over_prior_kbits": 7.30857290487639,
+ "blocks": [
+  {
+   "end": 262,
+   "bits": 1231.5152061529661,
+   "uniform": true
+  },
+  {
+   "end": 524,
+   "bits": 1217.9593617826727,
+   "prior_bits": 1214.8922084379421,
+   "temperature": 26.778334588534484,
+   "bits_per_label": 4.648699854132339,
+   "prior_bits_per_label": 4.6369931619768785
+  },
+  {
+   "end": 1047,
+   "bits": 2390.562237115054,
+   "prior_bits": 2401.433081228915,
+   "temperature": 8.978572471858199,
+   "bits_per_label": 4.570864698116738,
+   "prior_bits_per_label": 4.591650250915707
+  },
+  {
+   "end": 2094,
+   "bits": 5115.005175598495,
+   "prior_bits": 5121.062037313238,
+   "temperature": 5.6210501753104305,
+   "bits_per_label": 4.885391762749279,
+   "prior_bits_per_label": 4.891176730958202
+  },
+  {
+   "end": 4188,
+   "bits": 8930.044202065663,
+   "prior_bits": 9650.950024044994,
+   "temperature": 3.5190677774657764,
+   "bits_per_label": 4.264586533937757,
+   "prior_bits_per_label": 4.608858655226836
+  },
+  {
+   "end": 8376,
+   "bits": 18832.256347172857,
+   "prior_bits": 19802.937605907904,
+   "temperature": 2.2031182138867855,
+   "bits_per_label": 4.496718325494951,
+   "prior_bits_per_label": 4.7284951303505025
+  },
+  {
+   "end": 16753,
+   "bits": 32958.23859197579,
+   "prior_bits": 38561.363863653925,
+   "temperature": 1.2757032600156442,
+   "bits_per_label": 3.9343725190373386,
+   "prior_bits_per_label": 4.603242672036997
+  }
+ ]
+}
