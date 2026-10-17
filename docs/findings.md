@@ -54,8 +54,8 @@ TP-GRU and representation-probe results are still running; this file is updated 
   pictures only, W2V2 phone bigram +1.1 [-7.3, 8.2]). On km they all still beat the best constant (W2V2 phone
   bigram +159 km [89, 228], trained on shared pictures only +94 km [7, 186]). Reading: part of the
   speaker-disjoint R@1 of the bag probes comes from what speakers talk about; the location signal that
-  survives without topic is coarse (regional, not pincode-level). The speaker-disjoint shared-picture test subset has 1,222 utterances from 119
-  speakers, so these CIs are wide.
+  survives without topic is coarse (regional, not pincode-level). The speaker-disjoint shared-picture test
+  subset has 1,222 utterances from 119 speakers, so these CIs are wide.
 
 ## RQ1: inventory, local order, units
 
