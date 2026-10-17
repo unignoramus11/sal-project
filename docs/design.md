@@ -1,0 +1,76 @@
+# Study design: decisions and reasons
+
+This file records each methodological decision, why we made it, and where we depart from PRiSM.
+PRiSM's own settings are documented in `docs/prism_reproduction.md`. The rule: we reproduce PRiSM
+once, faithfully, as an anchor; every other experiment uses the protocol below, and any departure
+from PRiSM is justified here and, where it could change a conclusion, run both ways.
+
+## 1. Two datasets, one protocol
+
+- **Vaani-Hi (official)**, `changelinglab/vaani-hi-geo`. Access is gated with manual approval and still
+  pending (17 Oct 2026). Used for the anchor reproduction if access arrives.
+- **Vaani-Hi (rebuilt)**, `data/vaani_hi_rebuild/`, built from the public Vaani corpus with PRiSM's own
+  recipe (`src/sal/data/rebuild.py`, Vaani commit pinned). The study does not depend on the official
+  copy. The 7 states with at most 4 districts, which include Haryana and all its neighbours, match
+  PRiSM's district selection exactly; 5 states sample districts from a sorted list instead of PRiSM's
+  file-system order.
+
+## 2. Speakers: the central confound
+
+Vaani file names carry a speaker code (field 6 of `IISc_VaaniProject_<M>_<State>_<District>_<code>_...`).
+On the first 16,800 sampled rows it equals the explicit `speakerID` wherever that exists (100%), is present
+on every row, and maps to one gender and one district per code. So every Vaani-Hi utterance has a speaker.
+
+Why it matters: PRiSM splits at random within each pincode. Utterances per speaker are skewed (median 3,
+max 309 in the sample), so the same voice, microphone and room appear in train and test. A probe can then
+place a test utterance by recognising the speaker or the channel rather than the dialect. This inflates
+both probes, and not necessarily equally: the representation probe sees speaker and channel directly,
+the transcript probe only through recognition errors. The TP-RP gap, the object of this study, can
+therefore change under a speaker-disjoint split.
+
+Decisions:
+- **Main protocol: speaker-disjoint splits.** Speakers, not utterances, are assigned to train/val/test,
+  stratified by pincode so every pincode appears in every split, targeting 75/10/15 of utterances.
+  Pincodes with too few speakers to split are reported, not silently dropped.
+- **Anchor protocol: PRiSM's random split**, for the reproduction and as a second column in the main tables.
+- **Leakage is measured, not assumed:** share of test utterances whose speaker is in train under the
+  random split; and the drop from random to speaker-disjoint for each probe.
+- **Speaker-only baseline:** a probe on a speaker-verification embedding (ECAPA-TDNN), which encodes voice
+  and channel but is trained not to encode content. Its accuracy under each split bounds how much of GEO-v
+  can be solved without dialect information.
+
+## 3. Statistics
+
+- Utterances from one speaker are not independent. Confidence intervals and paired tests use a
+  **cluster bootstrap over speakers** (1,000 resamples), not over utterances.
+- 5 seeds per configuration; we report mean ± sd across seeds and the bootstrap CI of the seed-averaged
+  predictions.
+- Metrics: Recall@1 (PRiSM definition: nearest distinct location in the split), mean and **median**
+  great-circle error (median is robust to the long tail), per-state Recall@1.
+- Control task (Hewitt and Liang, 2019): labels permuted across speakers within the training set; a probe
+  whose control accuracy is high is memorising.
+
+## 4. Transcript probe tokenisation
+
+PRiSM joins CTC tokens without a separator and tokenises by character, so `kʰ`, `tʃ` and `kː` are split
+into several tokens. This matters for RQ1: shuffling characters destroys phones as well as their order.
+
+- Anchor: character tokens, exactly as PRiSM.
+- Main: **phone tokens**, the recognizer's own CTC output units, so order and inventory can be separated.
+- TP-Shuffle permutes phones within an utterance (fresh permutation each epoch for training, a fixed
+  seeded permutation for evaluation). TP-Bigram uses phone bigram counts. Character and phone variants
+  are both reported for the GRU.
+
+## 5. Representation probe
+
+PRiSM runs the frozen encoder online at every step and probes only the last layer. We cache features
+(storage plan in `docs/compute.md`), which makes 5 seeds and the order ablations affordable, and we
+select layers on validation data only (time-averaged layer sweep), never on test.
+The attention head is PRiSM's (learned query over L2-normalised frames); the order-aware variants keep
+the trainable parameter count within ±10% of it.
+
+## 6. What we will not claim
+
+- A district comparison is not a dialect comparison (Vaani language labels are self-reported).
+- Results on the rebuilt Vaani-Hi are compared with PRiSM's published numbers only as a sanity check;
+  the comparison of probes is always made within one dataset and one split.
