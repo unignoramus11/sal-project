@@ -111,3 +111,13 @@ def test_speaker_from_path():
     assert rebuild.speaker_from_path(p) == "Aara10941c9eaf68"
     with pytest.raises(ValueError):
         rebuild.speaker_from_path("something_else.wav")
+
+
+def test_normalise_all_null_float_column():
+    import pyarrow as pa
+    t = pa.table({"speakerID": pa.array([None, None], pa.float64()), "language": ["Hindi", "Hindi"]})
+    n = rebuild._normalise(t)
+    assert pa.types.is_string(n.schema.field("speakerID").type) and n.column("speakerID").null_count == 2
+    bad = pa.table({"speakerID": pa.array([1.0, None])})
+    with pytest.raises(TypeError):
+        rebuild._normalise(bad)

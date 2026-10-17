@@ -13,6 +13,28 @@ Facts checked on 9 Oct 2026, with their sources.
 - Splits: 19,780 / 2,668 / 3,985 utterances (PRiSM Table 5).
 - Audio bit depth unknown (float32 gives ~29 h, int16 ~57 h). `scripts/vaani_check.py` settles this.
 
+## Vaani-Hi (rebuilt), `data/vaani_hi_rebuild/` (17 Oct 2026)
+Built with `scripts/build_vaani_hi.py` (PRiSM recipe, `src/sal/data/rebuild.py`), Vaani commit
+`9e6ed4f94f7060e633cbc500480623ae7521522c`, pincode table sha256 `84af12fa...61e2` (India Post directory,
+157,126 rows). Output sha256 `07f6a8ce26e7b2b7b32bf1694d5dc27017d6e5fdcba5cd246100175f3bc32392`.
+- 84,000 sampled utterances (35 districts x 4 shards x 600); 22,551 kept by the > 450 per-pincode rule
+  (27%); 40.3 h; 26 pincodes; 1,570 speakers; 50.7% female.
+- States kept: Rajasthan 4,942, Jharkhand 4,672, Madhya Pradesh 4,422, Chhattisgarh 4,393, Haryana 1,480,
+  Uttarakhand 1,108, Himachal Pradesh 563, Punjab 514, Bihar 457. **Delhi, Chandigarh and Uttar Pradesh are
+  removed entirely by PRiSM's pincode rule**: "12 states" describes the sampling, not the dataset.
+- Speakers: every utterance has a speaker code (file name); explicit `speakerID` covers 40% and matches the
+  code on 100% of those rows. Fazilka and Jaipur shards have no explicit IDs at all.
+- Speakers per pincode: min 4, median 32, max 204. Top speaker's share of a pincode: median 13%, max 55%.
+  Utterances per speaker: median 5, max 257; 69% of utterances come from speakers with >= 20 recordings.
+- Splits (`splits.parquet`): PRiSM random split 16,904 / 2,243 / 3,404, **97.9% of test utterances have their
+  speaker in train**; speaker-disjoint split (seed 42) 16,753 / 2,217 / 3,581, 0% leakage, 223 test speakers;
+  all 26 pincodes appear in every split under both protocols.
+- Language labels: Hindi 17,755; Rajasthani 1,258; Marwadi 1,199; Khortha 567; Nimadi 527; Kumaoni 299;
+  Chhattisgarhi 292; Bengali 209. Transcribed: 7.9%.
+- 5 clips were longer than 20 s and were clipped (re-encoded as 16-bit PCM); all others keep the original bytes.
+- Licences: Vaani CC BY 4.0. ZIPA checkpoint `anyspeech/zipa-large-crctc-ns-800k` is **CC BY-NC-SA 4.0**
+  (the proposal said MIT, which is the licence of the ZIPA code).
+
 ## Vaani (gemination check)
 - Hugging Face: `ARTPARK-IISc/Vaani` (gated, CC BY 4.0, 7.21 TB, ~2,122 h transcribed).
 - Audio is stored as `audio/{State}/{District}/train-xxxxx-of-*.parquet`; HF configs are per language.
