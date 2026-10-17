@@ -11,6 +11,7 @@ import argparse
 import re
 import shutil
 import tempfile
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
@@ -37,7 +38,15 @@ def one(path: str, tmp: Path) -> int:
     part = parts / (path.replace("audio/", "").replace("/", "__"))
     if part.exists():
         return pq.ParquetFile(part).metadata.num_rows
-    local = hf_hub_download(REPO, path, repo_type="dataset", revision=REV, local_dir=tmp)
+    for attempt in range(4):                    # transient transfer errors (xet/CAS) should not kill the run
+        try:
+            local = hf_hub_download(REPO, path, repo_type="dataset", revision=REV, local_dir=tmp)
+            break
+        except Exception as e:  # noqa: BLE001
+            if attempt == 3:
+                raise
+            print(f"retry {path}: {type(e).__name__}: {e}", flush=True)
+            time.sleep(10 * (attempt + 1))
     t = pq.read_table(local, columns=COLS)
     mask = pc.and_(pc.equal(t["isTranscriptionAvailable"], "Yes"),
                    pc.fill_null(pc.match_substring_regex(t["transcript"], pattern), False))
