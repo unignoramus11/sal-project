@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Light GPU jobs that take load off the PC: transcription (and its reproducibility hash), prosody contours,
-# then, once those finish, the shared-picture TP-GRU runs (topic check) and the prosody BiGRU runs.
+# then, once those finish: TP-GRU seeds 44-46 of the main grid (the PC runs seeds 42-43), the shared-picture
+# TP-GRU runs (topic check) and the prosody BiGRU runs.
 # Needs the rebuilt dataset (step 2 of docs/ada.md). Submit once: bash slurm/light_jobs.sh
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -13,6 +14,7 @@ for M in w2v2 zipa; do
   for spec in "char gru" "phone gru" "phone shuffle"; do
     set -- $spec
     for P in speaker_split prism; do
+      bash slurm/submit.sh --dependency=afterok:$dep slurm/tp.sbatch $M $1 $2 $P all "44 45 46"
       bash slurm/submit.sh --dependency=afterok:$dep slurm/tp.sbatch $M $1 $2 $P generic "42 43 44 45 46"
     done
   done

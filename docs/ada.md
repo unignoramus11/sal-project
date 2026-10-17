@@ -75,8 +75,8 @@ bash slurm/light_jobs.sh
 ```
 
 Submits two transcription jobs (W2V2 and ZIPA phone recognizers), one CPU job for prosody contours, and,
-when those finish, 12 transcript-probe jobs (topic check: trained and tested on shared pictures only) and 2
-prosody-probe jobs. Check the transcription logs first:
+when those finish, 24 transcript-probe jobs (seeds 44-46 of the main TP-GRU grid, which the PC cannot finish
+in time, and the topic check: trained and tested on shared pictures only) and 2 prosody-probe jobs. Check the transcription logs first:
 
 ```bash
 tail -2 outputs/slurm/transcribe_*.out

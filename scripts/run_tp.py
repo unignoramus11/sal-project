@@ -18,6 +18,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from sal.data.control import control_targets
 from sal.data.prompts import restrict
 from sal.paths import DATA, OUTPUTS, RESULTS
 from sal.probes import models as M
@@ -34,6 +35,8 @@ ap.add_argument("--protocol", choices=["prism", "speaker_split"], default="prism
 ap.add_argument("--seeds", type=int, nargs="+", default=[42])
 ap.add_argument("--patience", type=int, default=100)
 ap.add_argument("--max-epochs", type=int, default=200)
+ap.add_argument("--control", action="store_true",
+                help="control task: each speaker gets another speaker's location (sal.data.control)")
 ap.add_argument("--prompts", choices=["all", "generic"], default="all",
                 help="generic: train and test only on utterances about shared pictures (no topic cue)")
 ap.add_argument("--device", default="cpu")
@@ -47,6 +50,9 @@ df = meta.merge(tr, on="metadata_idx", how="inner").reset_index(drop=True)
 assert len(df) == len(meta), f"{len(meta) - len(df)} utterances without a transcript"
 
 targets = np.radians(df[["latitude", "longitude"]].to_numpy(np.float64))
+if args.control:
+    targets = control_targets(df)
+    args.tag += "_control"
 splits = {s: np.flatnonzero(df[args.protocol].to_numpy() == s) for s in ("train", "val", "test")}
 splits = restrict(splits, df["metadata_idx"].to_numpy(), args.prompts)
 unit_seqs = [T.units(t, list(k), args.tokens) for t, k in zip(df["processed_transcript"], df["tokens"])]
