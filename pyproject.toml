@@ -25,6 +25,7 @@ dependencies = [
     "matplotlib>=3.9",
     "praat-parselmouth>=0.4.5",
     "panphon>=0.22",
+    "speechbrain>=1.0",
 ]
 
 [dependency-groups]
