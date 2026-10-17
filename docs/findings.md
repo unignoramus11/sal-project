@@ -49,13 +49,18 @@ TP-GRU and representation-probe results are still running; this file is updated 
 | Phone unigram | 15.2 ± 0.5 | 12.7 ± 1.0 | +2.9 [-0.9, 7.2] |
 | Char unigram | 14.5 ± 0.9 | 12.5 ± 1.3 | +3.2 [-0.7, 7.6] |
 
-- Topic check (P1). On shared-picture test utterances, no speaker-disjoint probe beats the majority R@1
-  (W2V2 phone bigram -2.9 [-11.6, 4.9]; ZIPA phone bigram +3.5 [-4.9, 11.5]; trained and tested on shared
-  pictures only, W2V2 phone bigram +1.1 [-7.3, 8.2]). On km they all still beat the best constant (W2V2 phone
-  bigram +159 km [89, 228], trained on shared pictures only +94 km [7, 186]). Reading: part of the
-  speaker-disjoint R@1 of the bag probes comes from what speakers talk about; the location signal that
-  survives without topic is coarse (regional, not pincode-level). The speaker-disjoint shared-picture test
-  subset has 1,222 utterances from 119 speakers, so these CIs are wide.
+- Topic check (P1). The clean test trains and tests on shared-picture utterances only and compares with that
+  subset's own baselines (majority R@1 21.3, state accuracy 38.6, best constant 537 km). Speaker-disjoint:
+  W2V2 phone bigram R@1 lift +1.1 [-7.3, 8.2], state lift +4.4 [-5.4, 15.5], km gain +94 [7, 186]; W2V2 phone
+  unigram +76 km [1, 152]; ZIPA phone bigram state lift +5.9 [-6.6, 19.1]; ECAPA +129 km [1, 272]. On all
+  utterances the same probes are far above baseline (ZIPA phone bigram: R@1 lift +10.6 [6.2, 15.9], correct
+  state 51.0% vs 18.4%, lift +32.7 [21.5, 43.9]). Probes trained on all utterances and scored on the
+  shared-picture subset are not a clean test: the transcript reveals that the picture is a shared one, and
+  the share of shared pictures differs by state (12-58%), so the prompt type itself moves the location prior.
+  Reading: most of the speaker-disjoint signal of the bag probes comes from what speakers talk about; what
+  survives without topic is at most a coarse regional signal (km gains of 76-129 km with CIs just above
+  zero; R@1 and state accuracy not significant). The subset has 1,222 test utterances from 119 speakers, so
+  the CIs are wide; state accuracy: results/tables/state_level.csv.
 
 ## RQ1: inventory, local order, units
 
