@@ -4,7 +4,9 @@ Two tokenisations:
 - "char": PRiSM's CharacterTokenizer. Vocabulary = <pad>, <unk>, <s>, </s>, then the characters of the
   training transcripts in sorted order; unknown characters map to <unk>; transcripts are cut to 512
   characters and an empty transcript becomes "?".
-- "phone": the recognizer's own collapsed CTC units (one id per phone), same special tokens, same 512 cap.
+- "phone": phones from `sal.phones.segment` applied to the same string, one rule for both recognizers
+  (wav2vec2 tokens are eSpeak phonemes, ZIPA tokens are characters, so raw tokens are not comparable);
+  same special tokens, same 512 cap.
 
 Order manipulations:
 - shuffle: phones (or characters) permuted within each utterance; a new permutation every training
@@ -17,6 +19,8 @@ from __future__ import annotations
 from collections import Counter
 
 import numpy as np
+
+from sal.phones import segment
 import torch
 from torch.nn.utils.rnn import pad_sequence
 
@@ -30,7 +34,7 @@ def units(transcript: str, tokens: list[str], mode: str) -> list[str]:
         t = transcript if transcript else "?"
         return list(t[:MAX_LEN])
     if mode == "phone":
-        t = list(tokens) if len(tokens) else ["?"]
+        t = segment(transcript) or ["?"]
         return t[:MAX_LEN]
     raise ValueError(mode)
 

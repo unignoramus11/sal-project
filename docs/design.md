@@ -60,7 +60,11 @@ PRiSM joins CTC tokens without a separator and tokenises by character, so `kʰ`,
 into several tokens. This matters for RQ1: shuffling characters destroys phones as well as their order.
 
 - Anchor: character tokens, exactly as PRiSM.
-- Main: **phone tokens**, the recognizer's own CTC output units, so order and inventory can be separated.
+- Main: **phone tokens** from one segmentation rule applied to both recognizers (`src/sal/phones.py`):
+  diacritics and modifier letters attach to their base, `tʃ`/`dʒ` are joined, the result is lossless.
+  Raw tokens are not comparable across models: wav2vec2 emits eSpeak phonemes (`oː`, `ɔːɹ`), ZIPA emits
+  characters (`o` + `ː`). PanPhon's segmenter was rejected because it silently drops symbols it does not
+  know (ASCII `g`, precomposed `ẽ`, `ᵻ`).
 - TP-Shuffle permutes phones within an utterance (fresh permutation each epoch for training, a fixed
   seeded permutation for evaluation). TP-Bigram uses phone bigram counts. Character and phone variants
   are both reported for the GRU.
