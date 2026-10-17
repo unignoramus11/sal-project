@@ -1,0 +1,96 @@
+# Findings so far (18 Oct 2026)
+
+Every number below comes from `results/` (tables: `results/tables/configs.csv`, `comparisons.csv`,
+`results/baselines.csv`, `results/dpr/`, `results/mdl/summary.csv`; regenerate with `scripts/summarise.py`,
+`scripts/baselines.py`, `scripts/dpr.py`, `scripts/mdl.py`). Recall@1 (R@1) values are seed means ± sd (5
+seeds) unless marked "ens" (seed-ensemble prediction, with a 95% speaker-cluster bootstrap CI in brackets).
+TP-GRU and representation-probe results are still running; this file is updated as they land.
+
+## Data
+
+- Rebuilt Vaani-Hi with PRiSM's recipe (Vaani commit 9e6ed4f9): 22,551 utterances, 40.3 h, 26 pincodes,
+  9 states, 1,570 speakers (speaker code from the file name).
+- PRiSM's random split puts the speaker of 97.9% of test utterances in train; our speaker-disjoint split
+  (pincode-stratified) has 0%.
+- 68% of utterances describe a district-specific picture (named after the speaker's own district); 32%
+  describe shared ("generic") pictures. The generic share varies by state from 12% (Madhya Pradesh) to 58%
+  (Chhattisgarh), so the shared-picture subset has its own location prior: its majority location covers
+  ~20% of test utterances against ~10% overall. Scores on that subset are therefore reported as lift over
+  the majority baseline (R@1) and gain over the best constant location (km), on the same utterances.
+
+## RQ0: speaker leakage
+
+| Reference (test) | random split | speaker-disjoint |
+|---|---|---|
+| Speaker lookup (speaker ID only) | 98.0 | 10.0 (= majority) |
+| Majority location | 10.5 | 10.0 |
+| Best constant location, mean km | 601 | 607 |
+| ECAPA speaker embedding, R@1 | 41.6 ± 1.6 | 10.1 ± 0.6 |
+| ECAPA, mean km (ens) | 169 | 435 |
+
+- Under PRiSM's split the task is almost solvable from the speaker identity alone (98.0 R@1).
+- ECAPA, which encodes voice and channel and is trained to ignore content, reaches 41.6 R@1 under the random
+  split and falls to the majority level (10.1; lift +0.4 [-6.2, 6.3]) on unseen speakers (prediction P4).
+  It still beats the best constant location by 172 km [96, 245] on unseen speakers, so voice and channel
+  carry some coarse regional information that transfers across speakers, but not enough to pick a pincode.
+- Transcript bag probes also drop between splits, by less than ECAPA:
+
+| Probe (W2V2 transcripts) | random split | speaker-disjoint | lift over majority, speaker-disjoint |
+|---|---|---|---|
+| Phone bigram | 27.9 ± 0.8 | 17.8 ± 1.7 | +7.9 [2.6, 13.9] |
+| Char bigram | 26.8 ± 0.5 | 14.3 ± 1.6 | +4.4 [-0.7, 10.2] |
+| Phone unigram | 15.5 ± 1.1 | 12.6 ± 0.7 | +3.1 [-1.0, 8.3] |
+| Char unigram | 14.5 ± 0.9 | 12.4 ± 1.1 | +2.8 [-1.2, 7.6] |
+
+| Probe (ZIPA transcripts) | random split | speaker-disjoint | lift over majority, speaker-disjoint |
+|---|---|---|---|
+| Phone bigram | 28.6 ± 0.8 | 21.3 ± 1.0 | +10.6 [6.2, 15.9] |
+| Char bigram | 27.9 ± 0.8 | 21.5 ± 0.6 (2 seeds) | +11.5 [6.2, 17.0] |
+| Phone unigram | 15.2 ± 0.5 | 12.7 ± 1.0 | +2.9 [-0.9, 7.2] |
+| Char unigram | 14.5 ± 0.9 | 12.5 ± 1.3 | +3.2 [-0.7, 7.6] |
+
+- Topic check (P1). On shared-picture test utterances, no speaker-disjoint probe beats the majority R@1
+  (W2V2 phone bigram -2.9 [-11.6, 4.9]; ZIPA phone bigram +3.5 [-4.9, 11.5]; trained and tested on shared
+  pictures only, W2V2 phone bigram +1.1 [-7.3, 8.2]). On km they all still beat the best constant (W2V2 phone
+  bigram +159 km [89, 228], trained on shared pictures only +94 km [7, 186]). Reading: part of the
+  speaker-disjoint R@1 of the bag probes comes from what speakers talk about; the location signal that
+  survives without topic is coarse (regional, not pincode-level). The speaker-disjoint shared-picture test subset has 1,222 utterances from 119
+  speakers, so these CIs are wide.
+
+## RQ1: inventory, local order, units
+
+All on the speaker-disjoint split, paired on the same test utterances (speaker-cluster bootstrap):
+
+- Local order helps: W2V2 phone bigram vs phone unigram +4.8 R@1 [2.6, 6.9], -33 km [-51, -15].
+- Phone units vs raw characters: W2V2 phone bigram vs char bigram +3.5 R@1 [2.1, 5.1] (km n.s.); ZIPA phone
+  vs char bigram -0.9 R@1 [-3.3, 1.3] but -20 km [-28, -11].
+- Recognizer: ZIPA phone bigram vs W2V2 phone bigram +2.7 R@1 [-0.1, 5.8] (p = 0.06), -33 km [-55, -12].
+- MDL (online coding of the pincode, speaker-ordered blocks, temperature-calibrated, 3 orderings): every bag
+  probe compresses better than the location prior (prior 78.8 kbits; uniform 78.7). Savings over the prior:
+  ZIPA phone bigram 7.9 ± 1.0 kbits, ZIPA char bigram 7.2 ± 0.9, W2V2 phone bigram 6.6 ± 1.1, W2V2 char bigram
+  6.6 ± 1.1, unigrams 5.0-6.0. Paired by ordering, ZIPA phone bigram saves 1.37 kbits over W2V2 phone bigram
+  (1.21-1.52 across the 3 orderings), bigrams save 1.6-2.0 kbits over unigrams, and phone units save 0.71
+  kbits over characters for ZIPA but nothing for W2V2 (0.02), which fits ZIPA's richer diacritic output: its
+  phone units group modifiers that the character tokenisation splits.
+
+## RQ2: gemination (doubled-phone rate)
+
+- W2V2 transcripts: Haryana has the lowest doubled-phone rate of the 9 states, 1.00% of consonants vs 1.17%
+  elsewhere, difference -0.17 pp [-0.32, -0.04], p = 0.012 (speaker bootstrap; Haryana has 12 speakers).
+- ZIPA transcripts: no difference, 1.63% vs 1.82%, -0.19 pp [-0.53, 0.19], p = 0.30. ZIPA doubles about 1.6x
+  as often overall, and its state ranking differs (Rajasthan highest at 3.6%).
+- So doubling in recognizer output depends on the recognizer; it cannot by itself establish a dialect
+  feature. The acoustic closure measurement (Haryana vs New Delhi, MMS alignment, Praat landmarks, mixed
+  model with speaker intercepts) is the test; it is running.
+
+## RQ3: prosody
+
+- Pooled utterance-level prosody statistics (12 within-utterance-normalised F0/intensity statistics, MLP):
+  below the majority R@1 under both splits (random 5.5 ± 0.7, speaker-disjoint 4.8 ± 0.4) and close to the
+  best constant on km (speaker-disjoint +12 km [-31, 53]). Speaker-normalised global prosody statistics
+  carry no usable location signal. The sequence model (prosody BiGRU on contours) is queued on the GPU.
+
+## Open
+- TP-GRU (char, phone, shuffled phone; both recognizers; both splits; 5 seeds) running on the PC.
+- Representation probes and layer sweep: on Ada.
+- Gemination acoustics and the blind manual audit of 50 tokens.
