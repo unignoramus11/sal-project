@@ -269,3 +269,4 @@ external/
 # Run results are small and versioned
 !/results/**/*.parquet
 /slurm/ada.env
+/slides/*/build/

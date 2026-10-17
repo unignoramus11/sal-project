@@ -94,7 +94,7 @@ def fig_probes():
                columnspacing=0.8, bbox_to_anchor=(0.5, 1.0))
     fig.tight_layout(pad=0.3, rect=(0, 0, 1, 0.94))
     for ext in ("pdf", "png"):
-        fig.savefig(out / f"fig_probes.{ext}", dpi=220)
+        fig.savefig(out / f"fig_probes.{ext}", dpi=220, transparent=True)
     plt.close(fig)
 
 
@@ -117,7 +117,7 @@ def fig_dpr():
             ax.spines[s].set_visible(False)
         fig.tight_layout(pad=0.3)
         for ext in ("pdf", "png"):
-            fig.savefig(out / f"fig_dpr_{model}.{ext}", dpi=220)
+            fig.savefig(out / f"fig_dpr_{model}.{ext}", dpi=220, transparent=True)
         plt.close(fig)
 
 

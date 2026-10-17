@@ -80,6 +80,24 @@ def ensemble(config: str, split: str = "test") -> pd.DataFrame:
     return df
 
 
+def default_pairs(have: set[str]) -> list[str]:
+    """The study's standard comparisons (a, b), kept where both configs exist."""
+    out = []
+    for proto in ("speaker_split", "prism"):
+        for m in ("w2v2", "zipa"):
+            tp = f"tp_{m}_rebuild"
+            out += [(f"{tp}_phone_bigram_{proto}", f"{tp}_phone_unigram_{proto}"),
+                    (f"{tp}_char_bigram_{proto}", f"{tp}_char_unigram_{proto}"),
+                    (f"{tp}_phone_bigram_{proto}", f"{tp}_char_bigram_{proto}"),
+                    (f"{tp}_phone_gru_{proto}", f"{tp}_phone_shuffle_{proto}"),
+                    (f"{tp}_phone_gru_{proto}", f"{tp}_char_gru_{proto}"),
+                    (f"{tp}_phone_gru_{proto}", f"{tp}_phone_bigram_{proto}"),
+                    (f"{tp}_phone_bigram_{proto}", f"dense_ecapa_rebuild_{proto}")]
+        for k in ("phone_bigram", "char_bigram", "phone_gru", "char_gru", "phone_shuffle"):
+            out.append((f"tp_zipa_rebuild_{k}_{proto}", f"tp_w2v2_rebuild_{k}_{proto}"))
+    return [c for a, b in out if a in have and b in have for c in (a, b)]
+
+
 def main():
     rows = {}
     for d in sorted(runs.iterdir()):
@@ -124,7 +142,7 @@ def main():
     t.to_csv(out / "configs.csv", index=False)
     print(t.round(1).to_string(index=False))
 
-    pairs = sys.argv[1:]
+    pairs = sys.argv[1:] or default_pairs(set(t["config"]))
     comps = []
     for a, b in zip(pairs[0::2], pairs[1::2]):
         ea, eb = ensemble(a).set_index("metadata_idx"), ensemble(b).set_index("metadata_idx")
