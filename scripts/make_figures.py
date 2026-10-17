@@ -1,8 +1,8 @@
 """Figures for the report and slides, generated only from results/ (PDF + PNG in results/figures/).
 
-fig_probes      Recall@1 (seed ensemble, 95% speaker-bootstrap CI) for every probe family under PRiSM's random
-                split (blue circles) and the speaker-disjoint split (orange squares); dashed line: majority
-                baseline; open marker: same probe scored only on shared-picture test utterances.
+fig_probes      per probe family (seed ensemble, 95% speaker-bootstrap CI), PRiSM's random split (blue circles)
+                and the speaker-disjoint split (orange squares): Recall@1 above the majority baseline and km
+                below the best constant location, on the same utterances; open marker: shared pictures only.
 fig_dpr_<model> doubled-phone rate by state with 95% speaker-bootstrap CIs, Haryana labelled.
 Run: uv run python scripts/make_figures.py
 """
@@ -54,42 +54,42 @@ def family(cfg: str) -> tuple[str, str, bool] | None:
 
 
 def fig_probes():
+    """Two panels on a common reference, so the full test set and the shared-picture subset (whose location prior
+    differs) are comparable: Recall@1 above the majority baseline, and km below the best constant location, both
+    on the same test utterances (seed ensemble, 95% speaker-bootstrap CI)."""
     t = pd.read_csv(RESULTS / "tables" / "configs.csv")
     t[["label", "proto", "generic"]] = t["config"].apply(lambda c: pd.Series(family(c) or (None, None, None)))
     t = t.dropna(subset=["label"])
     main = t[~t["generic"].astype(bool)]
-    labels = sorted(main["label"].unique(), key=lambda l: -main[main.label == l]["ens_recall1"].max())
-    base = pd.read_csv(RESULTS / "baselines.csv")
-    maj = base[(base.baseline == "majority") & (base.split == "test")].set_index("protocol")["recall1"]
-    fig, ax = plt.subplots(figsize=(3.4, 0.28 * len(labels) + 0.7))
-    for i, lab in enumerate(labels):
-        for proto, color, marker, dy in (("prism", BLUE, "o", -0.14), ("speaker_split", ORANGE, "s", 0.14)):
-            r = main[(main.label == lab) & (main.proto == proto)]
-            if r.empty:
-                continue
-            r = r.iloc[0]
-            ax.errorbar(r.ens_recall1, i + dy, xerr=[[r.ens_recall1 - r.ens_recall1_lo], [r.ens_recall1_hi - r.ens_recall1]],
-                        fmt=marker, ms=4, color=color, ecolor=color, elinewidth=1, capsize=0, zorder=3)
-            g = t[(t.label == lab) & (t.proto == proto) & (t["generic"].astype(bool))]
-            if not g.empty:
-                ax.plot(g.iloc[0].ens_recall1, i + dy, marker, ms=4, mfc="white", mec=color, mew=1, zorder=4)
-            elif not np.isnan(r.get("generic_recall1", np.nan)):
-                ax.plot(r.generic_recall1, i + dy, marker, ms=4, mfc="white", mec=color, mew=1, zorder=4)
-    ax.axvline(maj.mean(), color=INK2, lw=0.8, ls="--", zorder=1)
-    ax.set_yticks(range(len(labels)), labels)
-    ax.set_ylim(len(labels) - 0.5, -1.1)           # inverted, with headroom for the baseline label
-    ax.text(maj.mean() + 0.6, -0.75, "majority baseline", color=INK2, fontsize=6.5, va="center")
-    ax.set_xlabel("Test Recall@1 (%)")
-    ax.xaxis.grid(True, color=GRID, lw=0.5)
-    ax.set_axisbelow(True)
-    for s in ("top", "right"):
-        ax.spines[s].set_visible(False)
+    labels = sorted(main["label"].unique(), key=lambda l: -main[main.label == l]["lift_recall1"].max())
+    panels = [("lift_recall1", "lift_recall1_lo", "lift_recall1_hi", "generic_lift_recall1",
+               "Recall@1 above majority (points)"),
+              ("km_gain", "km_gain_lo", "km_gain_hi", "generic_km_gain", "km better than best constant")]
+    fig, axes = plt.subplots(1, 2, figsize=(6.8, 0.28 * len(labels) + 0.8), sharey=True)
+    for ax, (col, lo, hi, gcol, xlabel) in zip(axes, panels):
+        for i, lab in enumerate(labels):
+            for proto, color, marker, dy in (("prism", BLUE, "o", -0.14), ("speaker_split", ORANGE, "s", 0.14)):
+                r = main[(main.label == lab) & (main.proto == proto)]
+                if r.empty:
+                    continue
+                r = r.iloc[0]
+                ax.errorbar(r[col], i + dy, xerr=[[r[col] - r[lo]], [r[hi] - r[col]]], fmt=marker, ms=4, color=color,
+                            ecolor=color, elinewidth=1, capsize=0, zorder=3)
+                ax.plot(r[gcol], i + dy, marker, ms=4, mfc="white", mec=color, mew=1, zorder=4)
+        ax.axvline(0, color=INK2, lw=0.8, ls="--", zorder=1)
+        ax.set_xlabel(xlabel)
+        ax.xaxis.grid(True, color=GRID, lw=0.5)
+        ax.set_axisbelow(True)
+        for sp in ("top", "right"):
+            ax.spines[sp].set_visible(False)
+    axes[0].set_yticks(range(len(labels)), labels)
+    axes[0].set_ylim(len(labels) - 0.5, -0.6)
     h = [plt.Line2D([], [], marker="o", color=BLUE, ls="", ms=4, label="random split (PRiSM)"),
          plt.Line2D([], [], marker="s", color=ORANGE, ls="", ms=4, label="speaker-disjoint"),
-         plt.Line2D([], [], marker="o", mfc="white", mec=INK2, ls="", ms=4, label="shared pictures only")]
+         plt.Line2D([], [], marker="o", mfc="white", mec=INK2, ls="", ms=4, label="scored on shared pictures only")]
     fig.legend(handles=h, loc="upper center", ncol=3, frameon=False, fontsize=6.5, handletextpad=0.2,
                columnspacing=0.8, bbox_to_anchor=(0.5, 1.0))
-    fig.tight_layout(pad=0.3, rect=(0, 0, 1, 0.93))
+    fig.tight_layout(pad=0.3, rect=(0, 0, 1, 0.94))
     for ext in ("pdf", "png"):
         fig.savefig(out / f"fig_probes.{ext}", dpi=220)
     plt.close(fig)

@@ -6,6 +6,11 @@ A run directory is named <config>_s<seed>. For each config:
     speaker-cluster bootstrap CI for Recall@1 and mean km;
   - the same ensemble scored only on test utterances about GENERIC (shared) pictures, where the topic of
     the description cannot reveal the district.
+Every score is paired with the majority baseline on the same test utterances (most frequent training
+location of the same protocol and prompt subset): the shared-picture subset has a different location prior
+(its majority location covers ~20% of test utterances, against ~10% overall), so raw Recall@1 values on it
+are not comparable with the full test set. lift_* = probe minus majority, with speaker-bootstrap CI;
+km_gain = best-constant km minus probe km (positive = better than any fixed guess).
 Paired comparisons (same test utterances): difference in per-utterance hit rate and km error between two
 configs' seed ensembles, speaker-cluster bootstrap CI and p-value.
 
@@ -29,6 +34,25 @@ from sal.stats import cluster_bootstrap, paired_cluster_bootstrap
 runs = RESULTS / "runs"
 coords = pd.read_parquet(DATA / "vaani_hi_rebuild" / "vaani_hi_rebuild.parquet",
                          columns=["metadata_idx", "latitude", "longitude"]).set_index("metadata_idx")
+splits = pd.read_parquet(DATA / "vaani_hi_rebuild" / "splits.parquet").set_index("metadata_idx")
+splits["generic"] = prompt_type(splits.index) == "GENERIC"
+
+
+def majority_scores(e: pd.DataFrame, cfg: str) -> pd.DataFrame:
+    """Hit and km of the majority baseline (train split of cfg's protocol and prompt subset) on e's utterances,
+    and km of the best constant location (lowest mean km over the same training utterances)."""
+    proto = "speaker_split" if "_speaker_split" in cfg else "prism"
+    tr = splits[splits[proto] == "train"]
+    if cfg.endswith("_generic"):
+        tr = tr[tr["generic"]]
+    pin = tr["pincode"].mode().iloc[0]
+    lat, lon = coords.loc[tr.index[tr["pincode"] == pin][0]]
+    xyz = geo.latlon_to_xyz(torch.tensor([np.radians(lat)]), torch.tensor([np.radians(lon)]))
+    t = torch.tensor(np.radians(coords.loc[e["metadata_idx"], ["latitude", "longitude"]].to_numpy()))
+    pred = xyz.expand(len(e), 3).double()
+    const = torch.tensor(geo.best_constant(np.radians(coords.loc[tr.index, ["latitude", "longitude"]].to_numpy())))
+    return pd.DataFrame({"hit": geo.recall_at_k(pred, t, 1).numpy(), "km": geo.error_km(pred, t).numpy(),
+                         "const_km": geo.error_km(const.expand(len(e), 3), t).numpy()}, index=e.index)
 
 
 def config_of(name: str) -> tuple[str, int]:
@@ -72,14 +96,27 @@ def main():
         e = ensemble(cfg)
         ci_r = cluster_bootstrap(100 * e["hit"].to_numpy(), e["speaker"].to_numpy(), n=1000)
         ci_k = cluster_bootstrap(e["km"].to_numpy(), e["speaker"].to_numpy(), n=1000)
-        g = e[prompt_type(e["metadata_idx"]) == "GENERIC"]       # shared pictures only: no topic cue at test
+        is_g = prompt_type(e["metadata_idx"]) == "GENERIC"
+        g = e[is_g]                                              # shared pictures only: no topic cue at test
         ci_g = cluster_bootstrap(100 * g["hit"].to_numpy(), g["speaker"].to_numpy(), n=1000)
+        mj = majority_scores(e, cfg)
+        spk = e["speaker"].to_numpy()
+        lift = paired_cluster_bootstrap(100 * e["hit"], 100 * mj["hit"], spk, n=1000)
+        gain = paired_cluster_bootstrap(mj["const_km"], e["km"], spk, n=1000)
+        glift = paired_cluster_bootstrap(100 * g["hit"], 100 * mj.loc[is_g, "hit"], g["speaker"].to_numpy(), n=1000)
+        ggain = paired_cluster_bootstrap(mj.loc[is_g, "const_km"], g["km"], g["speaker"].to_numpy(), n=1000)
         table.append({"config": cfg, "seeds": len(ms), "recall1_mean": r1.mean(), "recall1_sd": r1.std(ddof=1) if len(ms) > 1 else 0,
                       "km_mean": km.mean(), "km_sd": km.std(ddof=1) if len(ms) > 1 else 0, "median_km": med.mean(),
                       "ens_recall1": ci_r["estimate"], "ens_recall1_lo": ci_r["lo"], "ens_recall1_hi": ci_r["hi"],
                       "ens_km": ci_k["estimate"], "ens_km_lo": ci_k["lo"], "ens_km_hi": ci_k["hi"],
                       "generic_recall1": ci_g["estimate"], "generic_recall1_lo": ci_g["lo"],
                       "generic_recall1_hi": ci_g["hi"], "generic_km": float(g["km"].mean()), "generic_n": len(g),
+                      "maj_recall1": 100 * mj["hit"].mean(), "const_km": mj["const_km"].mean(),
+                      "lift_recall1": lift["diff"], "lift_recall1_lo": lift["lo"], "lift_recall1_hi": lift["hi"],
+                      "km_gain": gain["diff"], "km_gain_lo": gain["lo"], "km_gain_hi": gain["hi"],
+                      "generic_maj_recall1": 100 * mj.loc[is_g, "hit"].mean(), "generic_const_km": mj.loc[is_g, "const_km"].mean(),
+                      "generic_lift_recall1": glift["diff"], "generic_lift_lo": glift["lo"], "generic_lift_hi": glift["hi"],
+                      "generic_km_gain": ggain["diff"], "generic_km_gain_lo": ggain["lo"], "generic_km_gain_hi": ggain["hi"],
                       "test_speakers": ci_r["n_clusters"]})
     out = RESULTS / "tables"
     out.mkdir(exist_ok=True)

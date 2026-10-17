@@ -2,6 +2,8 @@
 # Transcript-probe GRU runs on a CUDA machine, seed by seed so every condition gets seed 42 first.
 # Skips runs whose results/runs/<name>/metrics.json exists, so it can be restarted at any time.
 #   bash tools/queue_tp_gru.sh            (waits for both transcript files first)
+#   SEEDS="46 45 44 43" bash tools/queue_tp_gru.sh   (a second queue on the same GPU; a lock directory per run
+#                                                     stops two queues taking the same run)
 set -uo pipefail
 cd "$(dirname "$0")/.."
 . tools/prism_env.sh
@@ -9,13 +11,16 @@ export PYTHONUNBUFFERED=1
 for m in w2v2 zipa; do
   until [ -f outputs/transcripts/${m}_rebuild.parquet ]; do sleep 60; done
 done
-for seed in 42 43 44 45 46; do
+LOCKS=/tmp/sal_locks
+mkdir -p $LOCKS
+for seed in ${SEEDS:-42 43 44 45 46}; do
   for m in w2v2 zipa; do
     for spec in "char gru" "phone gru" "phone shuffle"; do
       set -- $spec
       for proto in prism speaker_split; do
         name="tp_${m}_rebuild_${1}_${2}_${proto}_s${seed}"
         [ -f "results/runs/$name/metrics.json" ] && continue
+        mkdir $LOCKS/$name 2>/dev/null || continue
         echo "$(date +%H:%M) start $name"
         python scripts/run_tp.py --transcripts outputs/transcripts/${m}_rebuild.parquet --tokens $1 --probe $2 \
           --protocol $proto --seeds $seed --device cuda > "outputs/logs/$name.log" 2>&1 \

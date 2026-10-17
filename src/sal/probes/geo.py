@@ -79,3 +79,16 @@ def summarise(pred_xyz: np.ndarray | torch.Tensor, target_latlon: np.ndarray | t
         "median_km": km.median().item(),
         "n": int(p.shape[0]),
     }
+
+
+def best_constant(target_latlon: np.ndarray, step_deg: float = 0.1) -> np.ndarray:
+    """Unit xyz of the single location with the lowest mean great-circle error over the targets (the spherical
+    geometric median, by grid search over the targets' lat/lon box). The fair constant reference for km."""
+    t = np.asarray(target_latlon, float)
+    pts, w = np.unique(t, axis=0, return_counts=True)
+    lo, hi = np.degrees(pts.min(0)) - 1, np.degrees(pts.max(0)) + 1
+    lat, lon = np.meshgrid(np.arange(lo[0], hi[0], step_deg), np.arange(lo[1], hi[1], step_deg), indexing="ij")
+    grid = latlon_to_xyz(torch.tensor(np.radians(lat.ravel())), torch.tensor(np.radians(lon.ravel())))
+    tx = latlon_to_xyz(torch.tensor(pts[:, 0]), torch.tensor(pts[:, 1]))
+    d = torch.acos((grid @ tx.T).clamp(-1, 1)) @ torch.tensor(w, dtype=grid.dtype)
+    return grid[int(d.argmin())].numpy()
