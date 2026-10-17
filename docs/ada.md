@@ -68,6 +68,24 @@ PRiSM's RP-Attn on the last layer: 3 models x 2 split protocols x 5 seeds. Each 
 `results/runs/rp_<model>_rebuild_L<l>_attn_<protocol>_s<seed>/` with `metrics.json`, `history.csv` and
 `predictions.parquet`.
 
+## 5b. Light jobs that take load off the PC (any time after step 2)
+
+```bash
+bash slurm/light_jobs.sh
+```
+
+Submits two transcription jobs (W2V2 and ZIPA phone recognizers), one CPU job for prosody contours, and,
+when those finish, 12 transcript-probe jobs (topic check: trained and tested on shared pictures only) and 2
+prosody-probe jobs. Check the transcription logs first:
+
+```bash
+tail -2 outputs/slurm/transcribe_*.out
+```
+
+Each ends with a `transcripts` line and an `expected` line; `MATCH` means Ada reproduces the PC's
+transcripts exactly. `DIFFERENT` is not fatal (GPU kernels can flip rare ties); send the log. Results land in
+`results/runs/tp_*_generic_s*/` and `results/runs/prosody_gru_*/`; push them as in step 7.
+
 ## 6. Main RP sweep (after the layer sweep)
 
 Cache the chosen layers' frames (`bash slurm/submit.sh slurm/extract.sbatch w2v2 8 16 24`, which re-extracts
