@@ -4,6 +4,9 @@ Writes next to the dataset:
   splits.parquet   metadata_idx, speaker, pincode, state, district, prism (PRiSM random split), speaker (disjoint)
   report.json      counts, hours, speakers per pincode, utterances per speaker, leakage per protocol
   split_report.csv per-pincode utterance shares and speaker counts under each protocol
+  prompts.parquet  metadata_idx, prompt (picture set), image, prompt_type (GENERIC or SPECIFIC). Vaani speakers
+                   describe pictures; SPECIFIC pictures belong to the speaker's own district, so they carry
+                   location through topic. GENERIC pictures are shared across districts.
 
 Run: uv run python scripts/make_splits.py data/vaani_hi_rebuild/vaani_hi_rebuild.parquet
 """
@@ -17,7 +20,7 @@ from sal.data.splits import leakage, speaker_disjoint_splits, split_report
 
 data = Path(sys.argv[1])
 cols = ["metadata_idx", "speaker", "pincode", "state", "district", "split", "gender", "language",
-        "audio_seconds", "latitude", "longitude", "transcript_available"]
+        "audio_seconds", "latitude", "longitude", "transcript_available", "source_audio_path"]
 df = pd.read_parquet(data, columns=cols).rename(columns={"split": "prism"})
 df["speaker_split"] = speaker_disjoint_splits(df, speaker_col="speaker", group_col="pincode", seed=42)
 
@@ -57,6 +60,12 @@ for proto in ("prism", "speaker_split"):
     }
 
 out = data.parent
+fields = df["source_audio_path"].str.split("_")
+prompts = pd.DataFrame({"metadata_idx": df["metadata_idx"], "prompt": fields.str[7],
+                        "image": fields.str[7] + "_" + fields.str[8]})
+prompts["prompt_type"] = prompts["prompt"].where(prompts["prompt"] == "GENERIC", "SPECIFIC")
+prompts.to_parquet(out / "prompts.parquet", index=False)
+report["prompt_type"] = prompts["prompt_type"].value_counts(normalize=True).to_dict()
 df[["metadata_idx", "speaker", "pincode", "state", "district", "prism", "speaker_split"]].to_parquet(
     out / "splits.parquet", index=False)
 reps = {p: split_report(df, p) for p in ("prism", "speaker_split")}

@@ -3,7 +3,9 @@
 A run directory is named <config>_s<seed>. For each config:
   - mean and sd over seeds of test Recall@1, mean km, median km (from metrics.json);
   - the seed ensemble: predicted directions averaged over seeds per test utterance, scored once, with a 95%
-    speaker-cluster bootstrap CI for Recall@1 and mean km.
+    speaker-cluster bootstrap CI for Recall@1 and mean km;
+  - the same ensemble scored only on test utterances about GENERIC (shared) pictures, where the topic of
+    the description cannot reveal the district.
 Paired comparisons (same test utterances): difference in per-utterance hit rate and km error between two
 configs' seed ensembles, speaker-cluster bootstrap CI and p-value.
 
@@ -19,6 +21,7 @@ import numpy as np
 import pandas as pd
 import torch
 
+from sal.data.prompts import prompt_type
 from sal.paths import DATA, RESULTS
 from sal.probes import geo
 from sal.stats import cluster_bootstrap, paired_cluster_bootstrap
@@ -69,10 +72,14 @@ def main():
         e = ensemble(cfg)
         ci_r = cluster_bootstrap(100 * e["hit"].to_numpy(), e["speaker"].to_numpy(), n=1000)
         ci_k = cluster_bootstrap(e["km"].to_numpy(), e["speaker"].to_numpy(), n=1000)
+        g = e[prompt_type(e["metadata_idx"]) == "GENERIC"]       # shared pictures only: no topic cue at test
+        ci_g = cluster_bootstrap(100 * g["hit"].to_numpy(), g["speaker"].to_numpy(), n=1000)
         table.append({"config": cfg, "seeds": len(ms), "recall1_mean": r1.mean(), "recall1_sd": r1.std(ddof=1) if len(ms) > 1 else 0,
                       "km_mean": km.mean(), "km_sd": km.std(ddof=1) if len(ms) > 1 else 0, "median_km": med.mean(),
                       "ens_recall1": ci_r["estimate"], "ens_recall1_lo": ci_r["lo"], "ens_recall1_hi": ci_r["hi"],
                       "ens_km": ci_k["estimate"], "ens_km_lo": ci_k["lo"], "ens_km_hi": ci_k["hi"],
+                      "generic_recall1": ci_g["estimate"], "generic_recall1_lo": ci_g["lo"],
+                      "generic_recall1_hi": ci_g["hi"], "generic_km": float(g["km"].mean()), "generic_n": len(g),
                       "test_speakers": ci_r["n_clusters"]})
     out = RESULTS / "tables"
     out.mkdir(exist_ok=True)

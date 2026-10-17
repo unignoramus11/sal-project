@@ -12,6 +12,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from sal.data.prompts import restrict
 from sal.paths import DATA, RESULTS
 from sal.probes.models import VectorMLP
 from sal.probes.tp_data import DenseBatcher
@@ -22,6 +23,8 @@ ap.add_argument("--features", type=Path, required=True)
 ap.add_argument("--file", default="emb.npy")
 ap.add_argument("--protocol", choices=["prism", "speaker_split"], default="prism")
 ap.add_argument("--seeds", type=int, nargs="+", default=[42])
+ap.add_argument("--prompts", choices=["all", "generic"], default="all",
+                help="generic: train and test only on utterances about shared pictures (no topic cue)")
 ap.add_argument("--device", default="cpu")
 args = ap.parse_args()
 
@@ -34,6 +37,7 @@ meta = meta.sort_values("metadata_idx").reset_index(drop=True)
 x = x_all[[row[mi] for mi in meta["metadata_idx"]]]
 targets = np.radians(meta[["latitude", "longitude"]].to_numpy(np.float64))
 splits = {s: np.flatnonzero(meta[args.protocol].to_numpy() == s) for s in ("train", "val", "test")}
+splits = restrict(splits, meta["metadata_idx"].to_numpy(), args.prompts)
 d = x.shape[1]
 
 for seed in args.seeds:
@@ -41,6 +45,6 @@ for seed in args.seeds:
                       seed=seed, device=args.device, extra={"features": str(args.features), "dim": d})
     make = lambda: VectorMLP(d)  # noqa: E731
     res = train_probe(make, DenseBatcher(x, targets), targets, splits, cfg, log=lambda s: None)
-    name = f"dense_{args.features.name}_{args.protocol}_s{seed}"
+    name = f"dense_{args.features.name}_{args.protocol}{'_generic' if args.prompts == 'generic' else ''}_s{seed}"
     save_run(res, RESULTS / "runs" / name, meta=meta[["metadata_idx", "speaker", "pincode", "state", "district"]])
     print(name, json.dumps({k: round(v, 2) for k, v in res["metrics"]["test"].items()}), flush=True)

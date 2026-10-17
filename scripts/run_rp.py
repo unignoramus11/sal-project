@@ -22,6 +22,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from sal.data.prompts import restrict
 from sal.paths import DATA, OUTPUTS, RESULTS
 from sal.probes import models as M
 from sal.probes.rp_data import FeatureStore, FrameBatcher
@@ -39,6 +40,8 @@ ap.add_argument("--in-memory", action="store_true", help="load frames into RAM (
 ap.add_argument("--patience", type=int, default=5)
 ap.add_argument("--max-epochs", type=int, default=100)
 ap.add_argument("--batch-size", type=int, default=48)
+ap.add_argument("--prompts", choices=["all", "generic"], default="all",
+                help="generic: train and test only on utterances about shared pictures (no topic cue)")
 ap.add_argument("--device", default="cuda")
 ap.add_argument("--out-root", type=Path, default=RESULTS / "runs")
 ap.add_argument("--tag", default="")
@@ -52,6 +55,7 @@ assert not missing, f"{len(missing)} utterances have no features"
 
 targets = np.radians(meta[["latitude", "longitude"]].to_numpy(np.float64))
 splits = {s: np.flatnonzero(meta[args.protocol].to_numpy() == s) for s in ("train", "val", "test")}
+splits = restrict(splits, meta["metadata_idx"].to_numpy(), args.prompts)
 n_layers = len(store.layers)
 size = M.match_size(args.probe, store.dim, n_layers)
 feat_tag = args.features.name
@@ -66,7 +70,7 @@ for seed in args.seeds:
     batcher = FrameBatcher(store, meta["metadata_idx"].to_numpy(), targets,
                            chunk_shuffle_ms=200 if args.probe == "chunkshuffle" else None, seed=seed)
     make = lambda: M.build_rp(args.probe, store.dim, n_layers, size)  # noqa: E731
-    name = f"rp_{feat_tag}_{layer_tag}_{args.probe}_{args.protocol}{args.tag}_s{seed}"
+    name = f"rp_{feat_tag}_{layer_tag}_{args.probe}_{args.protocol}{args.tag}{'_generic' if args.prompts == 'generic' else ''}_s{seed}"
     res = train_probe(make, batcher, targets, splits, cfg)
     save_run(res, args.out_root / name, meta=meta[["metadata_idx", "speaker", "pincode", "state", "district"]])
     print(name, json.dumps(res["metrics"]["test"]), flush=True)

@@ -18,6 +18,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from sal.data.prompts import restrict
 from sal.paths import DATA, OUTPUTS, RESULTS
 from sal.probes import models as M
 from sal.probes import tp_data as T
@@ -33,6 +34,8 @@ ap.add_argument("--protocol", choices=["prism", "speaker_split"], default="prism
 ap.add_argument("--seeds", type=int, nargs="+", default=[42])
 ap.add_argument("--patience", type=int, default=100)
 ap.add_argument("--max-epochs", type=int, default=200)
+ap.add_argument("--prompts", choices=["all", "generic"], default="all",
+                help="generic: train and test only on utterances about shared pictures (no topic cue)")
 ap.add_argument("--device", default="cpu")
 ap.add_argument("--tag", default="")
 args = ap.parse_args()
@@ -45,6 +48,7 @@ assert len(df) == len(meta), f"{len(meta) - len(df)} utterances without a transc
 
 targets = np.radians(df[["latitude", "longitude"]].to_numpy(np.float64))
 splits = {s: np.flatnonzero(df[args.protocol].to_numpy() == s) for s in ("train", "val", "test")}
+splits = restrict(splits, df["metadata_idx"].to_numpy(), args.prompts)
 unit_seqs = [T.units(t, list(k), args.tokens) for t, k in zip(df["processed_transcript"], df["tokens"])]
 vocab = T.build_vocab([unit_seqs[i] for i in splits["train"]])
 seqs = [T.encode(s, vocab) for s in unit_seqs]
@@ -65,7 +69,7 @@ for seed in args.seeds:
     else:
         batcher = T.DenseBatcher(x, targets)
         make = lambda: M.BagMLP(x.shape[1])  # noqa: E731
-    name = f"tp_{model_tag}_{args.tokens}_{args.probe}_{args.protocol}{args.tag}_s{seed}"
+    name = f"tp_{model_tag}_{args.tokens}_{args.probe}_{args.protocol}{args.tag}{'_generic' if args.prompts == 'generic' else ''}_s{seed}"
     res = train_probe(make, batcher, targets, splits, cfg)
     out = RESULTS / "runs" / name
     save_run(res, out, meta=df[["metadata_idx", "speaker", "pincode", "state", "district"]])
