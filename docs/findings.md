@@ -33,6 +33,13 @@ TP-GRU and representation-probe results are still running; this file is updated 
   split and falls to the majority level (10.1; lift +0.4 [-6.2, 6.3]) on unseen speakers (prediction P4).
   It still beats the best constant location by 172 km [96, 245] on unseen speakers, so voice and channel
   carry some coarse regional information that transfers across speakers, but not enough to pick a pincode.
+- Control task (each speaker labelled with another speaker's pincode, so labels carry speaker identity but no
+  dialect): ECAPA reaches 33.2 ± 0.8 R@1 on control labels under the random split (control majority 14.0),
+  against 41.6 on real labels (majority 10.5). Most of ECAPA's random-split score is speaker recognition.
+  Under the speaker-disjoint split its control score is 8.5, below the control majority (16.2), as expected.
+- MDL: under the random split the bag probes save 15.7-21.0 kbits over the location prior, against 5.0-7.9
+  kbits on unseen speakers (ZIPA phone bigram 21.0 ± 0.3 vs 7.9 ± 1.0): leakage makes location about three
+  times cheaper to code.
 - Transcript bag probes also drop between splits, by less than ECAPA:
 
 | Probe (W2V2 transcripts) | random split | speaker-disjoint | lift over majority, speaker-disjoint |
