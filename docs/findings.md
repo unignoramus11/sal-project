@@ -37,6 +37,11 @@ TP-GRU and representation-probe results are still running; this file is updated 
   dialect): ECAPA reaches 33.2 ± 0.8 R@1 on control labels under the random split (control majority 14.0),
   against 41.6 on real labels (majority 10.5). Most of ECAPA's random-split score is speaker recognition.
   Under the speaker-disjoint split its control score is 8.5, below the control majority (16.2), as expected.
+  Transcript bag probes (bigrams, both recognizers, chars and phones) do not recognise speakers by Recall@1:
+  control R@1 10.1-16.0 under the random split against a control majority of 14.0 (lifts -4.0 to +1.9). In
+  km, with the speaker-disjoint control runs as the no-speaker-information reference, the random split
+  lowers the control error by 29-47 km for bigrams (e.g., ZIPA phone bigram 515 -> 470 km) and by 308 km for
+  ECAPA (556 -> 248 km). Transcripts carry a little speaker identity, voices carry a lot.
 - MDL: under the random split the bag probes save 15.7-21.0 kbits over the location prior, against 5.0-7.9
   kbits on unseen speakers (ZIPA phone bigram 21.0 ± 0.3 vs 7.9 ± 1.0): leakage makes location about three
   times cheaper to code.
@@ -71,6 +76,11 @@ TP-GRU and representation-probe results are still running; this file is updated 
   the CIs are wide; state accuracy: results/tables/state_level.csv.
 
 ## RQ1: inventory, local order, units
+
+- TP-GRU, first runs (preliminary; W2V2 chars, PRiSM's probe and settings): random split 22.0 (s42) and 20.3
+  (s46) R@1, 395-405 km; speaker-disjoint 13.9 (s42), 445 km. That is below the char bigram bag on the same
+  data (26.8 ± 0.5 and 14.3 ± 1.6) and far below PRiSM's 45.7 on the official data; see
+  docs/prism_reproduction.md (reproduction status) for what is and is not explained.
 
 All on the speaker-disjoint split, paired on the same test utterances (speaker-cluster bootstrap):
 
