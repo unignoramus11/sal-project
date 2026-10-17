@@ -73,3 +73,30 @@ alone. This file records every setting we copy, where it comes from, and where c
 | TP early stopping patience | 5 | 100 (max 200 epochs) | code for O1 (it produced the published numbers); we also report patience 5 |
 | RP head | "attention pool + 2-layer MLP" | learned-query MHA over normalised frames | code |
 | Vaani-Hi size | 26,433 | 26,385 on the released card | report both |
+
+## Reproduction status (18 Oct 2026)
+
+Official Vaani-Hi access is still pending (403 on 18 Oct), so every number so far is on the rebuilt copy.
+
+| | PRiSM paper (official data) | Ours (rebuilt data, random split) |
+|---|---|---|
+| Utterances | 26,385 (card) | 22,551 |
+| Mean duration | ~4.5 s (card byte count / float32 16 kHz) | 6.4 s |
+| Naive (centroid) Recall@1 | 3.3 | 3.4 |
+| TP-GRU, W2V2 chars, Recall@1 | 45.7 | 22.0 (s42), 20.3 (s46) |
+| TP-GRU, mean km | 146 | 395-405 |
+
+The probe code matches PRiSM's (architecture, tokenisation, optimiser, schedule, early stopping; table
+above), and the transcripts match PRiSM's runner output exactly. On our data the char TP-GRU fits less well
+than a bag-of-bigrams MLP (train Recall@1 65 vs 82, test 22.0 vs 26.3), and test transcripts almost never
+repeat a training transcript (0.03%).
+
+Leads, not yet tested:
+- The two samples differ in size (26,385 vs 22,551) and utterance length (~4.5 vs 6.4 s), so PRiSM's
+  sampling selects different utterances, possibly more per speaker. On our data a voice-only embedding
+  (ECAPA) reaches 41.6 Recall@1 and 197 km under the random split, close to PRiSM's TP; a TP that could
+  recognise speakers through their transcripts would land in the same place. Our control task shows that
+  on our data transcript bags barely recognise speakers (control lift +2.1 vs ECAPA +19.1).
+- Once access arrives: rerun the TP-GRU on the official data (same code), measure speaker leakage there with
+  the file-name speaker codes if the official rows can be matched to Vaani files (metadata_idx), and compare
+  utterances per speaker.
