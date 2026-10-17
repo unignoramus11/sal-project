@@ -5,6 +5,7 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."
 . tools/prism_env.sh
+export PYTHONUNBUFFERED=1
 for m in w2v2 zipa; do
   until [ -f outputs/transcripts/${m}_rebuild.parquet ]; do sleep 60; done
 done

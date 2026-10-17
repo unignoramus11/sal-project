@@ -4,7 +4,7 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 A=data/vaani_districts/candidates_audio.parquet
 echo "$(date +%H:%M) waiting for download"
-while pgrep -f scripts/district_audio.py >/dev/null; do sleep 60; done
+while pgrep -f scripts/district_audio >/dev/null; do sleep 60; done
 [ -s $A ] || { echo "download produced no file"; exit 1; }
 echo "$(date +%H:%M) download done: $(du -h $A | cut -f1)"
 tools/sync_pc.sh >/dev/null

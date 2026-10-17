@@ -3,6 +3,7 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."
 . tools/prism_env.sh
+export PYTHONUNBUFFERED=1
 A=data/vaani_districts/candidates_audio.parquet
 until [ -s $A ] && ! pgrep -f "rsync.*candidates_audio" >/dev/null; do sleep 60; done
 sleep 120   # let the copy settle
