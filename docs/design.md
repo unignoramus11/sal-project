@@ -28,6 +28,10 @@ both probes, and not necessarily equally: the representation probe sees speaker 
 the transcript probe only through recognition errors. The TP-RP gap, the object of this study, can
 therefore change under a speaker-disjoint split.
 
+Evidence (17 Oct, first 68 of 140 shards): under PRiSM's random split, 97% of test utterances have their
+speaker in train. Foley et al. (2024), the geolocation work PRiSM follows, hold out whole radio stations
+to reduce speaker overlap and to geolocate "the speech itself, and not other channel artifacts".
+
 Decisions:
 - **Main protocol: speaker-disjoint splits.** Speakers, not utterances, are assigned to train/val/test,
   stratified by pincode so every pincode appears in every split, targeting 75/10/15 of utterances.
