@@ -37,6 +37,7 @@ comp = pd.read_csv(RES / "tables" / "comparisons.csv")
 ctrl = pd.read_csv(RES / "tables" / "control.csv").set_index(["probe"]) if (RES / "tables" / "control.csv").exists() else None
 mdl = pd.read_csv(RES / "mdl" / "summary.csv").set_index("config")
 state = pd.read_csv(RES / "tables" / "state_level.csv").set_index("config")
+knn = pd.read_csv(RES / "tables" / "knn_transcripts.csv").set_index(["transcripts", "protocol", "k"])
 
 
 def rgb(h):
@@ -275,8 +276,11 @@ def build():
         "majority level on new speakers. With labels that carry speaker identity but no dialect it still scores "
         f"{lk.control_recall1:.1f} (control majority {lk.control_majority:.1f})." if lk is not None else
         "A voice embedding trained to ignore content falls to the majority level on new speakers.",
-        "All further results are reported under both splits; the speaker-disjoint numbers are the ones that "
-        "measure dialect.",
+        "Transcripts leak too: a nearest-neighbour matcher on character n-grams reaches "
+        f"{knn.loc[('w2v2', 'prism', 1), 'recall1']:.1f} Recall@1 on the random split and "
+        f"{knn.loc[('w2v2', 'speaker_split', 1), 'recall1']:.1f} on new speakers; for 25% of test utterances the "
+        "closest training transcript is the same speaker's (chance 0.3%).",
+        "All further results are reported under both splits; the speaker-disjoint numbers measure dialect.",
     ], LM, Inches(3.55), Inches(12.1), Inches(3))
 
     # 6. results table
