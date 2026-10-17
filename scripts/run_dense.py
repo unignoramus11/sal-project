@@ -26,18 +26,23 @@ ap.add_argument("--seeds", type=int, nargs="+", default=[42])
 ap.add_argument("--prompts", choices=["all", "generic"], default="all",
                 help="generic: train and test only on utterances about shared pictures (no topic cue)")
 ap.add_argument("--device", default="cpu")
+ap.add_argument("--zscore", action="store_true", help="standardise each feature with train-split mean and sd")
 args = ap.parse_args()
 
 meta = pd.read_parquet(DATA / "vaani_hi_rebuild" / "vaani_hi_rebuild.parquet", columns=["metadata_idx", "latitude", "longitude"])
 meta = meta.merge(pd.read_parquet(DATA / "vaani_hi_rebuild" / "splits.parquet"), on="metadata_idx")
 index = pd.read_parquet(args.features / "index.parquet")
 x_all = np.load(args.features / args.file).astype(np.float32)
+x_all = x_all.reshape(len(x_all), -1)                  # e.g. pooled.npy stores (N, 1, D)
 row = {mi: k for k, mi in enumerate(index["metadata_idx"])}
 meta = meta.sort_values("metadata_idx").reset_index(drop=True)
 x = x_all[[row[mi] for mi in meta["metadata_idx"]]]
 targets = np.radians(meta[["latitude", "longitude"]].to_numpy(np.float64))
 splits = {s: np.flatnonzero(meta[args.protocol].to_numpy() == s) for s in ("train", "val", "test")}
 splits = restrict(splits, meta["metadata_idx"].to_numpy(), args.prompts)
+if args.zscore:                                         # heterogeneous summary statistics: train mean and sd
+    mu, sd = x[splits["train"]].mean(0), x[splits["train"]].std(0) + 1e-6
+    x = (x - mu) / sd
 d = x.shape[1]
 
 for seed in args.seeds:
