@@ -51,10 +51,12 @@ def recall_at_k(pred_xyz: torch.Tensor, target_latlon: torch.Tensor, k: int = 1,
 
     Candidates default to the distinct targets of the evaluated set (PRiSM: rounded to 6 decimals).
     """
+    dtype = torch.promote_types(pred_xyz.dtype, target_latlon.dtype)
+    pred_xyz, target_latlon = pred_xyz.to(dtype), target_latlon.to(dtype)
     t = target_latlon.round(decimals=6)
     if candidates is None:
         candidates = torch.unique(t, dim=0)
-    cand = candidates.round(decimals=6)
+    cand = candidates.to(dtype).round(decimals=6)
     cand_xyz = latlon_to_xyz(*cand.unbind(-1))
     sim = torch.nn.functional.normalize(pred_xyz, dim=1) @ torch.nn.functional.normalize(cand_xyz, dim=1).T
     topk = torch.topk(sim, k=min(k, cand.shape[0]), dim=1).indices
