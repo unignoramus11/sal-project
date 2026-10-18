@@ -1,0 +1,7 @@
+tokens 26033, speakers 3003, words 62
+district CharkhiDadri vs NewDelhi: x1.132 (95% CI x1.090 to x1.176), p = 1.3e-10, tokens 6885
+district Jhajjar vs NewDelhi: x1.153 (95% CI x1.109 to x1.197), p = 2.9e-13, tokens 7221
+district Rohtak vs NewDelhi: x1.140 (95% CI x1.099 to x1.183), p = 3.6e-12, tokens 7729
+by word: Haryana longer in 45 of 57 words (sign test p = 1.3e-05); median ratio x1.095
+speaker level: 2287 Haryana vs 716 New Delhi speakers, word-centred log voiceless interval difference x1.140 (95% bootstrap CI x1.105 to x1.177)
+random-effects meta-analysis over 53 words (speaker means, >= 10 speakers per region): x1.110 (95% CI x1.081 to x1.139); between-word tau = 0.049 on the log scale, I2 = 31%

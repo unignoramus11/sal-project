@@ -95,8 +95,33 @@ utterances (seed ensemble, 95\% speaker-bootstrap CI). Open markers: trained and
 \label{fig:probes}
 \end{figure*}
 
-\paragraph{RQ0.} \todo{text from docs/findings.md RQ0.}
-\paragraph{RQ1.} \todo{text from docs/findings.md RQ1; Table~\ref{tab:order}, Table~\ref{tab:mdl}.}
+\paragraph{RQ0: speakers and topic.} Under PRiSM's random split the task is almost solved by the speaker
+identity alone: a lookup that knows only the speaker ID reaches 98.0 Recall@1 (Table~\ref{tab:probes}). An
+MLP over ECAPA speaker embeddings, which encode voice and channel and are trained to ignore content, reaches
+41.6\,$\pm$\,1.6 under the random split and 10.1\,$\pm$\,0.6 on new speakers, the majority level (10.0). On
+control labels, where every speaker carries another speaker's location, it still scores 33.2\,$\pm$\,0.8
+against a control majority of 14.0: most of its random-split score is speaker recognition. Trained transcript
+probes stay at the control majority on Recall@1 (lifts $-$4.0 to $+$1.9), yet transcripts are speaker
+identifiable: a nearest-neighbour matcher over character n-grams, which learns nothing about location,
+reaches 39.6 [37.1, 42.0] under the random split and 18.2 [14.5, 22.2] on new speakers, and its nearest
+training transcript comes from the same speaker for 25\% of test utterances (chance 0.3\%). Its leakage rises
+from 15.3 for speakers absent from training to 46.3 for speakers with more than 50 training utterances.
+
+On new speakers only bigram probes beat the majority baseline (Figure~\ref{fig:probes}): ZIPA phone bigrams
+by $+$10.6 [6.2, 15.9] points and W2V2 phone bigrams by $+$7.9 [2.6, 13.9]. Trained and tested on shared
+pictures only, where the topic cannot reveal the district and the subset's own baselines apply, no transcript
+probe beats the majority on Recall@1 or on the state; km gains are 48 to 94\,km, and only the two W2V2 ones
+have CIs above zero. Most of the transcript probes' signal on new speakers is what speakers describe.
+\paragraph{RQ1: order.} Local order helps on new speakers: W2V2 phone bigrams beat phone unigrams by
+$+$4.8 [2.6, 6.9] Recall@1 and 33\,km (Table~\ref{tab:order}), and phone units beat raw characters for W2V2
+($+$3.5 [2.1, 5.1]). MDL agrees (Table~\ref{tab:mdl}): every bag probe codes the pincode of new speakers more
+cheaply than the location prior, bigrams save 1.6 to 2.0\,kbits more than unigrams on every ordering, and ZIPA
+transcripts save 1.4\,kbits more than W2V2 ones. Under the random split the same probes save about three
+times as many bits. PRiSM's BiGRU gains from order only when speakers are shared: against the same probe on
+shuffled phones it gains $+$3.9 [1.9, 5.9] points under the random split and loses 3.5 [1.0, 6.5] on new
+speakers (W2V2, 2 seeds so far; ZIPA $+$2.7 [0.9, 4.6] under the random split). It stays below the bigram bag
+on both splits, and far below PRiSM's 45.7 on the official data, which we cannot access yet
+\todo{final seeds; official-data rerun}.
 
 \begin{table}[t]
 \centering\scriptsize
@@ -105,7 +130,17 @@ utterances (seed ensemble, 95\% speaker-bootstrap CI). Open markers: trained and
 \label{tab:mdl}
 \end{table}
 
-\paragraph{RQ2.} \todo{text from docs/findings.md RQ2; Table~\ref{tab:gem}.}
+\paragraph{RQ2: duration.} Doubled phones in recognizer output do not settle the question: W2V2 writes
+fewer doubled consonants for Haryana than for the other states (1.00\% vs 1.17\%, $p = 0.012$) and ZIPA shows
+no difference (1.63\% vs 1.82\%, $p = 0.30$). In the audio, 85.5\% of 39,008 candidate stops are measured
+(Haryana 83.8\%, New Delhi 85.4\%). Haryana speakers hold single voiceless stops between vowels longer than New
+Delhi speakers: the voiceless interval by $\times$1.14 [1.11, 1.18] and the closure by $\times$1.26 [1.21, 1.31]
+(Table~\ref{tab:gem}). The effect holds in each Haryana district separately ($\times$1.13 to $\times$1.15), in
+45 of 57 words, on speaker means without a model ($\times$1.14 [1.11, 1.18]), pooled over words with word-level
+variation ($\times$1.11 [1.08, 1.14]), and within Lee bounds for the unequal measurement rates ($\times$1.07 to
+$\times$1.12). Lexical geminates measure $\times$1.59 [1.51, 1.67] the single stops, so the measure tracks length;
+Haryana single stops are lengthened by about a quarter of the geminate--single difference, a lengthening rather
+than a categorical doubling \todo{manual audit; recognizer doubling vs measured length; layer probe}.
 
 \begin{table*}[t]
 \centering\small

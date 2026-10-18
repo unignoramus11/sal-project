@@ -134,6 +134,12 @@ All on the speaker-disjoint split, paired on the same test utterances (speaker-c
     [1.51, 1.67] those of single stops in New Delhi, so the measure tracks consonant length. On the log scale,
     Haryana single stops are lengthened by 28% of the geminate-single difference; the geminate-single gap is
     slightly smaller in Haryana (interaction -0.054, p = 0.049).
+  - Robustness (scripts/gemination_robustness.py, results/gemination/robustness.txt): every Haryana district
+    differs from New Delhi on its own (Charkhi Dadri x1.132 [1.090, 1.176], Jhajjar x1.153 [1.109, 1.197],
+    Rohtak x1.140 [1.099, 1.183]); Haryana is longer in 45 of 57 words (sign test p = 1.3e-5, median x1.095);
+    speaker-level means (word-centred, 2,287 vs 716 speakers) give x1.140 [1.105, 1.177] without any model;
+    per-word effects pooled by random-effects meta-analysis (53 words) give x1.110 [1.081, 1.139], with modest
+    between-word variation (tau 0.049 on the log scale, I2 31%).
   - Reading: Haryana speakers produce longer voiceless stops between vowels than New Delhi speakers, by 14%
     (voiceless interval) to 26% (closure), the direction PRiSM's attribution example suggests. It is a
     lengthening, not a categorical doubling. Still to do: the blind manual audit of 50 tokens
