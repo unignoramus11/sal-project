@@ -1,0 +1,32 @@
+voiceless interval (primary): Haryana effect on voiceless interval = x1.142 (95% CI x1.106 to x1.178), p = 1.42e-16; tokens 26033, speakers 3003, words 62
+            Coef. Std.Err.        z  P>|z|  [0.025  0.975]
+Intercept   4.958    0.068   72.971  0.000   4.825   5.092
+haryana     0.132    0.016    8.263  0.000   0.101   0.164
+log_vowel  -0.166    0.009  -18.384  0.000  -0.184  -0.148
+voiceless interval, no rate control: Haryana effect on voiceless interval = x1.133 (95% CI x1.098 to x1.169), p = 4.59e-15; tokens 26033, speakers 3003, words 62
+           Coef. Std.Err.       z  P>|z| [0.025 0.975]
+Intercept  4.243    0.056  75.653  0.000  4.133  4.353
+haryana    0.125    0.016   7.838  0.000  0.093  0.156
+voiceless interval, all contexts (sensitivity: includes stops after a deleted schwa): Haryana effect on voiceless interval = x1.141 (95% CI x1.108 to x1.175), p = 2.43e-18; tokens 33333, speakers 3126, words 104
+            Coef. Std.Err.        z  P>|z|  [0.025  0.975]
+Intercept   4.404    0.084   52.124  0.000   4.239   4.570
+haryana     0.132    0.015    8.735  0.000   0.102   0.161
+log_vowel  -0.112    0.008  -14.188  0.000  -0.127  -0.096
+closure, tokens with a burst: Haryana effect on closure = x1.256 (95% CI x1.208 to x1.307), p = 1.04e-29; tokens 26033, speakers 3003, words 62
+            Coef. Std.Err.       z  P>|z|  [0.025  0.975]
+Intercept   4.130    0.101  40.732  0.000   3.931   4.329
+haryana     0.228    0.020  11.320  0.000   0.189   0.268
+log_vowel  -0.110    0.013  -8.181  0.000  -0.137  -0.084
+closure, clear bursts only (rise >= 6 dB, drop >= 10 dB): Haryana effect on closure = x1.269 (95% CI x1.215 to x1.324), p = 1.42e-27; tokens 9340, speakers 2189, words 48
+            Coef. Std.Err.       z  P>|z|  [0.025  0.975]
+Intercept   4.246    0.125  34.014  0.000   4.001   4.490
+haryana     0.238    0.022  10.881  0.000   0.195   0.281
+log_vowel  -0.049    0.017  -2.857  0.004  -0.082  -0.015
+acceptance (main contexts): Haryana 0.838, Delhi 0.854; raw Haryana - Delhi mean log voiceless interval +0.092 (x1.096); Lee bounds x1.070 to x1.118 (trimming 1.9% of Delhi tokens)
+validity: lexical geminate voiceless interval = x1.59 of single (95% CI x1.51 to x1.67) in New Delhi; interaction with Haryana -0.054 (p = 0.0493); tokens 29004
+                           Coef. Std.Err.        z  P>|z|  [0.025  0.975]
+Intercept                  4.220    0.014  291.958  0.000   4.192   4.248
+lexical_geminate           0.465    0.026   18.142  0.000   0.415   0.515
+haryana                    0.135    0.016    8.281  0.000   0.103   0.167
+lexical_geminate:haryana  -0.054    0.028   -1.966  0.049  -0.109  -0.000
+Group Var                  0.094    0.008                                

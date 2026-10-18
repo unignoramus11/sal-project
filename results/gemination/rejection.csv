@@ -1,0 +1,7 @@
+region,context,rejected_share,no voiceless stretch near the stop,voiceless interval outside 20-400 ms,voiceless stretch reaches the window edge
+Delhi,initial_schwa,0.09451219512195122,62,12,19
+Delhi,medial_schwa,0.11639937920331092,96,42,87
+Delhi,vowel,0.15895218718209564,397,137,91
+Haryana,initial_schwa,0.08960967564595931,268,116,105
+Haryana,medial_schwa,0.08267716535433071,234,130,140
+Haryana,vowel,0.1814520042706008,2703,762,274
