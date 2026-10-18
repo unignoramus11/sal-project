@@ -51,9 +51,19 @@ and speakers show the consonant lengthening of Haryanvi (RQ2), and whether inton
 transcripts discard (RQ3).
 
 \section{Related Work}
-\todo{geolocation from speech \citep{foley2024where}; probing and control tasks \citep{hewitt2019control};
-MDL probing \citep{voita2020mdl}; layer-wise analyses \citep{pasad2021layerwise}; Haryanvi phonology
-\citep{devi2021haryanvi}; geminates \citep{ohala2007geminates}.}
+\paragraph{Geolocation from speech.} \citet{foley2024where} geolocate speech from radio broadcasts and hold out
+whole stations, to locate the speech itself rather than channel artefacts. PRiSM's \geov{} task
+\citep{bharadwaj2026prism} instead splits Vaani-Hi utterances at random within each pincode, which, as we show,
+places nearly every test speaker in training.
+\paragraph{Probing.} A probe's accuracy mixes what a representation encodes with what the probe can learn;
+control tasks \citep{hewitt2019control} and description length \citep{voita2020mdl} separate the two. Speech
+models encode phonetic detail in layer-specific ways \citep{pasad2021layerwise,wells2022phonetic,choi2024phonetic},
+which is why the layer a probe reads matters.
+\paragraph{Dialect phonology.} Hindi dialects differ in segmental and suprasegmental detail
+\citep{gumperz1958,shim2024phonotactic}; Haryanvi dialects, including Bangru, are described with consonant
+gemination in contexts where standard Hindi has a single consonant \citep{devi2021haryanvi}. Hindi geminates
+are realised mainly through closure duration \citep{ohala2007geminates}. Intonation also carries dialect
+identity \citep{grabe2002intonational,vicenik2013intonation}, which transcripts discard.
 
 \section{Data}
 \paragraph{Rebuilt Vaani-Hi.} Access to the official copy is pending, so we rerun PRiSM's selection code on
