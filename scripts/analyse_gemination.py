@@ -3,11 +3,14 @@ the phone recognizers' doubling tracks the measured closure.
 
 Inputs:  data/vaani_districts/closures.parquet (scripts/measure_closure.py)
          outputs/transcripts/{w2v2,zipa}_districts.parquet (frame-level CTC argmax ids, scripts/transcribe.py)
+Tokens: main analyses use stops between vowels in speech (sal.gemination: after a vowel sign or a word-initial
+consonant); stops after a word-medial consonant (whose schwa Hindi usually deletes) enter one sensitivity model.
 Outputs: results/gemination/
   acoustic_summary.csv     per region (and per stop, per district): accepted tokens, speakers, closure, VOT,
                            following vowel, closure/vowel ratio (medians and speaker-bootstrap CIs of means)
   rejection.csv            share of tokens rejected per region and reason (a measurement-bias check)
-  mixed_model.txt          log(closure) ~ Haryana + log(vowel) + C(word), random intercept per speaker
+  mixed_model.txt          log(closure) ~ Haryana + log(vowel) + C(word), random intercept per speaker (the word
+                           fixes the stop, so aspiration is absorbed by C(word))
   model_doubling.csv       per recognizer: share of tokens doubled in the CTC output by region; closure for
                            doubled vs single tokens; AUC of closure for predicting doubling
 Run: uv run python scripts/analyse_gemination.py
@@ -21,6 +24,7 @@ import pandas as pd
 import statsmodels.formula.api as smf
 
 from sal import phones as P
+from sal.gemination import token_contexts
 from sal.paths import DATA, OUTPUTS, RESULTS
 from sal.stats import cluster_bootstrap
 
@@ -29,12 +33,15 @@ out.mkdir(parents=True, exist_ok=True)
 df = pd.read_parquet(DATA / "vaani_districts" / "closures.parquet")
 df["region"] = np.where(df["state"] == "Haryana", "Haryana", "Delhi")
 df["aspirated"] = df["stop"].isin(list("खछठथ"))
-ok = df[df["reject"] == ""].copy()
-ok["ratio"] = ok["closure_ms"] / ok["vowel_ms"]
+df["context"] = token_contexts(df["word"], df["stop"])     # sal.gemination: is the stop between vowels in speech?
+ok_all = df[df["reject"] == ""].copy()
+ok_all["ratio"] = ok_all["closure_ms"] / ok_all["vowel_ms"]
+ok = ok_all[ok_all["context"].isin(["vowel", "initial_schwa"])].copy()   # main analysis
+print(df["context"].value_counts().to_string())
 
 # --- rejection by region
-rej = df.groupby("region")["reject"].apply(lambda s: (s != "").mean()).rename("rejected_share").to_frame()
-rej = rej.join(df[df.reject != ""].groupby(["region", "reject"]).size().unstack(fill_value=0))
+rej = df.groupby(["region", "context"])["reject"].apply(lambda s: (s != "").mean()).rename("rejected_share").to_frame()
+rej = rej.join(df[df.reject != ""].groupby(["region", "context", "reject"]).size().unstack(fill_value=0))
 rej.to_csv(out / "rejection.csv")
 
 
@@ -48,23 +55,37 @@ def summ(g):
     return pd.Series(r)
 
 
-summary = pd.concat({
-    "region": ok.groupby("region").apply(summ),
-    "region_aspiration": ok.groupby(["region", "aspirated"]).apply(summ),
-    "district": ok.groupby("district").apply(summ),
-    "region_stop": ok.groupby(["region", "stop"]).apply(summ),
-}, names=["level"])
+parts = []
+for level, keys in [("region", ["region"]), ("region_aspiration", ["region", "aspirated"]),
+                    ("district", ["district"]), ("region_stop", ["region", "stop"]),
+                    ("region_context", ["region", "context"])]:
+    src = ok_all if level == "region_context" else ok
+    g = src.groupby(keys).apply(summ).reset_index()
+    g.insert(0, "group", g[keys].astype(str).agg(" / ".join, axis=1))
+    g.insert(0, "level", level)
+    parts.append(g.drop(columns=keys))
+summary = pd.concat(parts, ignore_index=True)
 summary.to_csv(out / "acoustic_summary.csv")
 
 # --- mixed model with speaker random intercepts
-ok["haryana"] = (ok["region"] == "Haryana").astype(int)
-ok["log_closure"] = np.log(ok["closure_ms"])
-ok["log_vowel"] = np.log(ok["vowel_ms"].clip(lower=20))
-common = ok["word"].value_counts()
-ok_m = ok[ok["word"].isin(common[common >= 20].index)]
+for d_ in (ok, ok_all):
+    d_["haryana"] = (d_["region"] == "Haryana").astype(int)
+    d_["log_closure"] = np.log(d_["closure_ms"])
+    d_["log_vowel"] = np.log(d_["vowel_ms"].clip(lower=20))
+
+
+def frequent(d_):
+    common = d_["word"].value_counts()
+    return d_[d_["word"].isin(common[common >= 20].index)]
+
+
 lines = []
-for name, formula in [("closure", "log_closure ~ haryana + log_vowel + aspirated + C(word)"),
-                      ("closure_no_rate", "log_closure ~ haryana + aspirated + C(word)")]:
+for name, formula, data in [
+        ("closure", "log_closure ~ haryana + log_vowel + C(word)", ok),
+        ("closure_no_rate", "log_closure ~ haryana + C(word)", ok),
+        ("closure_all_contexts (sensitivity: includes stops after a deleted schwa)",
+         "log_closure ~ haryana + log_vowel + C(word)", ok_all)]:
+    ok_m = frequent(data)
     fit = smf.mixedlm(formula, ok_m, groups=ok_m["speaker"]).fit(method="lbfgs")
     b, (lo, hi), p = fit.params["haryana"], fit.conf_int().loc["haryana"], fit.pvalues["haryana"]
     lines.append(f"{name}: Haryana effect on closure = x{np.exp(b):.3f} (95% CI x{np.exp(lo):.3f} to x{np.exp(hi):.3f}),"
@@ -130,5 +151,5 @@ for model in ("w2v2", "zipa"):
 if rows:
     pd.DataFrame(rows).to_csv(out / "model_doubling.csv", index=False)
     print(pd.DataFrame(rows).round(3).to_string(index=False))
-print(summary.loc["region"].round(2).to_string())
+print(summary[summary.level == "region"].round(2).to_string(index=False))
 print(rej.round(3).to_string())

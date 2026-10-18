@@ -9,6 +9,9 @@ For each utterance in data/vaani_districts/candidates_audio.parquet:
 The aligner works from the standard spelling and is independent of both phone recognizers, so the
 location it gives cannot reflect their doubling decisions.
 
+With --targets geminate the same is done for lexical voiceless geminates in any word (e.g., the च्छ of अच्छा),
+the positive class of the layer-wise geminate probe (scripts/geminate_layers.py).
+
 Output: data/vaani_districts/alignments.parquet, one row per candidate token: utterance key, speaker,
 district, word, word start/end (s), stop letter span start/end (s), preceding and following vowel letter
 spans (s), alignment score.
@@ -53,11 +56,26 @@ def target_positions(w):
     return out
 
 
+PAIRS = {(c, c) for c in STOPS} | {("क", "ख"), ("च", "छ"), ("ट", "ठ"), ("त", "थ")}
+
+
+def geminate_positions(w):
+    """Indices of the first letter of voiceless geminate clusters between vowels (क्क, च्छ, त्थ, ...)."""
+    out = []
+    for i in range(1, len(w) - 3):
+        p, c, h, d, n = w[i - 1], w[i], w[i + 1], w[i + 2], w[i + 3]
+        if h == "्" and (c, d) in PAIRS and n in MATRA and (p in MATRA or p in INDEP or p in CONS) and p != "्":
+            out.append(i)
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--shard", default="0/1", help="i/n: align only utterances with index %% n == i")
+    ap.add_argument("--targets", choices=["single", "geminate"], default="single",
+                    help="single: candidate words' single stops; geminate: any word's voiceless geminate cluster")
     ap.add_argument("--data", default=None, help="input parquet (default data/vaani_districts/candidates_audio.parquet)")
     ap.add_argument("--out", default=None, help="output parquet (default data/vaani_districts/alignments.parquet)")
     args = ap.parse_args()
@@ -97,7 +115,10 @@ def main():
         words = spoken_words(r.transcript)
         romans = [rom(w) for w in words]
         keep = [i for i, x in enumerate(romans) if x]
-        if not any(words[i] in words_set for i in keep):
+        def wanted(w):
+            return w in words_set if args.targets == "single" else bool(geminate_positions(w))
+
+        if not any(wanted(words[i]) for i in keep):
             continue
         wav, sr = sf.read(io.BytesIO(r.audio), dtype="float32")
         x = torch.from_numpy(wav).unsqueeze(0).to(args.device)
@@ -111,11 +132,13 @@ def main():
         sec_per_frame = x.shape[1] / emission.shape[1] / sr
         for j, i in enumerate(keep):
             w = words[i]
-            if w not in words_set:
+            if not wanted(w):
                 continue
             chars = spans[j]                       # one TokenSpan per letter of romans[i]
-            for pos in target_positions(w):
-                a, b = len(rom(w[:pos])), len(rom(w[:pos + 1]))
+            positions = target_positions(w) if args.targets == "single" else geminate_positions(w)
+            width = 1 if args.targets == "single" else 3      # stop letter, or stop + virama + stop
+            for pos in positions:
+                a, b = len(rom(w[:pos])), len(rom(w[:pos + width]))
                 if not (0 < a < b <= len(chars)):
                     continue
                 before = [c for c in range(a) if romans[i][c] in VOWEL_LETTERS]
@@ -123,6 +146,7 @@ def main():
                 rows.append({
                     "audio_path": r.audio_path, "speaker": speaker_from_path(r.audio_path), "district": r.district,
                     "state": r.state, "language": r.language, "word": w, "word_index": i, "stop": w[pos],
+                    "geminate": args.targets == "geminate",
                     "word_start": chars[0].start * sec_per_frame, "word_end": chars[-1].end * sec_per_frame,
                     "stop_start": chars[a].start * sec_per_frame, "stop_end": chars[b - 1].end * sec_per_frame,
                     "prev_vowel_end": chars[before[-1]].end * sec_per_frame if before else np.nan,

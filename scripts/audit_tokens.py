@@ -1,6 +1,6 @@
 """Blind manual audit of the automatic closure measurements (RQ2).
 
-Picks N accepted tokens balanced by region (Haryana / New Delhi) and stop letter, at most one token per speaker,
+Picks N accepted main-analysis tokens (stops between vowels in speech; sal.gemination) balanced by region (Haryana / New Delhi) and stop letter, at most one token per speaker,
 and exports for each a short WAV clip and a Praat TextGrid with the word and two empty interval tiers
 ("closure", "vot") for the annotator to fill. Files are numbered in random order and carry no region,
 district, speaker or automatic measurement, so the annotation is blind. The key (token, region, automatic
@@ -18,6 +18,7 @@ import numpy as np
 import pandas as pd
 import soundfile as sf
 
+from sal.gemination import token_contexts
 from sal.paths import DATA, ROOT
 
 MARGIN = 0.15
@@ -54,7 +55,8 @@ def main():
     ap.add_argument("--seed", type=int, default=0)
     args = ap.parse_args()
     df = pd.read_parquet(DATA / "vaani_districts" / "closures.parquet")
-    df = df[df["reject"] == ""].copy()
+    df["context"] = token_contexts(df["word"], df["stop"])
+    df = df[(df["reject"] == "") & df["context"].isin(["vowel", "initial_schwa"])].copy()   # main-analysis tokens
     df["region"] = np.where(df["state"] == "Haryana", "Haryana", "Delhi")
 
     # equal tokens per region; within a region spread evenly over stops (round robin), one token per speaker
