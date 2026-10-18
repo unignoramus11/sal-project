@@ -23,6 +23,7 @@ transcript probes; the Mac runs the analyses. Results from all three meet in thi
 | 7 | RP sweep (order x layers), per model | 1 extract + 19 GPU per model | 3-5 h each | final (RQ1, the core result) |
 | 8 | RP topic check and control task | 12 GPU | 2-5 h each | final (RQ0) |
 | 9 | Send results back | – | minutes | after every step |
+| 10 | Geminate probe by layer (when Mohit has pushed the token table) | 3 GPU | 2-6 h each | final (RQ2) |
 
 Priority if the queue is slow: 2 → 3 → 5 and 6 → 4 → 7 (speaker-disjoint jobs first; the scripts already
 submit those first) → 8. Steps 3 and 6 can run at the same time; 4, 5 and 8 need step 3.
@@ -177,6 +178,24 @@ Only `results/` is versioned (CSV, JSON and small prediction parquet files). Dat
 stay on Ada; they are gitignored and too large. Without push access: `tar czf ada_results_<date>.tgz results/`
 and send the file to Mohit.
 
+## 10. Where the encoders represent consonant length (3 GPU jobs; when the token table is in the repo)
+
+Start this once `results/gemination/layer_probe_tokens.parquet` exists after a `git pull` (Mohit pushes it when
+the closure measurements on the Mac are done; you will see it mentioned in the commit log).
+
+```bash
+for M in w2v2 zipa whisper; do bash slurm/submit.sh slurm/geminate_layers.sbatch $M; done
+```
+
+For about 25,000 single voiceless stops between vowels and 2,600 lexical geminates (अच्छा, बच्चे, मिट्टी,
+पत्थर, ...) from Haryana and New Delhi Vaani audio, each job averages every layer's frames over each token's
+measured closure and burst, then trains a geminate-vs-single linear probe per layer (speaker-grouped
+cross-validation). It reports the AUC by layer, the AUC within place of articulation, and whether Haryana single
+stops look more geminate-like than New Delhi ones. The first job also fetches the district audio (~12 GB
+streamed, ~3.5 GB kept); if compute nodes have no internet, run `python scripts/district_audio_files.py
+--workers 4` on the login node first. Results: `results/gemination/geminate_layers_<model>.csv` and
+`results/figures/fig_geminate_layers_<model>.*`.
+
 ## Troubleshooting
 
 - `CUDA error: no kernel image is available`: the GPU is too old for the torch build; report the GPU model.
@@ -193,9 +212,6 @@ and send the file to Mohit.
 
 ## Coming later (not ready yet)
 
-- **Gemination by layer (RQ2)**: a frame-level linear probe for geminate vs single consonants at every layer,
-  on the district clips the Mac is aligning now. Mohit will add the extraction and probe scripts and a
-  `slurm/geminate_layers.sbatch` once the alignments and closure measurements are in.
 - **Official Vaani-Hi reproduction**: if either access request is approved, rerun the TP-GRU and RP-Attn on
   the official data (scripts will accept `--dataset`); this settles the gap between PRiSM's 45.7 Recall@1 and
   our ~21 on the rebuilt data.
