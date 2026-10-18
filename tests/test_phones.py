@@ -45,3 +45,10 @@ def test_geminate_aspirate():
 def test_different_consonants_are_not_a_run():
     assert P.dpr("akta") == (0, 2)
     assert P.dpr("aktʃa") == (0, 2)
+
+
+def test_orphan_modifier_is_not_a_consonant():
+    from sal.phones import dpr
+    assert dpr("ːʈoː") == (0, 1)        # length mark of a vowel cut off by a window
+    assert dpr("ʰkʰa") == (0, 1)
+    assert dpr("oʈʈoː") == (1, 1)

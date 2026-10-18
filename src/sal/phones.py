@@ -75,8 +75,8 @@ def consonant_events(segs: list[str]) -> list[tuple[str, bool]]:
     i = 0
     while i < len(segs):
         s = segs[i]
-        if is_vowel(s) or not s.isprintable():
-            i += 1
+        if is_vowel(s) or not s.isprintable() or unicodedata.category(base(s)) == "Lm":
+            i += 1            # vowels, and modifiers with nothing to attach to (a window that starts at "ː")
             continue
         j = i
         while j + 1 < len(segs) and not is_vowel(segs[j + 1]) and stem(segs[j + 1]) == stem(s):
