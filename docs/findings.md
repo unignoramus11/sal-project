@@ -50,6 +50,10 @@ TP-GRU and representation-probe results are still running; this file is updated 
   content across utterances; a memorising matcher turns that into +21 R@1 of leakage, while the trained
   probes (bigram MLP 27.9, TP-GRU ~21) stay well below it. A TP that fits its training set more tightly
   than ours would move toward the matcher, which is one candidate explanation for PRiSM's 45.7.
+  Leakage grows with how many training utterances the test speaker has (W2V2, 1-NN, random split): speaker
+  unseen 15.3 R@1 (72 test utterances), 1-5 training utterances 22.1, 6-20 34.1, 21-50 45.0, more than 50
+  46.3, with the same-speaker share of nearest neighbours rising from 0 to 6%, 19%, 31% and 32% (ZIPA alike;
+  results/tables/knn_by_speaker_count.csv).
 - MDL: under the random split the bag probes save 15.7-21.0 kbits over the location prior, against 5.0-7.9
   kbits on unseen speakers (ZIPA phone bigram 21.0 ± 0.3 vs 7.9 ± 1.0): leakage makes location about three
   times cheaper to code.

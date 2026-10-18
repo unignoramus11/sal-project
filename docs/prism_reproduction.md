@@ -100,7 +100,9 @@ Leads, not yet tested:
   1-nearest-neighbour transcript matcher reaches 39.6 Recall@1 under the random split (18.2 speaker-disjoint)
   and finds a same-speaker neighbour for 25% of test utterances (chance 0.3%). So the transcripts do allow
   speaker memorisation; a TP that fits training data more tightly than ours (e.g., more utterances per
-  speaker in PRiSM's sample) would approach the matcher.
+  speaker in PRiSM's sample) would approach the matcher. The matcher's leakage rises steeply with the speaker's number of training
+  utterances (15.3 R@1 for unseen speakers, 46.3 for speakers with more than 50), so a sample with more
+  utterances per speaker would inflate transcript-probe scores under the random split.
 - Once access arrives: rerun the TP-GRU on the official data (same code), measure speaker leakage there with
   the file-name speaker codes if the official rows can be matched to Vaani files (metadata_idx), and compare
   utterances per speaker.
