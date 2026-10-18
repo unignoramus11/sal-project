@@ -89,8 +89,8 @@ TP-GRU and representation-probe results are still running; this file is updated 
 
 ## RQ1: inventory, local order, units
 
-- TP-GRU (preliminary, 1-2 seeds per condition; PRiSM's probe and settings). Phone BiGRU minus shuffled phone
-  BiGRU (paired, speaker bootstrap): random split W2V2 +3.9 R@1 [1.9, 5.9] (-53 km), ZIPA +3.4 [1.5, 5.4] (-81 km);
+- TP-GRU (2 seeds per condition, seeds 44-46 on Ada; PRiSM's probe and settings). Phone BiGRU minus shuffled phone
+  BiGRU (paired, speaker bootstrap): random split W2V2 +3.9 R@1 [1.9, 5.9] (-53 km), ZIPA +4.3 [2.5, 6.0] (-76 km);
   new speakers W2V2 -3.5 [-6.5, -1.0] (km -23 [-53, 4], n.s.), ZIPA +0.4 [-1.9, 2.9] (km -43 [-83, -9]; 2 seeds
   each). Order helps the BiGRU under the random split with both recognizers; on new speakers it brings no
   Recall@1 gain with either (W2V2 loses), and only ZIPA's km improves. Whether the random-split gain is speaker
