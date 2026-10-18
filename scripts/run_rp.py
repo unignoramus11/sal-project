@@ -22,8 +22,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from sal.data.control import control_targets
 from sal.data.prompts import restrict
-from sal.paths import DATA, OUTPUTS, RESULTS
+from sal.paths import DATA, RESULTS
 from sal.probes import models as M
 from sal.probes.rp_data import FeatureStore, FrameBatcher
 from sal.probes.train import TrainConfig, save_run, train_probe
@@ -42,6 +43,8 @@ ap.add_argument("--max-epochs", type=int, default=100)
 ap.add_argument("--batch-size", type=int, default=48)
 ap.add_argument("--prompts", choices=["all", "generic"], default="all",
                 help="generic: train and test only on utterances about shared pictures (no topic cue)")
+ap.add_argument("--control", action="store_true",
+                help="control task: each speaker gets another speaker's location (sal.data.control)")
 ap.add_argument("--device", default="cuda")
 ap.add_argument("--out-root", type=Path, default=RESULTS / "runs")
 ap.add_argument("--tag", default="")
@@ -54,6 +57,9 @@ missing = set(meta["metadata_idx"]) - set(store.index.index)
 assert not missing, f"{len(missing)} utterances have no features"
 
 targets = np.radians(meta[["latitude", "longitude"]].to_numpy(np.float64))
+if args.control:
+    targets = control_targets(meta)
+    args.tag += "_control"
 splits = {s: np.flatnonzero(meta[args.protocol].to_numpy() == s) for s in ("train", "val", "test")}
 splits = restrict(splits, meta["metadata_idx"].to_numpy(), args.prompts)
 n_layers = len(store.layers)
