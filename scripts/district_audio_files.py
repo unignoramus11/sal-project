@@ -67,7 +67,11 @@ def one(path: str, tmp: Path) -> int:
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--workers", type=int, default=4)
+    ap.add_argument("--assemble-only", action="store_true", help="write the output from the parts already fetched")
     args = ap.parse_args()
+    if args.assemble_only:
+        assemble()
+        return
     parts.mkdir(parents=True, exist_ok=True)
     api = HfApi()
     shards = sorted(f.path for d in DISTRICTS
@@ -81,6 +85,10 @@ def main():
             total += f.result()
             print(f"{k + 1}/{len(shards)} shards, {total} matching utterances", flush=True)
     shutil.rmtree(tmp, ignore_errors=True)
+    assemble()
+
+
+def assemble():
     tables = [pq.read_table(p) for p in sorted(parts.glob("*.parquet"))]
     pq.write_table(pa.concat_tables(tables, promote_options="default"), out)
     print(f"wrote {out}: {sum(t.num_rows for t in tables)} utterances from {len(tables)} shards")
