@@ -42,6 +42,9 @@ a = pd.concat([pd.read_parquet(p) for p in parts], ignore_index=True)
 a.to_parquet('$D/alignments.parquet', index=False); print(len(a), 'tokens merged')"
 uv run python scripts/measure_closure.py --workers 6 > outputs/logs/measure_closure.log 2>&1
 tail -8 outputs/logs/measure_closure.log
+uv run python scripts/analyse_gemination.py > outputs/logs/analyse_gemination.log 2>&1   # without recognizer doubling
+tail -20 outputs/logs/analyse_gemination.log
+echo "$(date +%H:%M) EXTRA_MEASURED"
 
 until ssh pc "test -f $R/outputs/logs/extra_transcripts.done"; do sleep 120; done
 for m in w2v2 zipa; do

@@ -6,7 +6,7 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."
 D=data/vaani_districts
-until grep -q "EXTRA_DONE\|no new shards" outputs/logs/gemination_extra.log 2>/dev/null; do sleep 120; done
+until grep -q "EXTRA_MEASURED\|no new shards" outputs/logs/gemination_extra.log 2>/dev/null; do sleep 120; done
 PYTHONUNBUFFERED=1 uv run --with uroman python scripts/align_districts.py --device cpu --targets geminate \
   --out $D/alignments_geminate.parquet > outputs/logs/align_geminate.log 2>&1
 tail -1 outputs/logs/align_geminate.log
