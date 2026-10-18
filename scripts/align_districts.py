@@ -58,6 +58,7 @@ def main():
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--shard", default="0/1", help="i/n: align only utterances with index %% n == i")
+    ap.add_argument("--data", default=None, help="input parquet (default data/vaani_districts/candidates_audio.parquet)")
     ap.add_argument("--out", default=None, help="output parquet (default data/vaani_districts/alignments.parquet)")
     args = ap.parse_args()
 
@@ -71,7 +72,7 @@ def main():
         return "".join(ch for ch in ur.romanize_string(w).lower() if ch in alphabet)
 
     # stream in small batches: the file holds ~3 GB of audio and loading it whole swaps a 12 GB machine to death
-    pf = pq.ParquetFile(DATA / "vaani_districts" / "candidates_audio.parquet")
+    pf = pq.ParquetFile(args.data or DATA / "vaani_districts" / "candidates_audio.parquet")
     cols = ["transcript", "audio", "audio_path", "district", "state", "language"]
     n_total = pf.metadata.num_rows if not args.limit else min(args.limit, pf.metadata.num_rows)
 

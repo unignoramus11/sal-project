@@ -68,6 +68,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--assemble-only", action="store_true", help="write the output from the parts already fetched")
+    ap.add_argument("--no-assemble", action="store_true", help="fetch parts only (the output may be in use)")
     args = ap.parse_args()
     if args.assemble_only:
         assemble()
@@ -85,7 +86,8 @@ def main():
             total += f.result()
             print(f"{k + 1}/{len(shards)} shards, {total} matching utterances", flush=True)
     shutil.rmtree(tmp, ignore_errors=True)
-    assemble()
+    if not args.no_assemble:
+        assemble()
 
 
 def assemble():
