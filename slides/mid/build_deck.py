@@ -421,20 +421,49 @@ def build():
         f"W2V2: Haryana doubles least, {100 * hv_w.haryana:.2f}% of consonants vs {100 * hv_w.rest:.2f}% elsewhere "
         f"(p = {hv_w.p:.3f}). ZIPA: {100 * hv_z.haryana:.2f}% vs {100 * hv_z.rest:.2f}% (p = {hv_z.p:.2f}). Neither shows "
         "the Haryanvi doubling PRiSM's attribution example suggests; Haryana has only 12 speakers.",
-        "Next: closure durations measured in the audio (MMS alignment, Praat landmarks) for 104 words in Rohtak, "
-        "Jhajjar, Charkhi Dadri and New Delhi, with a mixed model and a blind manual audit of 50 tokens.",
+        "So the recognizers' output cannot settle gemination; next slide measures it in the audio.",
     ], LM, Inches(5.35), Inches(12.1), Inches(1.6), size=12)
+
+    # 10b. RQ2 acoustics
+    mm = (RES / "gemination" / "mixed_model.txt").read_text()
+    if "voiceless interval (primary)" in mm:
+        import re as _re
+
+        def eff(label):
+            m_ = _re.search(_re.escape(label) + r".*?= x([\d.]+)[^(]*\(95% CI x([\d.]+) to x([\d.]+)\).*?tokens (\d+)", mm)
+            return float(m_[1]), float(m_[2]), float(m_[3]), int(m_[4])
+        voi, clo, val = eff("voiceless interval (primary)"), eff("closure, tokens with a burst"), \
+            eff("validity: lexical geminate voiceless interval")
+        lee = _re.search(r"Lee bounds x([\d.]+) to x([\d.]+)", mm)
+        acc = _re.search(r"acceptance \(main contexts\): Haryana ([\d.]+), Delhi ([\d.]+)", mm)
+        s = d._slide()
+        d.header(s, "Results  ·  RQ2 duration, acoustics", "In the audio, Haryana speakers hold voiceless stops 14% longer")
+        d.stats(s, [(f"x{voi[0]:.2f}", f"voiceless interval, Haryana vs New Delhi\n(95% CI {voi[1]:.2f} to {voi[2]:.2f})"),
+                    (f"x{clo[0]:.2f}", f"closure alone\n(95% CI {clo[1]:.2f} to {clo[2]:.2f})"),
+                    (f"x{val[0]:.2f}", f"lexical geminates vs single stops\n(validity check, 95% CI {val[1]:.2f} to {val[2]:.2f})")],
+                Inches(1.9), best=0)
+        d.bullets(s, [
+            f"{voi[3]:,} single voiceless stops between vowels in Rohtak, Jhajjar, Charkhi Dadri and New Delhi Vaani "
+            "audio, located by MMS forced alignment of the standard spelling (independent of the phone recognizers) "
+            "and measured with Praat voicing and burst landmarks.",
+            "Mixed model with word fixed effects, following-vowel duration as rate control and a random intercept per "
+            f"speaker. Measured share {100 * float(acc[1]):.0f}% (Haryana) vs {100 * float(acc[2]):.0f}% (New Delhi); "
+            f"Lee bounds for that difference x{float(lee[1]):.2f} to x{float(lee[2]):.2f}.",
+            "Lexical geminates (अच्छा, बच्चे, मिट्टी) come out much longer, so the measure tracks length. Haryana single "
+            "stops move about a quarter of the way toward geminate length: lengthening, not categorical doubling. "
+            "A blind manual audit of 50 tokens by both authors is the next check.",
+        ], LM, Inches(3.55), Inches(12.1), Inches(3), size=12.5)
 
     # 11. next steps
     s = d._slide()
     d.header(s, "Plan", "What remains before the final evaluation")
     d.deflist(s, [
-        ("Running now", "TP-BiGRU over chars, phones and shuffled phones (2 recognizers x 2 splits x 5 seeds); "
-                        "district audio for the closure study; control task for the transcript probes."),
+        ("Running now", "TP-BiGRU over chars, phones and shuffled phones (2 recognizers x 2 splits; PC seeds 42-43, "
+                        "Ada seeds 44-46); BiGRU control task and MDL; prosody contours."),
         ("On Ada", "Feature extraction (W2V2, Whisper, ZIPA), layer sweep, representation probes with and without "
                    "order at matched size, transcription check."),
-        ("RQ2", "Closure and closure/vowel ratio, Haryana vs New Delhi, mixed model with speaker intercepts; does "
-                "recognizer doubling track measured closure?"),
+        ("RQ2", "Blind manual audit of 50 tokens by both authors; does recognizer doubling track measured length; "
+                "which encoder layers represent consonant length (geminate probe by layer, Ada)."),
         ("RQ3", "Prosody BiGRU on F0 and intensity contours; late fusion with the transcript probe."),
         ("Write-up", "ACL-format report with all tables generated from results/ by script."),
     ], Inches(1.8), label_w=Inches(2.0), size=13, row=Inches(0.85))
@@ -449,7 +478,8 @@ def build():
         "most of it comes from what speakers describe rather than how they pronounce.",
         "Local order (bigrams) and richer phone strings help on new speakers, by Recall@1, km and MDL alike; the "
         "BiGRU's order gain over shuffled phones appears only when speakers are shared (preliminary).",
-        "Doubling in recognizer output is recognizer-specific; gemination needs acoustic measurement.",
+        "Doubling in recognizer output is recognizer-specific, but the audio shows it: Haryana speakers hold "
+        "voiceless stops 14% longer (closure 26%) than New Delhi speakers.",
     ], LM, Inches(1.8), Inches(12.1), Inches(4.5), size=14, color=LIGHT)
     d.text(s, "Code, data recipe and every number: github.com/unignoramus11/sal-project", LM, Inches(6.6),
            Inches(12), Inches(0.3), size=10, italic=True, color="9fb8aa")

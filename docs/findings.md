@@ -118,9 +118,29 @@ All on the speaker-disjoint split, paired on the same test utterances (speaker-c
   elsewhere, difference -0.17 pp [-0.32, -0.04], p = 0.012 (speaker bootstrap; Haryana has 12 speakers).
 - ZIPA transcripts: no difference, 1.63% vs 1.82%, -0.19 pp [-0.53, 0.19], p = 0.30. ZIPA doubles about 1.6x
   as often overall, and its state ranking differs (Rajasthan highest at 3.6%).
-- So doubling in recognizer output depends on the recognizer; it cannot by itself establish a dialect
-  feature. The acoustic closure measurement (Haryana vs New Delhi, MMS alignment, Praat landmarks, mixed
-  model with speaker intercepts) is the test; it is running.
+- So doubling in recognizer output depends on the recognizer; it cannot by itself establish a dialect feature.
+- Acoustics (Rohtak, Jhajjar, Charkhi Dadri vs New Delhi Vaani audio; MMS alignment of the standard spelling,
+  independent of the recognizers; results/gemination/). 39,008 candidate single voiceless stops, 85.5% measured
+  (Haryana 83.8%, New Delhi 85.4% in the main contexts). Main analysis: stops between vowels in speech, words
+  with >= 20 tokens; mixed models with word fixed effects, following-vowel duration as rate control, speaker
+  random intercepts.
+  - Voiceless interval (voicing offset to voicing onset, the primary measure): Haryana x1.142 [1.106, 1.178],
+    p < 1e-15 (26,033 tokens, 62 words); without the rate control x1.133 [1.098, 1.169]; including stops after
+    a deleted schwa x1.141 [1.108, 1.175]. Lee bounds for the small difference in measurement rates: x1.070 to
+    x1.118 on the raw difference (x1.096).
+  - Closure (voicing offset to burst): x1.256 [1.208, 1.307] on all tokens with a burst; x1.269 [1.215, 1.324]
+    on clear bursts only (9,340 tokens).
+  - Validity: lexical geminates (अच्छा, बच्चे, मिट्टी, ...; 2,971 tokens) have voiceless intervals x1.59
+    [1.51, 1.67] those of single stops in New Delhi, so the measure tracks consonant length. On the log scale,
+    Haryana single stops are lengthened by 28% of the geminate-single difference; the geminate-single gap is
+    slightly smaller in Haryana (interaction -0.054, p = 0.049).
+  - Reading: Haryana speakers produce longer voiceless stops between vowels than New Delhi speakers, by 14%
+    (voiceless interval) to 26% (closure), the direction PRiSM's attribution example suggests. It is a
+    lengthening, not a categorical doubling. Still to do: the blind manual audit of 50 tokens
+    (internal/audit/), and whether the recognizers' doubling tracks the measured length (needs the PC's
+    district transcripts).
+- A first version of the measurement made burst strength and intensity drop hard filters; it measured only 31%
+  of tokens and rejected Haryana tokens more often (75% vs 65%). It is not used (docs/design.md section 8).
 
 ## RQ3: prosody
 
