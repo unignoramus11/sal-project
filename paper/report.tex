@@ -1,0 +1,135 @@
+\documentclass[11pt]{article}
+\usepackage[final]{acl}
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage[safe]{tipa}
+\usepackage{xcolor}
+
+\setlist{nosep, leftmargin=*}
+\newcommand{\geov}{\texttt{GEO-v}}
+\newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
+
+\title{Order, Duration, or Melody? Probing What Phone Recognizers Use\\to Geolocate Haryanvi and Hindi-Belt Speech}
+
+\author{Mohit Kumar Singh \qquad\qquad Nidhi Vaidya \\
+  Speech Analysis and Linguistics (Monsoon 2026), IIIT Hyderabad}
+
+\begin{document}
+\maketitle
+
+% Draft. Every number in tables and figures is generated from results/ by scripts/make_tables.py and
+% scripts/make_figures.py; numbers in the text are copied from docs/findings.md and must be re-checked
+% against results/ before submission.
+
+\begin{abstract}
+PRiSM reports that a transcript probe over predicted phones locates Hindi-belt speakers better than a
+representation probe over the recognizer's hidden states. We rebuild its dialect geolocation task from public
+data and find that its random split places the speaker of 98\% of test utterances in training, where a lookup
+on the speaker ID alone reaches 98.0 Recall@1. On new speakers a voice embedding falls to the majority level,
+and transcript probes keep a small advantage that comes mostly from what speakers describe. Local phone order
+helps, and a sequence model's further gain from order appears only when speakers are shared. In the audio,
+Haryana speakers hold intervocalic voiceless stops 14\% longer than New Delhi speakers, a lengthening that the
+two recognizers transcribe inconsistently. \todo{representation-probe results (Ada).}
+\end{abstract}
+
+\section{Introduction}
+PRiSM \citep{bharadwaj2026prism} benchmarks phone recognizers on intrinsic transcription and on downstream
+tasks probed in two ways: a transcript probe (TP) over the predicted phone string and a representation probe
+(RP) over hidden states. On \geov{}, dialect geolocation over Vaani-Hi \citep{ghosh2025vaani}, the TP reaches
+146\,km mean error against 253\,km for the RP. The authors suggest that phone order explains the gap. We ask
+what each probe actually uses, under four questions: whether the evaluation protocol rewards speaker
+recognition (RQ0), whether phone order carries location beyond the phone inventory (RQ1), whether recognizers
+and speakers show the consonant lengthening of Haryanvi (RQ2), and whether intonation adds information that
+transcripts discard (RQ3).
+
+\section{Related Work}
+\todo{geolocation from speech \citep{foley2024where}; probing and control tasks \citep{hewitt2019control};
+MDL probing \citep{voita2020mdl}; layer-wise analyses \citep{pasad2021layerwise}; Haryanvi phonology
+\citep{devi2021haryanvi}; geminates \citep{ohala2007geminates}.}
+
+\section{Data}
+\paragraph{Rebuilt Vaani-Hi.} Access to the official copy is pending, so we rerun PRiSM's selection code on
+the public Vaani corpus at a pinned commit: 22,551 utterances (40.3\,h), 26 pincodes in 9 states, 1,570
+speakers identified from the file names. A rebuild on a second machine reproduces the dataset bit for bit.
+\paragraph{Splits.} PRiSM's random split within pincode, and a speaker-disjoint split stratified by pincode
+(0\% of test speakers in training, against 97.9\% under the random split).
+\paragraph{Prompts.} Speakers describe pictures; 68\% of utterances describe a picture named after the
+speaker's own district. The shared-picture subset has its own location prior and gets its own baselines.
+
+\section{Method}
+\paragraph{Probes.} PRiSM's TP (two-layer BiGRU over characters) with its settings, the same over phones and
+over phones shuffled within the utterance; MLPs over unigram or bigram frequencies; an MLP over ECAPA-TDNN
+speaker embeddings \citep{desplanques2020ecapa}; PRiSM's RP and order-aware RPs at matched size
+\todo{Ada}. Phone strings come from W2V2 and ZIPA \citep{zhu2025zipa} with PRiSM's own wrappers.
+\paragraph{Leakage diagnostics.} A speaker-ID lookup; a control task in which every speaker is labelled with
+another speaker's location \citep{hewitt2019control}; a nearest-neighbour transcript matcher.
+\paragraph{Statistics.} Five seeds; seed-ensemble predictions; 95\% CIs and paired tests by bootstrap over
+speakers. Online-coding MDL \citep{voita2020mdl} of the pincode with speaker-ordered blocks.
+\paragraph{Gemination.} MMS forced alignment \citep{pratap2024mms} of the standard spelling locates single
+voiceless stops between vowels in Rohtak, Jhajjar, Charkhi Dadri and New Delhi audio; Praat voicing and burst
+landmarks \citep{jadoul2018parselmouth,boersma2024praat} give the voiceless interval and the closure; mixed
+models with word fixed effects, a rate control and speaker random intercepts; Lee bounds
+\citep{lee2009bounds} for unequal measurement rates; lexical geminates as a validity check.
+
+\section{Results}
+\begin{table*}[t]
+\centering\small
+\input{tables/tab_probes.tex}
+\caption{Test Recall@1 (mean $\pm$ sd over seeds) and seed-ensemble mean error in km on rebuilt Vaani-Hi.}
+\label{tab:probes}
+\end{table*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{../results/figures/fig_probes.pdf}
+\caption{Recall@1 above the majority baseline and km saved over the best constant location, on the same test
+utterances (seed ensemble, 95\% speaker-bootstrap CI). Open markers: trained and tested on shared pictures.}
+\label{fig:probes}
+\end{figure*}
+
+\paragraph{RQ0.} \todo{text from docs/findings.md RQ0.}
+\paragraph{RQ1.} \todo{text from docs/findings.md RQ1; Table~\ref{tab:order}, Table~\ref{tab:mdl}.}
+
+\begin{table}[t]
+\centering\scriptsize
+\input{tables/tab_mdl.tex}
+\caption{Online codelength saved over the location prior (kbits, mean $\pm$ sd over 3 orderings).}
+\label{tab:mdl}
+\end{table}
+
+\paragraph{RQ2.} \todo{text from docs/findings.md RQ2; Table~\ref{tab:gem}.}
+
+\begin{table*}[t]
+\centering\small
+\input{tables/tab_gemination.tex}
+\caption{Haryana vs New Delhi, multiplicative effects from mixed models (95\% CI).}
+\label{tab:gem}
+\end{table*}
+
+\paragraph{RQ3.} \todo{prosody BiGRU and fusion.}
+
+\begin{table*}[t]
+\centering\scriptsize
+\input{tables/tab_order.tex}
+\caption{Paired comparisons on the same test utterances (speaker bootstrap).}
+\label{tab:order}
+\end{table*}
+
+\section{Limitations}
+Rebuilt rather than official data; 12 Haryana speakers in Vaani-Hi; picture prompts tie topic to place;
+recognizer output is not a phonetic gold standard; the gemination audit covers 50 tokens.
+
+\section*{Ethics}
+Vaani is released under CC-BY 4.0 with speaker consent; we report only aggregate results and do not attempt to
+identify speakers.
+
+\bibliography{custom}
+\end{document}

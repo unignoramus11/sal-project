@@ -1,0 +1,27 @@
+\begin{tabular}{lrrrrr}
+\toprule
+ & \multicolumn{2}{c}{Random split (PRiSM)} & \multicolumn{2}{c}{Speaker-disjoint} & \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+Probe & R@1 & km & R@1 & km & seeds \\
+\midrule
+Majority location & 10.5 & 660 & 10.0 & 675 & -- \\
+Speaker lookup (ID only) & 98.0 & 12 & 10.0 & 675 & -- \\
+\midrule
+ECAPA speaker embedding & $41.6 \pm 1.6$ & 169 & $10.1 \pm 0.6$ & 435 & 5 \\
+Prosody statistics & $5.5 \pm 0.7$ & 571 & $4.8 \pm 0.4$ & 595 & 5 \\
+\midrule
+W2V2 char unigram & $14.5 \pm 0.9$ & 448 & $12.4 \pm 1.1$ & 470 & 5 \\
+W2V2 phone unigram & $15.5 \pm 1.1$ & 440 & $12.6 \pm 0.7$ & 469 & 5 \\
+W2V2 char bigram & $26.8 \pm 0.5$ & 368 & $14.3 \pm 1.6$ & 438 & 5 \\
+W2V2 phone bigram & $27.9 \pm 0.8$ & 360 & $17.8 \pm 1.7$ & 436 & 5 \\
+W2V2 char BiGRU & $20.7 \pm 1.2$ & 374 & $14.2 \pm 0.5$ & 434 & 2 \\
+W2V2 phone BiGRU & $21.4 \pm 1.3$ & 384 & $11.8 \pm 1.3$ & 445 & 2 \\
+W2V2 shuffled phone BiGRU & $18.3 \pm 0.0$ & 437 & $15.7 \pm 0.5$ & 468 & 2 \\
+ZIPA char unigram & $14.5 \pm 0.9$ & 451 & $12.5 \pm 1.3$ & 474 & 5 \\
+ZIPA phone unigram & $15.2 \pm 0.5$ & 443 & $12.7 \pm 1.0$ & 472 & 5 \\
+ZIPA char bigram & $27.9 \pm 0.8$ & 350 & $21.2 \pm 0.5$ & 420 & 5 \\
+ZIPA phone bigram & $\mathbf{28.6 \pm 0.8}$ & 344 & $\mathbf{21.3 \pm 1.0}$ & 403 & 5 \\
+ZIPA char BiGRU & $21.2 \pm 0.2$ & 362 & $13.9 \pm 1.4$ & 423 & 2 \\
+ZIPA phone BiGRU & $21.6$ & 385 & $17.5$ & 441 & 1 \\
+\bottomrule
+\end{tabular}
