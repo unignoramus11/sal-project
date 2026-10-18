@@ -114,11 +114,18 @@ Predictions:
   include that consonant. Main analyses keep stops after a vowel sign or an independent vowel, or after the
   word's first consonant (whose vowel is pronounced: रखा, ra-khaa): 79% of candidate tokens. Stops after a
   word-medial consonant (21%) enter one sensitivity model only (`sal.gemination`).
-- **Landmarks.** Praat voicing (Parselmouth) and 2-8 kHz band energy: closure = voicing offset of the preceding
-  vowel to the burst; VOT = burst to voicing onset; following vowel duration as a local rate control. Tokens
-  are rejected with a reason (no landmark, closure outside 20-400 ms, intensity drop < 10 dB, burst rise < 6 dB);
-  rejection rates are reported per region and context, because unequal rejection could bias the comparison.
-- **Model.** log closure ~ Haryana + log following vowel + word (fixed) + speaker (random intercept), on words
+- **Landmarks and measures.** Praat voicing (Parselmouth) and 2-8 kHz band energy. Primary measure: the
+  voiceless interval, the unvoiced stretch at the aligned stop from the voicing offset of the preceding vowel to
+  the voicing onset of the next (= closure + VOT; needs voicing only). Secondary: closure = voicing offset to the
+  burst (largest high-band energy rise inside the stretch, at least 10 ms in), on tokens with a burst and on
+  tokens with a clear burst (rise >= 6 dB and intensity drop >= 10 dB). Following vowel duration is a local
+  rate control. A first version made the burst and the intensity drop hard filters: it accepted only 31% of
+  tokens (these are phone recordings with many weakened closures) and rejected Haryana tokens more often than
+  New Delhi ones (75% vs 65% in the main contexts), which can bias a regional comparison. The current version
+  rejects only tokens whose stretch cannot be measured; rejection rates are still reported per region and
+  context, and Lee bounds show how far unequal rejection could move the estimate.
+- **Model.** log voiceless interval (and log closure) ~ Haryana + log following vowel + word (fixed) + speaker
+  (random intercept), on words
   with at least 20 tokens; the word fixes the stop, so stop identity and aspiration are absorbed by the word
   term. Reported as a multiplicative effect with a 95% CI; a version without the rate control as a check.
 - **Validity.** 50 accepted main-analysis tokens, balanced by region and stop, one per speaker, are annotated
