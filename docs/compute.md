@@ -8,15 +8,16 @@
 - Renting a GPU: not needed unless Ada's queue blocks the RP sweep in late November. One 24 GB card
   for a day covers the whole sweep once features are cached.
 
-## What runs where
-| Job | Where | Cost |
+## What runs where (as of 18 Oct 2026)
+| Job | Where | Measured cost |
 |---|---|---|
-| Phone transcripts, TP probes (~30 runs), TP-Shuffle, DPR | Laptop | ~15 min per TP run |
-| Praat, Parselmouth, syllabification | Laptop / Mac CPU | small |
-| Feature extraction, 3 models over Vaani-Hi | Ada, 1 GPU per model | < 1 h per model |
-| RP sweep: 5 variants x 2 layer settings x 3 models x 5 seeds ≈ 150 runs | Ada | ~75-150 GPU-h; 2-4 days wall-clock on one node |
-
-Everything for the 3 Nov mid evaluation fits on the laptop.
+| Phone transcripts (W2V2, ZIPA) | PC | ~1 h per recognizer over Vaani-Hi |
+| TP-GRU runs (patience 100 checks, as PRiSM) | PC seeds 42-43, Ada seeds 44-46 | 25-60 min per run at the PC's 25 W cap (two in parallel); the GPU intermittently throttles to 6-15 W |
+| Bag probes, MDL, control task, kNN matcher | Mac CPU | 1-10 min per run |
+| ECAPA embeddings, prosody contours | Mac CPU | < 1 h each |
+| Prosody BiGRU | GPU (Ada or PC) | ~7 min per epoch on the Mac CPU, so not there |
+| MMS forced alignment of district audio | Mac CPU | ~3.8 utt/s per process (the shared PC GPU managed < 1) |
+| Feature extraction, layer sweep, RP runs | Ada (docs/ada.md) | RP sweep ~150-300 GPU-h |
 
 ## Storage maths
 - Vaani-Hi is 6.61 GB of parquet holding WAV bytes. If the WAVs are 32-bit float: ~29 h audio (~3.9 s/utt).
