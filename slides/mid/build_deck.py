@@ -447,7 +447,8 @@ def build():
         "embedding drops from 41.6 to the majority level once speakers are disjoint.",
         "On new speakers, phone bigrams keep a real but small advantage (+8 to +11 points over majority), and "
         "most of it comes from what speakers describe rather than how they pronounce.",
-        "Local order and richer phone strings help, by Recall@1, km and MDL alike.",
+        "Local order (bigrams) and richer phone strings help on new speakers, by Recall@1, km and MDL alike; the "
+        "BiGRU's order gain over shuffled phones appears only when speakers are shared (preliminary).",
         "Doubling in recognizer output is recognizer-specific; gemination needs acoustic measurement.",
     ], LM, Inches(1.8), Inches(12.1), Inches(4.5), size=14, color=LIGHT)
     d.text(s, "Code, data recipe and every number: github.com/unignoramus11/sal-project", LM, Inches(6.6),
