@@ -404,9 +404,9 @@ def build():
             "within each utterance, which keeps the inventory and removes order. Paired on the same test utterances.",
             f"On the random split order helps with both recognizers ({g[('w2v2', 'prism')].recall1_diff:+.1f} and "
             f"{g[('zipa', 'prism')].recall1_diff:+.1f} points, {-g[('w2v2', 'prism')].km_diff:.0f} and "
-            f"{-g[('zipa', 'prism')].km_diff:.0f} km). On new speakers the two disagree "
+            f"{-g[('zipa', 'prism')].km_diff:.0f} km). On new speakers neither gains on Recall@1 "
             f"({g[('w2v2', 'speaker_split')].recall1_diff:+.1f} for W2V2, {g[('zipa', 'speaker_split')].recall1_diff:+.1f} for ZIPA), "
-            "so part of the gain may come from memorising speakers' phone sequences, which the remaining seeds must settle.",
+            "so part of the random-split gain may be memorised speaker sequences; the remaining seeds must settle it.",
             "The BiGRU stays below a bag of bigrams on both splits, and far below PRiSM's 45.7 on the official data, "
             f"which we cannot access yet. Preliminary: {nseed}-2 seeds per condition so far; 5 by the final.",
         ], LM, Inches(3.55), Inches(12.1), Inches(3))
