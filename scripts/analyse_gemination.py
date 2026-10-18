@@ -11,6 +11,8 @@ Outputs: results/gemination/
   rejection.csv            share of tokens rejected per region and reason (a measurement-bias check)
   mixed_model.txt          log(closure) ~ Haryana + log(vowel) + C(word), random intercept per speaker (the word
                            fixes the stop, so aspiration is absorbed by C(word))
+  geminate_vs_single.csv   validity check: closures of lexical geminates vs single stops by region (when
+                           data/vaani_districts/closures_geminate.parquet exists; tools/geminate_pass.sh)
   model_doubling.csv       per recognizer: share of tokens doubled in the CTC output by region; closure for
                            doubled vs single tokens; AUC of closure for predicting doubling
 Run: uv run python scripts/analyse_gemination.py
@@ -95,6 +97,32 @@ for name, formula, data in [
 (out / "mixed_model.txt").write_text("\n".join(lines) + "\n")
 print("\n".join(lines))
 
+
+# --- validity: lexical geminates (अच्छा, बच्चे, ...) must have longer closures than single stops
+gpath = DATA / "vaani_districts" / "closures_geminate.parquet"
+if gpath.exists():
+    gm = pd.read_parquet(gpath)
+    gm = gm[gm["reject"] == ""].copy()
+    gm["region"] = np.where(gm["state"] == "Haryana", "Haryana", "Delhi")
+    both = pd.concat([ok.assign(lexical_geminate=0), gm.assign(lexical_geminate=1)], ignore_index=True)
+    both["log_closure"] = np.log(both["closure_ms"])
+    both["haryana"] = (both["region"] == "Haryana").astype(int)
+    vrows = []
+    for (region, gem), g in both.groupby(["region", "lexical_geminate"]):
+        ci = cluster_bootstrap(g["closure_ms"].to_numpy(), g["speaker"].to_numpy(), n=1000)
+        vrows.append({"region": region, "lexical_geminate": gem, "tokens": len(g), "speakers": g["speaker"].nunique(),
+                      "closure_median": g["closure_ms"].median(), "closure_mean": ci["estimate"],
+                      "lo": ci["lo"], "hi": ci["hi"]})
+    pd.DataFrame(vrows).to_csv(out / "geminate_vs_single.csv", index=False)
+    fit = smf.mixedlm("log_closure ~ lexical_geminate * haryana", both, groups=both["speaker"]).fit(method="lbfgs")
+    b, (lo, hi) = fit.params["lexical_geminate"], fit.conf_int().loc["lexical_geminate"]
+    msg = (f"validity: lexical geminate closure = x{np.exp(b):.2f} of single (95% CI x{np.exp(lo):.2f} to "
+           f"x{np.exp(hi):.2f}) in New Delhi; interaction with Haryana {fit.params['lexical_geminate:haryana']:+.3f} "
+           f"(p = {fit.pvalues['lexical_geminate:haryana']:.3g}); tokens {len(both)}")
+    with open(out / "mixed_model.txt", "a") as f:
+        f.write(msg + "\n" + fit.summary().tables[1].to_string() + "\n")
+    print(msg)
+    print(pd.DataFrame(vrows).round(1).to_string(index=False))
 
 # --- model doubling inside each token's window
 def vocab(model):

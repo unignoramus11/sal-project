@@ -17,4 +17,6 @@ uv run python scripts/geminate_layers.py --export-tokens > outputs/logs/export_t
 tail -3 outputs/logs/export_tokens.log
 git add results/gemination/layer_probe_tokens.parquet && git commit -qm "Add token table for the layer-wise geminate probe" \
   && timeout 120 git push -q
+uv run python scripts/analyse_gemination.py > outputs/logs/analyse_gemination.log 2>&1   # adds the validity check
+grep -A1 "validity" outputs/logs/analyse_gemination.log | head -3
 echo "$(date +%H:%M) GEMINATE_PASS_DONE"
