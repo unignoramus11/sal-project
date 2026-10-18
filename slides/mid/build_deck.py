@@ -457,6 +457,30 @@ def build():
             "A blind manual audit of 50 tokens by both authors is the next check.",
         ], LM, Inches(3.55), Inches(12.1), Inches(3), size=12.5)
 
+    # 10c. RQ2 layers (when the layer-wise geminate probe has run)
+    lay = RES / "gemination" / "geminate_layers_w2v2.csv"
+    if lay.exists():
+        L = pd.read_csv(lay)
+        best = L.loc[L["auc_within"].idxmax()]
+        sig = L[L["haryana_lo"] > 0]
+        s = d._slide()
+        d.header(s, "Results  ·  RQ2 duration, layers",
+                 f"W2V2 represents consonant length best around layer {int(best.layer)}")
+        pic = d.image(s, RES / "figures" / "fig_geminate_layers_w2v2.png", LM, Inches(1.5), w=Inches(7.6))
+        tx = LM + Inches(7.9)
+        d.bullets(s, [
+            f"A linear probe per layer separates lexical geminates from single stops (speaker-grouped "
+            f"cross-validation, {int(best.tokens):,} tokens). Best within place of articulation: layer "
+            f"{int(best.layer)}, AUC {best.auc_within:.2f} (all tokens {best.auc:.2f} [{best.auc_lo:.2f}, {best.auc_hi:.2f}]).",
+            f"Haryana single stops look more geminate-like than New Delhi ones in {len(sig)} of {len(L)} layers "
+            f"(at layer {int(best.layer)}: {best.haryana_logit:+.2f} logit [{best.haryana_lo:+.2f}, {best.haryana_hi:+.2f}]).",
+            ("So the encoder carries the lengthening measured in the audio; ZIPA and Whisper follow on Ada."
+             if len(sig) else "So the encoder separates lexical geminates, but the Haryana lengthening of single stops "
+             "is not visible to it; ZIPA and Whisper follow on Ada."),
+        ], tx, Inches(1.7), W - tx - Inches(0.6), Inches(4.8), size=12)
+        d.caption(s, "Figure. Left: probe AUC by layer, all tokens and within place. Right: Haryana shift for single stops.",
+                  LM, Inches(6.75), Inches(7.6))
+
     # 11. next steps
     s = d._slide()
     d.header(s, "Plan", "What remains before the final evaluation")
