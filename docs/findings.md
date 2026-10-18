@@ -41,7 +41,9 @@ TP-GRU and representation-probe results are still running; this file is updated 
   control R@1 10.1-16.0 under the random split against a control majority of 14.0 (lifts -4.0 to +1.9). In
   km, with the speaker-disjoint control runs as the no-speaker-information reference, the random split
   lowers the control error by 29-47 km for bigrams (e.g., ZIPA phone bigram 515 -> 470 km) and by 308 km for
-  ECAPA (556 -> 248 km). Trained regression probes on transcripts exploit little speaker identity.
+  ECAPA (556 -> 248 km). Trained regression probes on transcripts exploit little speaker identity; the same
+  holds for PRiSM's BiGRU (W2V2 phones, random split: control R@1 10.6 +- 0.8, 2 seeds, below the control
+  majority 14.0; ZIPA control runs in progress).
 - Transcripts are nonetheless speaker-identifiable. A 1-nearest-neighbour matcher (TF-IDF over character
   1-4-grams, no location learning; scripts/knn_transcripts.py) reaches 39.6 R@1 [37.1, 42.0] on W2V2
   transcripts under the random split (ZIPA 39.0) and 18.2 [14.5, 22.2] under the speaker-disjoint split
