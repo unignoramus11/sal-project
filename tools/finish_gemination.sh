@@ -1,13 +1,11 @@
 #!/usr/bin/env bash
-# Second half of the gemination chain: wait for both alignment shards (PC shard 0, Mac shard 1), merge them,
+# Second half of the gemination chain: wait for both alignment shards (both on the Mac), merge them,
 # measure closures on the Mac, pull the PC's district transcripts, run the analysis, export the audit clips.
 set -uo pipefail
 cd "$(dirname "$0")/.."
 D=data/vaani_districts
-until [ -s $D/alignments_1.parquet ]; do sleep 60; done
-echo "$(date +%H:%M) Mac shard done"
-until ssh pc "test -s ~/developer/sal-project/$D/alignments_0.parquet"; do sleep 60; done
-rsync -a pc:~/developer/sal-project/$D/alignments_0.parquet $D/
+until [ -s $D/alignments_0.parquet ] && [ -s $D/alignments_1.parquet ]; do sleep 60; done
+echo "$(date +%H:%M) both shards aligned"
 uv run python -c "
 import pandas as pd
 a = pd.concat([pd.read_parquet('$D/alignments_0.parquet'), pd.read_parquet('$D/alignments_1.parquet')], ignore_index=True)
