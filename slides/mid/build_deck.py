@@ -387,6 +387,29 @@ def build():
         "W2V2 (0.0), matching ZIPA's richer diacritic output.",
     ], LM, Inches(1.75), Inches(12.1), Inches(4.8))
 
+    # 9b. RQ1 sequence model
+    if ("tp_w2v2_rebuild_phone_gru_speaker_split", "tp_w2v2_rebuild_phone_shuffle_speaker_split") in cmp_.index:
+        g_r = cmp_.loc[("tp_w2v2_rebuild_phone_gru_prism", "tp_w2v2_rebuild_phone_shuffle_prism")]
+        g_s = cmp_.loc[("tp_w2v2_rebuild_phone_gru_speaker_split", "tp_w2v2_rebuild_phone_shuffle_speaker_split")]
+        g_b = cmp_.loc[("tp_w2v2_rebuild_phone_gru_speaker_split", "tp_w2v2_rebuild_phone_bigram_speaker_split")]
+        nseed = int(min(cfg.loc[c, "seeds"] for c in cfg.index if "_gru_" in c or "_shuffle_" in c))
+        s = d._slide()
+        d.header(s, "Results  ·  RQ1 sequence model", "Phone order helps only when test speakers were seen in training")
+        d.stats(s, [(f"{g_r.recall1_diff:+.1f}", f"BiGRU minus shuffled BiGRU, random split\n(95% CI {g_r.recall1_lo:.1f} to {g_r.recall1_hi:.1f})"),
+                    (f"{g_s.recall1_diff:+.1f}", f"the same on new speakers\n(95% CI {g_s.recall1_lo:.1f} to {g_s.recall1_hi:.1f})"),
+                    (f"{g_b.recall1_diff:+.1f}", f"BiGRU minus bigram bag, new speakers\n(95% CI {g_b.recall1_lo:.1f} to {g_b.recall1_hi:.1f})")],
+                Inches(1.9), best=0)
+        d.bullets(s, [
+            "PRiSM's transcript probe (2-layer BiGRU over W2V2 phones) against the same probe on phones shuffled within "
+            "each utterance, which keeps the inventory and removes order. Paired on the same test utterances.",
+            f"Order adds {g_r.recall1_diff:.1f} points and saves {-g_r.km_diff:.0f} km on the random split. On new "
+            f"speakers it costs {-g_s.recall1_diff:.1f} points, and the km difference is not significant "
+            f"({g_s.km_diff:.0f} km, 95% CI {g_s.km_lo:.0f} to {g_s.km_hi:.0f}). The sequence model memorises "
+            "speaker-specific phone sequences, which only pays off when the speaker is in training.",
+            "On our data the BiGRU is below a bag of bigrams on both splits, and far below PRiSM's 45.7 on the official "
+            f"data, which we cannot access yet. Preliminary: {nseed}-3 seeds per condition so far; 5 by the final.",
+        ], LM, Inches(3.55), Inches(12.1), Inches(3))
+
     # 10. RQ2 DPR
     s = d._slide()
     d.header(s, "Results  ·  RQ2 duration", "Doubled phones in recognizer output depend on the recognizer")
