@@ -156,18 +156,6 @@ All on the speaker-disjoint split, paired on the same test utterances (speaker-c
   (AUC 0.46). So the lengthening is gradient and mostly below the threshold at which a recognizer writes a double
   consonant: only W2V2's rare doubling follows it, and ZIPA's does not. (An earlier run counted a vowel's length
   mark cut off at the window start as a doubled consonant; fixed in sal.phones, Vaani-Hi DPR unchanged.)
-- Layers (W2V2; scripts/token_frames.py + scripts/geminate_layers.py; results/gemination/geminate_layers_w2v2*.csv).
-  A linear probe per layer on each token's frames (closure + VOT span) separates lexical geminates from single
-  stops: AUC 0.96 at layer 0 rising to 0.99 (best within place of articulation: layer 8, 0.967; all tokens 0.990
-  [0.989, 0.992]). Haryana single stops look more geminate-like than New Delhi ones at all 25 layers (layer 8:
-  +0.55 logit [0.44, 0.66], word fixed effects, speaker intercepts). Controls: with word-disjoint folds (test
-  words never seen in training) AUC stays 0.93-0.98 (within place 0.83-0.92) and the Haryana shift stays
-  +0.42 to +0.83 at all 25 layers, so the probe is not recognising words; along an unrelated direction
-  (aspirated vs plain single stops) the Haryana shift is null at all 25 layers (-0.09 to +0.07), so it is not a
-  general regional offset; holding each token's measured voiceless interval constant leaves 72-86% of the shift
-  (layer 8: +0.47 [0.36, 0.57]). The encoder represents the Haryana lengthening along its consonant-length
-  direction, and more of it than our duration measure captures (measurement noise in the duration estimate
-  can also leave such a residual). ZIPA and Whisper: Ada (docs/ada.md step 10).
 - A first version of the measurement made burst strength and intensity drop hard filters; it measured only 31%
   of tokens and rejected Haryana tokens more often (75% vs 65%). It is not used (docs/design.md section 8).
 
@@ -180,5 +168,5 @@ All on the speaker-disjoint split, paired on the same test utterances (speaker-c
 
 ## Open
 - TP-GRU (char, phone, shuffled phone; both recognizers; both splits; 5 seeds) running on the PC.
-- Representation probes and layer sweep: on Ada.
+- Representation probes, layer sweep and the layer-wise geminate probe: on Ada (Nidhi).
 - Gemination acoustics and the blind manual audit of 50 tokens.

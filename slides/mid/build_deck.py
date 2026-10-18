@@ -422,8 +422,7 @@ def build():
         f"W2V2: Haryana doubles least, {100 * hv_w.haryana:.2f}% of consonants vs {100 * hv_w.rest:.2f}% elsewhere "
         f"(p = {hv_w.p:.3f}). ZIPA: {100 * hv_z.haryana:.2f}% vs {100 * hv_z.rest:.2f}% (p = {hv_z.p:.2f}). Neither shows "
         "the Haryanvi doubling PRiSM's attribution example suggests; Haryana has only 12 speakers.",
-        "So the recognizers' output cannot settle gemination; the next slides measure it in the audio and in the "
-        "encoder.",
+        "So the recognizers' output cannot settle gemination; the next slide measures it in the audio.",
     ], LM, Inches(5.35), Inches(12.1), Inches(1.6), size=12)
 
     # 10b. RQ2 acoustics
