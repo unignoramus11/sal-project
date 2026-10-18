@@ -62,9 +62,10 @@ PAIRS = {(c, c) for c in STOPS} | {("क", "ख"), ("च", "छ"), ("ट", "ठ"
 def geminate_positions(w):
     """Indices of the first letter of voiceless geminate clusters between vowels (क्क, च्छ, त्थ, ...)."""
     out = []
-    for i in range(1, len(w) - 3):
+    for i in range(1, len(w) - 3):  # needs a letter after the cluster
         p, c, h, d, n = w[i - 1], w[i], w[i + 1], w[i + 2], w[i + 3]
-        if h == "्" and (c, d) in PAIRS and n in MATRA and (p in MATRA or p in INDEP or p in CONS) and p != "्":
+        vowel_after = n in MATRA or (n in CONS and (i + 4 >= len(w) or w[i + 4] != "्"))   # पत्थर: थ keeps its vowel
+        if h == "्" and (c, d) in PAIRS and vowel_after and (p in MATRA or p in INDEP or p in CONS) and p != "्":
             out.append(i)
     return out
 

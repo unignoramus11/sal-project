@@ -41,8 +41,10 @@ def work(args):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--workers", type=int, default=8)
+    ap.add_argument("--alignments", default=str(DATA / "vaani_districts" / "alignments.parquet"))
+    ap.add_argument("--out", default=str(DATA / "vaani_districts" / "closures.parquet"))
     args = ap.parse_args()
-    al = pd.read_parquet(DATA / "vaani_districts" / "alignments.parquet").reset_index(names="token_id")
+    al = pd.read_parquet(args.alignments).reset_index(names="token_id")
     audio = pd.read_parquet(DATA / "vaani_districts" / "candidates_audio.parquet", columns=["audio_path", "audio"])
     audio = audio.drop_duplicates("audio_path").set_index("audio_path")["audio"]
     jobs = [(audio[p], g.to_dict("records")) for p, g in al.groupby("audio_path")]
@@ -54,7 +56,7 @@ def main():
                 print(f"{k + 1}/{len(jobs)} utterances", flush=True)
     m = pd.DataFrame(rows)
     out = al.merge(m, on="token_id")
-    out.to_parquet(DATA / "vaani_districts" / "closures.parquet", index=False)
+    out.to_parquet(args.out, index=False)
     ok = out["reject"] == ""
     print(f"{len(out)} tokens, {ok.mean():.1%} accepted")
     print(out.loc[~ok, "reject"].value_counts().to_string())
