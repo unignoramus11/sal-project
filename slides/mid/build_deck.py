@@ -446,6 +446,8 @@ def build():
             f"{voi[3]:,} single voiceless stops between vowels in Rohtak, Jhajjar, Charkhi Dadri and New Delhi Vaani "
             "audio, located by MMS forced alignment of the standard spelling (independent of the phone recognizers) "
             "and measured with Praat voicing and burst landmarks.",
+            "Holds in each Haryana district alone (x1.13 to x1.15), in 45 of 57 words, and on speaker means without "
+            "a model (x1.14).",
             "Mixed model with word fixed effects, following-vowel duration as rate control and a random intercept per "
             f"speaker. Measured share {100 * float(acc[1]):.0f}% (Haryana) vs {100 * float(acc[2]):.0f}% (New Delhi); "
             f"Lee bounds for that difference x{float(lee[1]):.2f} to x{float(lee[2]):.2f}.",
