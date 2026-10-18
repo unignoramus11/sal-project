@@ -96,7 +96,8 @@ def main():
         key.append({"clip": name, "token_id": r.token_id, "region": r.region, "district": r.district,
                     "speaker": r.speaker, "word": r.word, "stop": r.stop, "clip_start": c0,
                     "auto_closure_start": r.closure_start - c0, "auto_burst": r.burst - c0,
-                    "auto_voice_onset": r.voice_onset - c0, "auto_closure_ms": r.closure_ms, "auto_vot_ms": r.vot_ms})
+                    "auto_voice_onset": r.voice_onset - c0, "auto_voi_ms": r.voi_ms, "auto_closure_ms": r.closure_ms,
+                    "auto_vot_ms": r.vot_ms})
     pd.DataFrame(key).to_csv(keydir / "key.csv", index=False)
     (ROOT / "internal" / "audit" / "README.txt").write_text(README.format(n=len(sel)))
     shutil.copytree(clips, clips.parent / "nidhi", dirs_exist_ok=True)

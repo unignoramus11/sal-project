@@ -43,3 +43,17 @@ def test_rejects_when_no_closure():
     x = np.concatenate([vowel(0.3)]).astype(np.float32)   # all voiced: no stop
     m = measure(x, SR, 0.15, 0.02, 0.28)
     assert m.reject != ""
+
+
+@pytest.mark.parametrize("closure,vot", [(0.08, 0.02), (0.15, 0.05)])
+def test_voiceless_interval(closure, vot):
+    x = synthetic_token(closure, vot, 0.15)
+    m = measure(x, SR, 0.12 + closure / 2, 0.02, len(x) / SR - 0.02)
+    assert m.voi_ms == pytest.approx(1000 * (closure + 0.008 + vot), abs=15)
+    assert m.clear_burst
+
+
+def test_aligned_centre_slightly_off_still_finds_stretch():
+    x = synthetic_token(0.10, 0.02, 0.15)
+    m = measure(x, SR, 0.12 - 0.04, 0.02, len(x) / SR - 0.02)     # centre 40 ms early, inside the vowel
+    assert m.reject == "" and m.voi_ms == pytest.approx(128, abs=15)

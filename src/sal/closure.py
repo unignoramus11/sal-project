@@ -1,15 +1,21 @@
-"""Acoustic measurement of intervocalic voiceless stops: closure, VOT, following vowel.
+"""Acoustic measurement of intervocalic voiceless stops: voiceless interval, closure, VOT, following vowel.
 
 Within a search window around the aligned stop:
-  closure start   last voiced frame of the preceding vowel before the stop's aligned centre
-  burst           the largest frame-to-frame rise of 2-8 kHz band energy after the closure start
-  voice onset     first voiced frame after the burst
-  vowel end       last voiced frame of the following voiced stretch
-closure = burst - closure start; VOT = voice onset - burst; vowel = vowel end - voice onset.
+  voiceless stretch  the run of unvoiced frames (Praat pitch tracker) that contains the stop's aligned centre,
+                     or the nearest one within 60 ms of it
+  closure start      first frame of that stretch (voicing offset of the preceding vowel)
+  voice onset        first voiced frame after it (onset of the following vowel)
+  burst              the largest frame-to-frame rise of 2-8 kHz band energy inside the stretch, at least 10 ms
+                     after the closure start
+  vowel end          last voiced frame of the following voiced stretch
+voiceless interval = voice onset - closure start (= closure + VOT; needs voicing only, so it can be measured on
+nearly every token); closure = burst - closure start; VOT = voice onset - burst; vowel = vowel end - voice onset.
 
-Voicing comes from Praat's pitch tracker (Parselmouth), energy from a 5 ms-hop STFT. A token is rejected,
-with a reason, if any landmark is missing or implausible: closure outside 20-400 ms, an intensity drop of
-less than 10 dB from the preceding vowel into the closure, or a burst rise under 6 dB.
+Rejected only when the stretch cannot be measured: no voiceless stretch near the stop, a stretch that reaches
+the edge of the window (its start or end is not visible), or a voiceless interval outside 20-400 ms. Burst rise
+and the intensity drop from the vowel into the closure are kept as quality covariates (clear_burst: rise >= 6 dB
+and drop >= 10 dB) instead of filters, because hard thresholds rejected most tokens of these phone recordings
+and did so unequally across regions.
 """
 from __future__ import annotations
 
@@ -23,6 +29,7 @@ HOP = 0.005
 
 @dataclass
 class Measure:
+    voi_ms: float = np.nan
     closure_ms: float = np.nan
     vot_ms: float = np.nan
     vowel_ms: float = np.nan
@@ -31,6 +38,7 @@ class Measure:
     voice_onset: float = np.nan
     intensity_drop_db: float = np.nan
     burst_rise_db: float = np.nan
+    clear_burst: bool = False
     reject: str = ""
 
 
@@ -60,6 +68,12 @@ def _frames(x: np.ndarray, sr: int, t0: float, t1: float):
     return times, voiced, np.array(total), np.array(hf), hop
 
 
+def _runs(mask: np.ndarray) -> list[tuple[int, int]]:
+    """(start, end) of runs of True, end exclusive."""
+    d = np.diff(np.concatenate([[0], mask.astype(int), [0]]))
+    return list(zip(np.flatnonzero(d == 1), np.flatnonzero(d == -1), strict=True))
+
+
 def measure(x: np.ndarray, sr: int, stop_centre: float, t0: float, t1: float) -> Measure:
     m = Measure()
     times, voiced, total, hf, _ = _frames(x, sr, t0, t1)
@@ -67,39 +81,33 @@ def measure(x: np.ndarray, sr: int, stop_centre: float, t0: float, t1: float) ->
         m.reject = "window too short"
         return m
     c = int(np.argmin(np.abs(times - stop_centre)))
-    # closure start: walk back from the centre to the last voiced frame
-    before = np.flatnonzero(voiced[:c])
-    if len(before) == 0:
-        m.reject = "no voiced frame before the stop"
+    runs = _runs(~voiced)
+    near = int(0.06 / HOP)
+    dist = [0 if s <= c < e else min(abs(c - s), abs(c - (e - 1))) for s, e in runs]
+    if not runs or min(dist) > near:
+        m.reject = "no voiceless stretch near the stop"
         return m
-    cs = before[-1] + 1
-    # burst: largest rise in high-band energy after the closure start (look up to 400 ms ahead)
-    lim = min(len(times) - 1, cs + int(0.4 / HOP))
-    if lim - cs < 4:
-        m.reject = "no room for a burst"
+    cs, vo = runs[int(np.argmin(dist))]
+    if cs == 0 or vo == len(times):
+        m.reject = "voiceless stretch reaches the window edge"
         return m
-    rises = np.diff(hf[cs: lim + 1])
-    b = cs + 1 + int(np.argmax(rises))
-    m.burst_rise_db = float(rises.max())
-    after = np.flatnonzero(voiced[b:])
-    if len(after) == 0:
-        m.reject = "no voicing after the burst"
-        return m
-    vo = b + after[0]
+    m.voi_ms = 1000 * (vo - cs) * HOP
     vend = vo
     while vend + 1 < len(voiced) and voiced[vend + 1]:
         vend += 1
-    m.closure_start, m.burst, m.voice_onset = float(times[cs]), float(times[b]), float(times[vo])
-    m.closure_ms = 1000 * (m.burst - m.closure_start)
-    m.vot_ms = 1000 * (m.voice_onset - m.burst)
+    m.closure_start, m.voice_onset = float(times[cs]), float(times[vo])
     m.vowel_ms = 1000 * (times[vend] + HOP - m.voice_onset)
-    vowel_level = np.median(total[max(0, cs - 8): cs]) if cs > 0 else np.nan
-    closure_level = np.median(total[cs: b]) if b > cs else np.nan
-    m.intensity_drop_db = float(vowel_level - closure_level)
-    if not 20 <= m.closure_ms <= 400:
-        m.reject = "closure outside 20-400 ms"
-    elif not m.intensity_drop_db >= 10:
-        m.reject = "intensity drop under 10 dB"
-    elif not m.burst_rise_db >= 6:
-        m.reject = "burst rise under 6 dB"
+    if not 20 <= m.voi_ms <= 400:
+        m.reject = "voiceless interval outside 20-400 ms"
+        return m
+    if vo - cs >= 3:                                   # burst at least 2 frames (10 ms) after voicing offset
+        rises = np.diff(hf[cs: vo + 1])[1:]
+        b = cs + 2 + int(np.argmax(rises))
+        m.burst_rise_db = float(rises.max())
+        m.burst = float(times[b])
+        m.closure_ms = 1000 * (b - cs) * HOP
+        m.vot_ms = 1000 * (vo - b) * HOP
+        vowel_level = np.median(total[max(0, cs - 8): cs])
+        m.intensity_drop_db = float(vowel_level - np.median(total[cs: b]))
+        m.clear_burst = bool(m.burst_rise_db >= 6 and m.intensity_drop_db >= 10)
     return m

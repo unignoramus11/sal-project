@@ -9,8 +9,9 @@ Outputs: results/gemination/
   acoustic_summary.csv     per region (and per stop, per district): accepted tokens, speakers, closure, VOT,
                            following vowel, closure/vowel ratio (medians and speaker-bootstrap CIs of means)
   rejection.csv            share of tokens rejected per region and reason (a measurement-bias check)
-  mixed_model.txt          log(closure) ~ Haryana + log(vowel) + C(word), random intercept per speaker (the word
-                           fixes the stop, so aspiration is absorbed by C(word))
+  mixed_model.txt          log(voiceless interval) ~ Haryana + log(vowel) + C(word), random intercept per speaker
+                           (the word fixes the stop, so aspiration is absorbed by C(word)); the same for closure on
+                           tokens with a burst and with clear bursts; Lee bounds for unequal rejection by region
   geminate_vs_single.csv   validity check: closures of lexical geminates vs single stops by region (when
                            data/vaani_districts/closures_geminate.parquet exists; tools/geminate_pass.sh)
   model_doubling.csv       per recognizer: share of tokens doubled in the CTC output by region; closure for
@@ -37,7 +38,7 @@ df["region"] = np.where(df["state"] == "Haryana", "Haryana", "Delhi")
 df["aspirated"] = df["stop"].isin(list("खछठथ"))
 df["context"] = token_contexts(df["word"], df["stop"])     # sal.gemination: is the stop between vowels in speech?
 ok_all = df[df["reject"] == ""].copy()
-ok_all["ratio"] = ok_all["closure_ms"] / ok_all["vowel_ms"]
+ok_all["ratio"] = ok_all["voi_ms"] / ok_all["vowel_ms"]
 ok = ok_all[ok_all["context"].isin(["vowel", "initial_schwa"])].copy()   # main analysis
 print(df["context"].value_counts().to_string())
 
@@ -50,8 +51,9 @@ rej.to_csv(out / "rejection.csv")
 # --- acoustic summary
 def summ(g):
     r = {"tokens": len(g), "speakers": g["speaker"].nunique()}
-    for col in ("closure_ms", "vot_ms", "vowel_ms", "ratio"):
-        ci = cluster_bootstrap(g[col].to_numpy(), g["speaker"].to_numpy(), n=1000)
+    for col in ("voi_ms", "closure_ms", "vot_ms", "vowel_ms", "ratio"):
+        v = g[col].notna().to_numpy()
+        ci = cluster_bootstrap(g[col].to_numpy()[v], g["speaker"].to_numpy()[v], n=1000)
         r.update({f"{col}_median": g[col].median(), f"{col}_mean": ci["estimate"], f"{col}_lo": ci["lo"],
                   f"{col}_hi": ci["hi"]})
     return pd.Series(r)
@@ -69,9 +71,10 @@ for level, keys in [("region", ["region"]), ("region_aspiration", ["region", "as
 summary = pd.concat(parts, ignore_index=True)
 summary.to_csv(out / "acoustic_summary.csv")
 
-# --- mixed model with speaker random intercepts
+# --- mixed models with speaker random intercepts
 for d_ in (ok, ok_all):
     d_["haryana"] = (d_["region"] == "Haryana").astype(int)
+    d_["log_voi"] = np.log(d_["voi_ms"])
     d_["log_closure"] = np.log(d_["closure_ms"])
     d_["log_vowel"] = np.log(d_["vowel_ms"].clip(lower=20))
 
@@ -82,18 +85,37 @@ def frequent(d_):
 
 
 lines = []
-for name, formula, data in [
-        ("closure", "log_closure ~ haryana + log_vowel + C(word)", ok),
-        ("closure_no_rate", "log_closure ~ haryana + C(word)", ok),
-        ("closure_all_contexts (sensitivity: includes stops after a deleted schwa)",
-         "log_closure ~ haryana + log_vowel + C(word)", ok_all)]:
+burst = ok[ok["closure_ms"].notna() & (ok["closure_ms"] > 0)]
+for name, measure_, formula, data in [
+        ("voiceless interval (primary)", "voiceless interval", "log_voi ~ haryana + log_vowel + C(word)", ok),
+        ("voiceless interval, no rate control", "voiceless interval", "log_voi ~ haryana + C(word)", ok),
+        ("voiceless interval, all contexts (sensitivity: includes stops after a deleted schwa)", "voiceless interval",
+         "log_voi ~ haryana + log_vowel + C(word)", ok_all),
+        ("closure, tokens with a burst", "closure", "log_closure ~ haryana + log_vowel + C(word)", burst),
+        ("closure, clear bursts only (rise >= 6 dB, drop >= 10 dB)", "closure",
+         "log_closure ~ haryana + log_vowel + C(word)", burst[burst["clear_burst"]])]:
     ok_m = frequent(data)
     fit = smf.mixedlm(formula, ok_m, groups=ok_m["speaker"]).fit(method="lbfgs")
     b, (lo, hi), p = fit.params["haryana"], fit.conf_int().loc["haryana"], fit.pvalues["haryana"]
-    lines.append(f"{name}: Haryana effect on closure = x{np.exp(b):.3f} (95% CI x{np.exp(lo):.3f} to x{np.exp(hi):.3f}),"
+    lines.append(f"{name}: Haryana effect on {measure_} = x{np.exp(b):.3f} (95% CI x{np.exp(lo):.3f} to x{np.exp(hi):.3f}),"
                  f" p = {p:.3g}; tokens {len(ok_m)}, speakers {ok_m['speaker'].nunique()}, words {ok_m['word'].nunique()}")
     lines.append(fit.summary().tables[1].loc[["Intercept", "haryana", "log_vowel"] if "log_vowel" in formula
                                             else ["Intercept", "haryana"]].to_string())
+
+# --- unequal rejection: Lee bounds on the raw Haryana - Delhi difference in mean log voiceless interval
+main = df[df["context"].isin(["vowel", "initial_schwa"])]
+acc = main.groupby("region")["reject"].apply(lambda s: (s == "").mean())
+lv = {r: np.sort(np.log(ok.loc[ok["region"] == r, "voi_ms"].to_numpy())) for r in ("Haryana", "Delhi")}
+hi_r, lo_r = (("Haryana", "Delhi") if acc["Haryana"] > acc["Delhi"] else ("Delhi", "Haryana"))
+q = (acc[hi_r] - acc[lo_r]) / acc[hi_r]            # share of the better-measured region's tokens to trim
+k = int(round(q * len(lv[hi_r])))
+trim_low, trim_high = lv[hi_r][k:], lv[hi_r][: len(lv[hi_r]) - k]
+sign = 1 if hi_r == "Haryana" else -1
+bounds = sorted([sign * (trim_low.mean() - lv[lo_r].mean()), sign * (trim_high.mean() - lv[lo_r].mean())])
+raw = lv["Haryana"].mean() - lv["Delhi"].mean()
+lines.append(f"acceptance (main contexts): Haryana {acc['Haryana']:.3f}, Delhi {acc['Delhi']:.3f}; raw Haryana - Delhi "
+             f"mean log voiceless interval {raw:+.3f} (x{np.exp(raw):.3f}); Lee bounds x{np.exp(bounds[0]):.3f} to "
+             f"x{np.exp(bounds[1]):.3f} (trimming {100 * q:.1f}% of {hi_r} tokens)")
 (out / "mixed_model.txt").write_text("\n".join(lines) + "\n")
 print("\n".join(lines))
 
@@ -105,18 +127,18 @@ if gpath.exists():
     gm = gm[gm["reject"] == ""].copy()
     gm["region"] = np.where(gm["state"] == "Haryana", "Haryana", "Delhi")
     both = pd.concat([ok.assign(lexical_geminate=0), gm.assign(lexical_geminate=1)], ignore_index=True)
-    both["log_closure"] = np.log(both["closure_ms"])
+    both["log_voi"] = np.log(both["voi_ms"])
     both["haryana"] = (both["region"] == "Haryana").astype(int)
     vrows = []
     for (region, gem), g in both.groupby(["region", "lexical_geminate"]):
-        ci = cluster_bootstrap(g["closure_ms"].to_numpy(), g["speaker"].to_numpy(), n=1000)
+        ci = cluster_bootstrap(g["voi_ms"].to_numpy(), g["speaker"].to_numpy(), n=1000)
         vrows.append({"region": region, "lexical_geminate": gem, "tokens": len(g), "speakers": g["speaker"].nunique(),
-                      "closure_median": g["closure_ms"].median(), "closure_mean": ci["estimate"],
+                      "voi_median": g["voi_ms"].median(), "voi_mean": ci["estimate"],
                       "lo": ci["lo"], "hi": ci["hi"]})
     pd.DataFrame(vrows).to_csv(out / "geminate_vs_single.csv", index=False)
-    fit = smf.mixedlm("log_closure ~ lexical_geminate * haryana", both, groups=both["speaker"]).fit(method="lbfgs")
+    fit = smf.mixedlm("log_voi ~ lexical_geminate * haryana", both, groups=both["speaker"]).fit(method="lbfgs")
     b, (lo, hi) = fit.params["lexical_geminate"], fit.conf_int().loc["lexical_geminate"]
-    msg = (f"validity: lexical geminate closure = x{np.exp(b):.2f} of single (95% CI x{np.exp(lo):.2f} to "
+    msg = (f"validity: lexical geminate voiceless interval = x{np.exp(b):.2f} of single (95% CI x{np.exp(lo):.2f} to "
            f"x{np.exp(hi):.2f}) in New Delhi; interaction with Haryana {fit.params['lexical_geminate:haryana']:+.3f} "
            f"(p = {fit.pvalues['lexical_geminate:haryana']:.3g}); tokens {len(both)}")
     with open(out / "mixed_model.txt", "a") as f:
@@ -165,16 +187,16 @@ for model in ("w2v2", "zipa"):
     for region, g in s.groupby("region"):
         ci = cluster_bootstrap(g["doubled"].astype(float).to_numpy(), g["speaker"].to_numpy(), n=1000)
         d, n_ = g[g.doubled], g[~g.doubled]
-        # AUC: probability that a doubled token has a longer closure than a single one
+        # AUC: probability that a doubled token has a longer voiceless interval than a single one
         if len(d) and len(n_):
-            ranks = pd.concat([d["closure_ms"], n_["closure_ms"]]).rank()
+            ranks = pd.concat([d["voi_ms"], n_["voi_ms"]]).rank()
             auc = (ranks.iloc[: len(d)].sum() - len(d) * (len(d) + 1) / 2) / (len(d) * len(n_))
         else:
             auc = np.nan
         rows.append({"model": model, "region": region, "tokens": len(g), "doubled_share": ci["estimate"],
-                     "lo": ci["lo"], "hi": ci["hi"], "closure_doubled_median": d["closure_ms"].median(),
-                     "closure_single_median": n_["closure_ms"].median(), "auc_closure_predicts_doubling": auc})
-    s[["token_id", "audio_path", "word", "stop", "region", "closure_ms", "window_phones", "doubled"]].to_parquet(
+                     "lo": ci["lo"], "hi": ci["hi"], "voi_doubled_median": d["voi_ms"].median(),
+                     "voi_single_median": n_["voi_ms"].median(), "auc_voi_predicts_doubling": auc})
+    s[["token_id", "audio_path", "word", "stop", "region", "voi_ms", "closure_ms", "window_phones", "doubled"]].to_parquet(
         out / f"model_doubling_tokens_{model}.parquet", index=False)
 if rows:
     pd.DataFrame(rows).to_csv(out / "model_doubling.csv", index=False)
