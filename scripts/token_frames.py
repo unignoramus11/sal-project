@@ -26,34 +26,10 @@ import soundfile as sf
 ROOT = Path(__file__).resolve().parents[1]
 
 
-class W2V2HF:
-    """The same W2V2 phone recognizer through Hugging Face transformers alone (waveform normalised by the
-    feature extractor, all 25 hidden states), equivalent to PRiSM's wrapper for one unpadded utterance; runs
-    without the PRiSM stack, e.g. on Apple silicon (--device mps)."""
-    rate = 50
-
-    def __init__(self, device):
-        import torch
-        from transformers import Wav2Vec2FeatureExtractor, Wav2Vec2ForCTC
-        self.torch = torch
-        self.fe = Wav2Vec2FeatureExtractor.from_pretrained("facebook/wav2vec2-lv-60-espeak-cv-ft")
-        self.m = Wav2Vec2ForCTC.from_pretrained("facebook/wav2vec2-lv-60-espeak-cv-ft").wav2vec2.to(device).eval()
-        self.device = device
-        self.names = ["cnn_proj"] + [f"layer{i}" for i in range(1, 25)]
-
-    def __call__(self, wav):
-        x = self.fe(wav, sampling_rate=16000, return_tensors="pt").input_values.to(self.device)
-        with self.torch.no_grad():
-            out = self.m(x, output_hidden_states=True)
-        return [h[0] for h in out.hidden_states]
-
-
 def models(backend):
-    if backend == "hf":
-        return {"w2v2": W2V2HF}
     sys.path.insert(0, str(ROOT / "scripts"))
-    from extract_features import W2V2, Whisper, Zipa
-    return {"w2v2": W2V2, "whisper": Whisper, "zipa": Zipa}
+    from extract_features import W2V2, W2V2HF, Whisper, Zipa
+    return {"w2v2": W2V2HF if backend == "hf" else W2V2, "whisper": Whisper, "zipa": Zipa}
 
 
 def main():

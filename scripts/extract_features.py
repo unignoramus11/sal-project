@@ -54,6 +54,25 @@ class W2V2:
         return [h[0] for h in out.hidden_states]
 
 
+class W2V2HF:
+    """The same W2V2 phone recognizer through Hugging Face transformers alone (feature-extractor normalisation, all
+    25 hidden states): for one unpadded utterance this is what PRiSM's wrapper computes (scripts/transcribe_hf.py:
+    frame-identical CTC output on 200 Vaani-Hi utterances). Runs without the PRiSM stack, e.g. --device mps."""
+    rate = 50
+
+    def __init__(self, device):
+        from transformers import Wav2Vec2FeatureExtractor, Wav2Vec2ForCTC
+        self.fe = Wav2Vec2FeatureExtractor.from_pretrained("facebook/wav2vec2-lv-60-espeak-cv-ft")
+        self.m = Wav2Vec2ForCTC.from_pretrained("facebook/wav2vec2-lv-60-espeak-cv-ft").wav2vec2.to(device).eval()
+        self.device = device
+        self.names = ["cnn_proj"] + [f"layer{i}" for i in range(1, 25)]
+
+    @torch.no_grad()
+    def __call__(self, wav):
+        x = self.fe(wav, sampling_rate=16000, return_tensors="pt").input_values.to(self.device)
+        return [h[0] for h in self.m(x, output_hidden_states=True).hidden_states]
+
+
 class Whisper:
     rate = 50
 
@@ -108,9 +127,12 @@ def main():
     ap.add_argument("--frame-layers", type=int, nargs="*", default=[-1])
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--limit", type=int, default=None)
+    ap.add_argument("--backend", choices=["prism", "hf"], default="prism",
+                    help="hf: W2V2 through transformers alone (no PRiSM stack); Whisper never needs PRiSM")
     args = ap.parse_args()
 
-    model = {"w2v2": W2V2, "whisper": Whisper, "zipa": Zipa}[args.model](args.device)
+    w2v2 = W2V2HF if args.backend == "hf" else W2V2
+    model = {"w2v2": w2v2, "whisper": Whisper, "zipa": Zipa}[args.model](args.device)
     ids = pd.read_parquet(args.data, columns=["metadata_idx", "audio_seconds"])
     n_utt = len(ids) if args.limit is None else min(args.limit, len(ids))
     args.out_dir.mkdir(parents=True, exist_ok=True)
