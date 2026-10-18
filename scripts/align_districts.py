@@ -21,6 +21,7 @@ import time
 
 import numpy as np
 import pandas as pd
+import pyarrow.parquet as pq
 import soundfile as sf
 import torch
 import uroman
@@ -67,11 +68,22 @@ def main():
     def rom(w):
         return "".join(ch for ch in ur.romanize_string(w).lower() if ch in alphabet)
 
-    df = pd.read_parquet(DATA / "vaani_districts" / "candidates_audio.parquet")
-    if args.limit:
-        df = df.head(args.limit)
+    # stream in small batches: the file holds ~3 GB of audio and loading it whole swaps a 12 GB machine to death
+    pf = pq.ParquetFile(DATA / "vaani_districts" / "candidates_audio.parquet")
+    cols = ["transcript", "audio", "audio_path", "district", "state", "language"]
+    n_total = pf.metadata.num_rows if not args.limit else min(args.limit, pf.metadata.num_rows)
+
+    def records():
+        seen = 0
+        for batch in pf.iter_batches(batch_size=128, columns=cols):
+            for r in batch.to_pandas().itertuples(index=False):
+                if seen == n_total:
+                    return
+                seen += 1
+                yield r
+
     rows, fails, t0 = [], 0, time.time()
-    for k, r in enumerate(df.itertuples(index=False)):
+    for k, r in enumerate(records()):
         words = spoken_words(r.transcript)
         romans = [rom(w) for w in words]
         keep = [i for i, x in enumerate(romans) if x]
@@ -108,8 +120,8 @@ def main():
                     "next_vowel_end": chars[after[0]].end * sec_per_frame if after else np.nan,
                     "score": float(np.mean([c.score for c in chars])),
                 })
-        if (k + 1) % 1000 == 0:
-            print(f"{k + 1}/{len(df)} utterances, {len(rows)} tokens, {fails} failures, "
+        if (k + 1) % 250 == 0:
+            print(f"{k + 1}/{n_total} utterances, {len(rows)} tokens, {fails} failures, "
                   f"{(k + 1) / (time.time() - t0):.1f} utt/s", flush=True)
     out = pd.DataFrame(rows)
     out.to_parquet(DATA / "vaani_districts" / "alignments.parquet", index=False)
