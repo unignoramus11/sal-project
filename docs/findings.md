@@ -91,9 +91,10 @@ TP-GRU and representation-probe results are still running; this file is updated 
 
 - TP-GRU (preliminary, 1-2 seeds per condition; PRiSM's probe and settings). Phone BiGRU minus shuffled phone
   BiGRU (paired, speaker bootstrap): random split W2V2 +3.9 R@1 [1.9, 5.9] (-53 km), ZIPA +3.4 [1.5, 5.4] (-81 km);
-  new speakers W2V2 -3.5 [-6.5, -1.0] (km n.s.), ZIPA +3.7 [-0.3, 7.9] (1 seed). Order helps the BiGRU under the
-  random split with both recognizers; on new speakers the recognizers disagree, so whether the order gain is
-  speaker memorisation (see the nearest-neighbour result in RQ0) is open until the remaining seeds are in.
+  new speakers W2V2 -3.5 [-6.5, -1.0] (km -23 [-53, 4], n.s.), ZIPA +0.4 [-1.9, 2.9] (km -43 [-83, -9]; 2 seeds
+  each). Order helps the BiGRU under the random split with both recognizers; on new speakers it brings no
+  Recall@1 gain with either (W2V2 loses), and only ZIPA's km improves. Whether the random-split gain is speaker
+  memorisation (see the nearest-neighbour result in RQ0) is open until seeds 44-46 (Ada) are in.
   The BiGRU is below the bigram bag on both splits (W2V2 phone GRU vs phone bigram -5.7 [-7.4, -4.0] random,
   -6.1 [-9.9, -3.1] speaker-disjoint) and far below PRiSM's 45.7 on the official data; see
   docs/prism_reproduction.md (reproduction status).
