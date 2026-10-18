@@ -19,7 +19,13 @@ Two modes.
                     haryana_logit  dialect test on single stops only: out-of-fold logit P(geminate) ~ Haryana +
                                    word + speaker random intercept; > 0 means Haryana single stops look more
                                    geminate-like to the probe than New Delhi ones (95% CI, p)
-Output: results/gemination/geminate_layers_<model>.csv and results/figures/fig_geminate_layers_<model>.{pdf,png}
+                    haryana_given_length  the same, holding the token's measured voiceless interval constant
+                                   (does the encoder carry more than the measured lengthening?)
+Controls: --groups word (word-disjoint folds: the probe cannot score by recognising words) and --contrast
+aspiration (aspirated vs plain single stops: a Haryana shift along an unrelated direction would mean a general
+regional offset rather than lengthening).
+Output: results/gemination/geminate_layers_<model>[_<contrast>_<groups>].csv and
+        results/figures/fig_geminate_layers_<model>.{pdf,png}
 Run:    uv run python scripts/geminate_layers.py --export-tokens
         uv run python scripts/geminate_layers.py --model w2v2
 """
@@ -72,7 +78,7 @@ def speaker_ci(y, p, spk, n=300, seed=0):
     return np.nanpercentile(vals, [2.5, 97.5])
 
 
-def probe_layers(model: str):
+def probe_layers(model: str, contrast: str = "geminate", groups: str = "speaker"):
     import statsmodels.formula.api as smf
     from sklearn.linear_model import LogisticRegression
     from sklearn.model_selection import GroupKFold
@@ -83,9 +89,16 @@ def probe_layers(model: str):
     X_all = np.load(d / "tokens.npy", mmap_mode="r")
     tok = pd.read_parquet(d / "tokens.parquet")
     meta = json.loads((d / "meta.json").read_text())
-    y = tok["geminate"].to_numpy().astype(int)
+    tok["log_span"] = np.log(1000 * (tok["span_end"] - tok["span_start"]).clip(lower=0.005))
+    if contrast == "aspiration":                 # control direction: aspirated vs plain, single stops only
+        keep = ~tok["geminate"].to_numpy()
+        X_all, tok = X_all[np.flatnonzero(keep)], tok[keep].reset_index(drop=True)
+        tok["target"] = tok["stop"].isin(list("खछठथ"))
+    else:
+        tok["target"] = tok["geminate"]
+    y = tok["target"].to_numpy().astype(int)
     spk = tok["speaker"].to_numpy()
-    folds = list(GroupKFold(n_splits=5).split(np.zeros(len(y)), y, spk))
+    folds = list(GroupKFold(n_splits=5).split(np.zeros(len(y)), y, tok[groups].to_numpy()))
     rows = []
     for layer, (name, w) in enumerate(zip(meta["layers"], meta["widths"], strict=True)):
         X = np.asarray(X_all[:, layer, :w], dtype=np.float32)
@@ -100,23 +113,37 @@ def probe_layers(model: str):
             yy = y[g.index]
             if min(yy.sum(), len(yy) - yy.sum()) >= 20:
                 within.append(auc(yy, p[g.index]))
-        single = tok[~tok["geminate"]].assign(logit=np.log(p[~tok["geminate"].to_numpy()].clip(1e-4, 1 - 1e-4))
-                                              - np.log1p(-p[~tok["geminate"].to_numpy()].clip(1e-4, 1 - 1e-4)),
-                                              haryana=lambda t: (t["region"] == "Haryana").astype(int))
+        sel = ~tok["geminate"].to_numpy()
+        pc = p[sel].clip(1e-4, 1 - 1e-4)
+        single = tok[sel].assign(logit=np.log(pc) - np.log1p(-pc), haryana=lambda t: (t["region"] == "Haryana").astype(int))
         common = single["word"].value_counts()
         single = single[single["word"].isin(common[common >= 20].index)]
-        fit = smf.mixedlm("logit ~ haryana + C(word)", single, groups=single["speaker"]).fit(method="lbfgs")
+        fit = fit_mixed(smf, "logit ~ haryana + C(word)", single)
         ci = fit.conf_int().loc["haryana"]
+        fit2 = fit_mixed(smf, "logit ~ haryana + log_span + C(word)", single)   # holding measured length constant
+        ci2 = fit2.conf_int().loc["haryana"]
         rows.append({"layer": layer, "name": name, "auc": auc(y, p), "auc_lo": lo, "auc_hi": hi,
                      "auc_within": float(np.nanmean(within)) if within else np.nan, "places": len(within),
                      "haryana_logit": fit.params["haryana"], "haryana_lo": ci[0], "haryana_hi": ci[1],
-                     "haryana_p": fit.pvalues["haryana"], "tokens": len(y), "geminates": int(y.sum())})
+                     "haryana_p": fit.pvalues["haryana"], "haryana_given_length": fit2.params["haryana"],
+                     "haryana_given_length_lo": ci2[0], "haryana_given_length_hi": ci2[1],
+                     "converged": bool(fit.converged and fit2.converged), "tokens": len(y), "positives": int(y.sum())})
         print(f"{model} layer {layer:2d} {name:9s} AUC {rows[-1]['auc']:.3f} [{lo:.3f}, {hi:.3f}] within-place "
               f"{rows[-1]['auc_within']:.3f}  Haryana logit {fit.params['haryana']:+.3f} [{ci[0]:+.3f}, {ci[1]:+.3f}]",
               flush=True)
     out = pd.DataFrame(rows)
-    out.to_csv(RESULTS / "gemination" / f"geminate_layers_{model}.csv", index=False)
-    figure(out, model)
+    tag = model if (contrast, groups) == ("geminate", "speaker") else f"{model}_{contrast}_{groups}"
+    out.to_csv(RESULTS / "gemination" / f"geminate_layers_{tag}.csv", index=False)
+    if tag == model:
+        figure(out, model)
+
+
+def fit_mixed(smf, formula, data):
+    """Mixed model with a speaker random intercept; falls back to Powell if L-BFGS does not converge."""
+    fit = smf.mixedlm(formula, data, groups=data["speaker"]).fit(method="lbfgs")
+    if not fit.converged:
+        fit = smf.mixedlm(formula, data, groups=data["speaker"]).fit(method="powell", maxiter=3000)
+    return fit
 
 
 def figure(t, model):
@@ -152,11 +179,15 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--export-tokens", action="store_true")
     ap.add_argument("--model", choices=["w2v2", "whisper", "zipa"])
+    ap.add_argument("--contrast", choices=["geminate", "aspiration"], default="geminate",
+                    help="aspiration: control direction (aspirated vs plain single stops)")
+    ap.add_argument("--groups", choices=["speaker", "word"], default="speaker",
+                    help="cross-validation groups; word: test words are never seen in training")
     args = ap.parse_args()
     if args.export_tokens:
         export_tokens()
     if args.model:
-        probe_layers(args.model)
+        probe_layers(args.model, args.contrast, args.groups)
 
 
 if __name__ == "__main__":
