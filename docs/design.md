@@ -100,3 +100,32 @@ Predictions:
   carry more location information that generalises to new speakers.
 - P4. The speaker-embedding probe (ECAPA) is near the majority baseline under the speaker-disjoint split
   (observed: 10.1 vs 10.0).
+
+## 8. Gemination measurement (RQ2), decisions of 18 Oct 2026
+
+- **Material.** Transcribed Vaani utterances from Rohtak, Jhajjar and Charkhi Dadri (Haryana; Bangru/Haryanvi
+  area) and New Delhi, restricted to utterances containing one of 104 frequent words with a single voiceless
+  stop between vowels in the spelling (फ excluded: often [f]). 23,963 utterances.
+- **Locating the stop without the recognizers.** MMS forced alignment (torchaudio MMS_FA) of the uroman
+  romanisation of the standard spelling. The doubling decisions of W2V2 and ZIPA never enter the window, so
+  comparing their output with the measured closure is not circular.
+- **Between vowels in speech, not only in spelling.** Hindi usually deletes the inherent vowel of a word-medial
+  consonant (सकते /sakte/, उसके /uske/), which puts the stop after a consonant; the measured "closure" can then
+  include that consonant. Main analyses keep stops after a vowel sign or an independent vowel, or after the
+  word's first consonant (whose vowel is pronounced: रखा, ra-khaa): 79% of candidate tokens. Stops after a
+  word-medial consonant (21%) enter one sensitivity model only (`sal.gemination`).
+- **Landmarks.** Praat voicing (Parselmouth) and 2-8 kHz band energy: closure = voicing offset of the preceding
+  vowel to the burst; VOT = burst to voicing onset; following vowel duration as a local rate control. Tokens
+  are rejected with a reason (no landmark, closure outside 20-400 ms, intensity drop < 10 dB, burst rise < 6 dB);
+  rejection rates are reported per region and context, because unequal rejection could bias the comparison.
+- **Model.** log closure ~ Haryana + log following vowel + word (fixed) + speaker (random intercept), on words
+  with at least 20 tokens; the word fixes the stop, so stop identity and aspiration are absorbed by the word
+  term. Reported as a multiplicative effect with a 95% CI; a version without the rate control as a check.
+- **Validity.** 50 accepted main-analysis tokens, balanced by region and stop, one per speaker, are annotated
+  blind by both authors in Praat (`scripts/audit_tokens.py`); `scripts/audit_compare.py` reports landmark
+  errors, duration agreement, inter-annotator agreement, and whether the automatic error differs by region.
+- **Where gemination is encoded (planned).** Lexical voiceless geminates in the same utterances (अच्छा, बच्चे,
+  मिट्टी, पत्थर; ~2,600 tokens) are the positive class, single stops the negative class. A linear probe per layer
+  on the frames of the stop span, speaker-grouped cross-validation, evaluated within place of articulation
+  (geminates and singles differ in stop mix); then whether Haryana single stops look more geminate-like to the
+  probe than New Delhi ones (mixed model, speaker intercept).
