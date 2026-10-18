@@ -388,26 +388,27 @@ def build():
     ], LM, Inches(1.75), Inches(12.1), Inches(4.8))
 
     # 9b. RQ1 sequence model
-    if ("tp_w2v2_rebuild_phone_gru_speaker_split", "tp_w2v2_rebuild_phone_shuffle_speaker_split") in cmp_.index:
-        g_r = cmp_.loc[("tp_w2v2_rebuild_phone_gru_prism", "tp_w2v2_rebuild_phone_shuffle_prism")]
-        g_s = cmp_.loc[("tp_w2v2_rebuild_phone_gru_speaker_split", "tp_w2v2_rebuild_phone_shuffle_speaker_split")]
-        g_b = cmp_.loc[("tp_w2v2_rebuild_phone_gru_speaker_split", "tp_w2v2_rebuild_phone_bigram_speaker_split")]
-        nseed = int(min(cfg.loc[c, "seeds"] for c in cfg.index if "_gru_" in c or "_shuffle_" in c))
+    pairs = {(m, P): (f"tp_{m}_rebuild_phone_gru_{P}", f"tp_{m}_rebuild_phone_shuffle_{P}")
+             for m in ("w2v2", "zipa") for P in ("prism", "speaker_split")}
+    if all(v in cmp_.index for v in pairs.values()):
+        g = {k: cmp_.loc[v] for k, v in pairs.items()}
+        nseed = int(min(cfg.loc[c, "seeds"] for c in cfg.index if ("_gru_" in c or "_shuffle_" in c) and "control" not in c))
         s = d._slide()
-        d.header(s, "Results  ·  RQ1 sequence model", "Phone order helps only when test speakers were seen in training")
-        d.stats(s, [(f"{g_r.recall1_diff:+.1f}", f"BiGRU minus shuffled BiGRU, random split\n(95% CI {g_r.recall1_lo:.1f} to {g_r.recall1_hi:.1f})"),
-                    (f"{g_s.recall1_diff:+.1f}", f"the same on new speakers\n(95% CI {g_s.recall1_lo:.1f} to {g_s.recall1_hi:.1f})"),
-                    (f"{g_b.recall1_diff:+.1f}", f"BiGRU minus bigram bag, new speakers\n(95% CI {g_b.recall1_lo:.1f} to {g_b.recall1_hi:.1f})")],
-                Inches(1.9), best=0)
+        d.header(s, "Results  ·  RQ1 sequence model", "Order helps the BiGRU on PRiSM's split; on new speakers it is unclear")
+        lab = {"prism": "random split", "speaker_split": "new speakers"}
+        d.stats(s, [(f"{g[k].recall1_diff:+.1f}", f"{k[0].upper()}, {lab[k[1]]}\n(95% CI {g[k].recall1_lo:.1f} to {g[k].recall1_hi:.1f})")
+                    for k in [("w2v2", "prism"), ("zipa", "prism"), ("w2v2", "speaker_split"), ("zipa", "speaker_split")]],
+                Inches(1.9))
         d.bullets(s, [
-            "PRiSM's transcript probe (2-layer BiGRU over W2V2 phones) against the same probe on phones shuffled within "
-            "each utterance, which keeps the inventory and removes order. Paired on the same test utterances.",
-            f"Order adds {g_r.recall1_diff:.1f} points and saves {-g_r.km_diff:.0f} km on the random split. On new "
-            f"speakers it costs {-g_s.recall1_diff:.1f} points, and the km difference is not significant "
-            f"({g_s.km_diff:.0f} km, 95% CI {g_s.km_lo:.0f} to {g_s.km_hi:.0f}). The sequence model memorises "
-            "speaker-specific phone sequences, which only pays off when the speaker is in training.",
-            "On our data the BiGRU is below a bag of bigrams on both splits, and far below PRiSM's 45.7 on the official "
-            f"data, which we cannot access yet. Preliminary: {nseed}-3 seeds per condition so far; 5 by the final.",
+            "Recall@1 of PRiSM's transcript probe (2-layer BiGRU over phones) minus the same probe on phones shuffled "
+            "within each utterance, which keeps the inventory and removes order. Paired on the same test utterances.",
+            f"On the random split order helps with both recognizers ({g[('w2v2', 'prism')].recall1_diff:+.1f} and "
+            f"{g[('zipa', 'prism')].recall1_diff:+.1f} points, {-g[('w2v2', 'prism')].km_diff:.0f} and "
+            f"{-g[('zipa', 'prism')].km_diff:.0f} km). On new speakers the two disagree "
+            f"({g[('w2v2', 'speaker_split')].recall1_diff:+.1f} for W2V2, {g[('zipa', 'speaker_split')].recall1_diff:+.1f} for ZIPA), "
+            "so part of the gain may come from memorising speakers' phone sequences, which the remaining seeds must settle.",
+            "The BiGRU stays below a bag of bigrams on both splits, and far below PRiSM's 45.7 on the official data, "
+            f"which we cannot access yet. Preliminary: {nseed}-2 seeds per condition so far; 5 by the final.",
         ], LM, Inches(3.55), Inches(12.1), Inches(3))
 
     # 10. RQ2 DPR
@@ -479,7 +480,7 @@ def build():
         "On new speakers, phone bigrams keep a real but small advantage (+8 to +11 points over majority), and "
         "most of it comes from what speakers describe rather than how they pronounce.",
         "Local order (bigrams) and richer phone strings help on new speakers, by Recall@1, km and MDL alike; the "
-        "BiGRU's order gain over shuffled phones appears only when speakers are shared (preliminary).",
+        "BiGRU gains from order on PRiSM's split, while on new speakers the recognizers disagree (preliminary).",
         "Doubling in recognizer output is recognizer-specific, but the audio shows it: Haryana speakers hold "
         "voiceless stops 14% longer (closure 26%) than New Delhi speakers.",
     ], LM, Inches(1.8), Inches(12.1), Inches(4.5), size=14, color=LIGHT)

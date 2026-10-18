@@ -89,13 +89,13 @@ TP-GRU and representation-probe results are still running; this file is updated 
 
 ## RQ1: inventory, local order, units
 
-- TP-GRU (preliminary, 1-3 seeds per condition; PRiSM's probe and settings). Random split: W2V2 char GRU
-  20.7 ± 1.2 R@1, phone GRU 21.4 ± 1.3, shuffled phone GRU 18.3; speaker-disjoint: 14.2, 11.8, 15.7. Paired
-  (speaker bootstrap): phone GRU vs shuffled phone GRU +3.9 R@1 [1.9, 5.9] and -53 km on the random split, but
-  -3.5 R@1 [-6.5, -1.0] on new speakers, where the km difference is not significant (-23 km [-53, 4]). Phone
-  order helps only when test speakers were seen in training, which fits a sequence model memorising speaker-specific phone sequences (see the nearest-neighbour
-  result in RQ0). The GRU is also below the bigram bag on both splits (phone GRU vs phone bigram -5.7 [-7.4,
-  -4.0] random, -6.1 [-9.9, -3.1] speaker-disjoint). All far below PRiSM's 45.7 on the official data; see
+- TP-GRU (preliminary, 1-2 seeds per condition; PRiSM's probe and settings). Phone BiGRU minus shuffled phone
+  BiGRU (paired, speaker bootstrap): random split W2V2 +3.9 R@1 [1.9, 5.9] (-53 km), ZIPA +3.4 [1.5, 5.4] (-81 km);
+  new speakers W2V2 -3.5 [-6.5, -1.0] (km n.s.), ZIPA +3.7 [-0.3, 7.9] (1 seed). Order helps the BiGRU under the
+  random split with both recognizers; on new speakers the recognizers disagree, so whether the order gain is
+  speaker memorisation (see the nearest-neighbour result in RQ0) is open until the remaining seeds are in.
+  The BiGRU is below the bigram bag on both splits (W2V2 phone GRU vs phone bigram -5.7 [-7.4, -4.0] random,
+  -6.1 [-9.9, -3.1] speaker-disjoint) and far below PRiSM's 45.7 on the official data; see
   docs/prism_reproduction.md (reproduction status).
 
 All on the speaker-disjoint split, paired on the same test utterances (speaker-cluster bootstrap):

@@ -35,7 +35,7 @@ representation probe over the recognizer's hidden states. We rebuild its dialect
 data and find that its random split places the speaker of 98\% of test utterances in training, where a lookup
 on the speaker ID alone reaches 98.0 Recall@1. On new speakers a voice embedding falls to the majority level,
 and transcript probes keep a small advantage that comes mostly from what speakers describe. Local phone order
-helps, and a sequence model's further gain from order appears only when speakers are shared. In the audio,
+helps on new speakers; a sequence model's gain from order is clear only when speakers are shared. In the audio,
 Haryana speakers hold intervocalic voiceless stops 14\% longer than New Delhi speakers, a lengthening that the
 two recognizers transcribe inconsistently. \todo{representation-probe results (Ada).}
 \end{abstract}
@@ -128,9 +128,9 @@ $+$4.8 [2.6, 6.9] Recall@1 and 33\,km (Table~\ref{tab:order}), and phone units b
 ($+$3.5 [2.1, 5.1]). MDL agrees (Table~\ref{tab:mdl}): every bag probe codes the pincode of new speakers more
 cheaply than the location prior, bigrams save 1.6 to 2.0\,kbits more than unigrams on every ordering, and ZIPA
 transcripts save 1.4\,kbits more than W2V2 ones. Under the random split the same probes save about three
-times as many bits. PRiSM's BiGRU gains from order only when speakers are shared: against the same probe on
-shuffled phones it gains $+$3.9 [1.9, 5.9] points under the random split and loses 3.5 [1.0, 6.5] on new
-speakers (W2V2, 2 seeds so far; ZIPA $+$2.7 [0.9, 4.6] under the random split). It stays below the bigram bag
+times as many bits. PRiSM's BiGRU gains from order under the random split with both recognizers ($+$3.9 [1.9, 5.9] for W2V2,
+$+$3.4 [1.5, 5.4] for ZIPA, against the same probe on shuffled phones); on new speakers the recognizers disagree
+($-$3.5 [$-$6.5, $-$1.0] and $+$3.7 [$-$0.3, 7.9]; 1--2 seeds so far). It stays below the bigram bag
 on both splits, and far below PRiSM's 45.7 on the official data, which we cannot access yet
 \todo{final seeds; official-data rerun}.
 
