@@ -9,6 +9,7 @@ wrappers); each token's vector at each layer is the mean of the frames whose cen
 Output: outputs/features/geminate_<model>/tokens.npy float16 (n_tokens, L, Dmax), tokens.parquet (row order),
         meta.json (layer names, widths).
 Run (envs/prism, GPU): python scripts/token_frames.py --model w2v2
+    (Mac, W2V2 only):  uv run python scripts/token_frames.py --model w2v2 --backend hf --device mps
 """
 import argparse
 import io
@@ -23,15 +24,43 @@ import pyarrow.parquet as pq
 import soundfile as sf
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "scripts"))
-from extract_features import W2V2, Whisper, Zipa  # noqa: E402
 
-MODELS = {"w2v2": W2V2, "whisper": Whisper, "zipa": Zipa}
+
+class W2V2HF:
+    """The same W2V2 phone recognizer through Hugging Face transformers alone (waveform normalised by the
+    feature extractor, all 25 hidden states), equivalent to PRiSM's wrapper for one unpadded utterance; runs
+    without the PRiSM stack, e.g. on Apple silicon (--device mps)."""
+    rate = 50
+
+    def __init__(self, device):
+        import torch
+        from transformers import Wav2Vec2FeatureExtractor, Wav2Vec2ForCTC
+        self.torch = torch
+        self.fe = Wav2Vec2FeatureExtractor.from_pretrained("facebook/wav2vec2-lv-60-espeak-cv-ft")
+        self.m = Wav2Vec2ForCTC.from_pretrained("facebook/wav2vec2-lv-60-espeak-cv-ft").wav2vec2.to(device).eval()
+        self.device = device
+        self.names = ["cnn_proj"] + [f"layer{i}" for i in range(1, 25)]
+
+    def __call__(self, wav):
+        x = self.fe(wav, sampling_rate=16000, return_tensors="pt").input_values.to(self.device)
+        with self.torch.no_grad():
+            out = self.m(x, output_hidden_states=True)
+        return [h[0] for h in out.hidden_states]
+
+
+def models(backend):
+    if backend == "hf":
+        return {"w2v2": W2V2HF}
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from extract_features import W2V2, Whisper, Zipa
+    return {"w2v2": W2V2, "whisper": Whisper, "zipa": Zipa}
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--model", choices=MODELS, required=True)
+    ap.add_argument("--model", choices=["w2v2", "whisper", "zipa"], required=True)
+    ap.add_argument("--backend", choices=["prism", "hf"], default="prism",
+                    help="hf: W2V2 through transformers alone (no PRiSM stack; Mac MPS)")
     ap.add_argument("--tokens", type=Path, default=ROOT / "results" / "gemination" / "layer_probe_tokens.parquet")
     ap.add_argument("--audio", type=Path, default=ROOT / "data" / "vaani_districts" / "candidates_audio.parquet")
     ap.add_argument("--device", default="cuda")
@@ -40,7 +69,7 @@ def main():
 
     tok = pd.read_parquet(args.tokens).reset_index(drop=True)
     by_utt = tok.groupby("audio_path").indices
-    model = MODELS[args.model](args.device)
+    model = models(args.backend)[args.model](args.device)
     out_dir = ROOT / "outputs" / "features" / f"geminate_{args.model}"
     out_dir.mkdir(parents=True, exist_ok=True)
     vecs, widths, done, t0 = None, None, 0, time.time()
