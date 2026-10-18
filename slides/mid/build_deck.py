@@ -459,8 +459,10 @@ def build():
 
     # 10c. RQ2 layers (when the layer-wise geminate probe has run)
     lay = RES / "gemination" / "geminate_layers_w2v2.csv"
-    if lay.exists():
-        L = pd.read_csv(lay)
+    lay_w = RES / "gemination" / "geminate_layers_w2v2_geminate_word.csv"
+    lay_a = RES / "gemination" / "geminate_layers_w2v2_aspiration_speaker.csv"
+    if lay.exists() and lay_w.exists() and lay_a.exists() and "haryana_given_length" in pd.read_csv(lay).columns:
+        L, LW, LA = pd.read_csv(lay), pd.read_csv(lay_w), pd.read_csv(lay_a)
         best = L.loc[L["auc_within"].idxmax()]
         sig = L[L["haryana_lo"] > 0]
         s = d._slide()
@@ -474,9 +476,11 @@ def build():
             f"{int(best.layer)}, AUC {best.auc_within:.2f} (all tokens {best.auc:.2f} [{best.auc_lo:.2f}, {best.auc_hi:.2f}]).",
             f"Haryana single stops look more geminate-like than New Delhi ones in {len(sig)} of {len(L)} layers "
             f"(at layer {int(best.layer)}: {best.haryana_logit:+.2f} logit [{best.haryana_lo:+.2f}, {best.haryana_hi:+.2f}]).",
-            ("So the encoder carries the lengthening measured in the audio; ZIPA and Whisper follow on Ada."
-             if len(sig) else "So the encoder separates lexical geminates, but the Haryana lengthening of single stops "
-             "is not visible to it; ZIPA and Whisper follow on Ada."),
+            f"Controls: with test words never seen in training the best within-place AUC is {LW['auc_within'].max():.2f}; "
+            f"along an unrelated direction (aspirated vs plain stops) the Haryana shift is "
+            f"{LA.loc[LA['auc_within'].idxmax(), 'haryana_logit']:+.2f} logit at the best layer; holding the measured "
+            f"interval constant it is {best.haryana_given_length:+.2f} [{best.haryana_given_length_lo:+.2f}, "
+            f"{best.haryana_given_length_hi:+.2f}]. ZIPA and Whisper follow on Ada.",
         ], tx, Inches(1.7), W - tx - Inches(0.6), Inches(4.8), size=12)
         d.caption(s, "Figure. Left: probe AUC by layer, all tokens and within place. Right: Haryana shift for single stops.",
                   LM, Inches(6.75), Inches(7.6))
