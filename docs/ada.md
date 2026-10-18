@@ -23,7 +23,7 @@ transcript probes; the Mac runs the analyses. Results from all three meet in thi
 | 7 | RP sweep (order x layers), per model | 1 extract + 19 GPU per model | 3-5 h each | final (RQ1, the core result) |
 | 8 | RP topic check and control task | 12 GPU | 2-5 h each | final (RQ0) |
 | 9 | Send results back | – | minutes | after every step |
-| 10 | Geminate probe by layer, ZIPA and Whisper (token table is pushed) | 2 GPU | 2-6 h each | final (RQ2) |
+| 10 | Geminate probe by layer, all three models (token table is pushed) | 3 GPU | 2-6 h each | final (RQ2) |
 
 Priority if the queue is slow: 2 → 3 → 5 and 6 → 4 → 7 (speaker-disjoint jobs first; the scripts already
 submit those first) → 8. Steps 3 and 6 can run at the same time; 4, 5 and 8 need step 3.
@@ -178,13 +178,12 @@ Only `results/` is versioned (CSV, JSON and small prediction parquet files). Dat
 stay on Ada; they are gitignored and too large. Without push access: `tar czf ada_results_<date>.tgz results/`
 and send the file to Mohit.
 
-## 10. Where the encoders represent consonant length (2 GPU jobs; ready now)
+## 10. Where the encoders represent consonant length (3 GPU jobs; ready now)
 
-The token table `results/gemination/layer_probe_tokens.parquet` is in the repo (29,004 tokens). The W2V2 run is
-already done; Ada runs ZIPA (needs k2/CUDA) and Whisper.
+The token table `results/gemination/layer_probe_tokens.parquet` is in the repo (29,004 tokens).
 
 ```bash
-for M in zipa whisper; do bash slurm/submit.sh slurm/geminate_layers.sbatch $M; done   # W2V2 is already done
+for M in w2v2 zipa whisper; do bash slurm/submit.sh slurm/geminate_layers.sbatch $M; done
 ```
 
 For the accepted single voiceless stops between vowels (roughly 25,000; exact count in the token table) and

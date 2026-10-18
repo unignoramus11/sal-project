@@ -10,5 +10,4 @@ until grep -q QUEUE_DONE outputs/logs/queue_tp_gru.log 2>/dev/null && grep -q QU
 done
 bash tools/queue_pc_district.sh >> outputs/logs/queue_pc_district.log 2>&1
 bash tools/queue_pc_after.sh >> outputs/logs/queue_pc_after.log 2>&1
-bash tools/queue_pc_prosody.sh >> outputs/logs/queue_pc_prosody.log 2>&1
 echo POST_DONE
