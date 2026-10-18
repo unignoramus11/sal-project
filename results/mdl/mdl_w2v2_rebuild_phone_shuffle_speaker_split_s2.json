@@ -1,0 +1,66 @@
+{
+ "config": "mdl_w2v2_rebuild_phone_shuffle_speaker_split",
+ "seed": 2,
+ "n": 16753,
+ "classes": 26,
+ "online_kbits": 71.20478048904563,
+ "prior_kbits": 77.98415402673989,
+ "uniform_kbits": 78.7464665980177,
+ "compression": 1.1059154463671483,
+ "gain_over_prior_kbits": 6.77937353769425,
+ "blocks": [
+  {
+   "end": 262,
+   "bits": 1231.5152061529661,
+   "uniform": true
+  },
+  {
+   "end": 524,
+   "bits": 1202.9821549461394,
+   "prior_bits": 1214.8922084379421,
+   "temperature": 22.90798834527245,
+   "bits_per_label": 4.591534942542517,
+   "prior_bits_per_label": 4.6369931619768785
+  },
+  {
+   "end": 1047,
+   "bits": 2423.9155783136525,
+   "prior_bits": 2401.433081228915,
+   "temperature": 8.978572471858199,
+   "bits_per_label": 4.634637817043313,
+   "prior_bits_per_label": 4.591650250915707
+  },
+  {
+   "end": 2094,
+   "bits": 5124.331973616742,
+   "prior_bits": 5121.062037313238,
+   "temperature": 6.570736813058781,
+   "bits_per_label": 4.894299879290108,
+   "prior_bits_per_label": 4.891176730958202
+  },
+  {
+   "end": 4188,
+   "bits": 9187.050320538712,
+   "prior_bits": 9650.950024044994,
+   "temperature": 4.808624355576479,
+   "bits_per_label": 4.387321069980283,
+   "prior_bits_per_label": 4.608858655226836
+  },
+  {
+   "end": 8376,
+   "bits": 18605.51794248002,
+   "prior_bits": 19802.937605907904,
+   "temperature": 2.784406995472635,
+   "bits_per_label": 4.442578305272211,
+   "prior_bits_per_label": 4.7284951303505025
+  },
+  {
+   "end": 16753,
+   "bits": 33429.4673129974,
+   "prior_bits": 38561.363863653925,
+   "temperature": 1.4912356431084453,
+   "bits_per_label": 3.9906252015038084,
+   "prior_bits_per_label": 4.603242672036997
+  }
+ ]
+}

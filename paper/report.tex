@@ -131,7 +131,9 @@ transcripts save 1.4\,kbits more than W2V2 ones. Under the random split the same
 times as many bits. PRiSM's BiGRU gains from order under the random split with both recognizers ($+$3.9 [1.9, 5.9] for W2V2,
 $+$4.3 [2.5, 6.0] for ZIPA, against the same probe on shuffled phones); on new speakers it brings no Recall@1 gain
 ($-$3.5 [$-$6.5, $-$1.0] for W2V2, $+$0.4 [$-$1.9, 2.9] for ZIPA; 2 seeds so far), and only ZIPA's mean error
-improves (43\,km [9, 83]). It stays below the bigram bag
+improves (43\,km [9, 83]). In description length the same pattern holds: order saves 3.4 to 4.2\,kbits per ordering under the
+random split but only 0.4 to 1.6 on new speakers, where the BiGRU codes the pincode no better than the bigram
+bag. It stays below the bigram bag
 on both splits, and far below PRiSM's 45.7 on the official data, which we cannot access yet
 \todo{final seeds; official-data rerun}.
 

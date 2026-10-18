@@ -43,7 +43,7 @@ TP-GRU and representation-probe results are still running; this file is updated 
   lowers the control error by 29-47 km for bigrams (e.g., ZIPA phone bigram 515 -> 470 km) and by 308 km for
   ECAPA (556 -> 248 km). Trained regression probes on transcripts exploit little speaker identity; the same
   holds for PRiSM's BiGRU (W2V2 phones, random split: control R@1 10.6 +- 0.8, 2 seeds, below the control
-  majority 14.0; ZIPA control runs in progress).
+  majority 14.0; ZIPA 10.2 +- 0.4).
 - Transcripts are nonetheless speaker-identifiable. A 1-nearest-neighbour matcher (TF-IDF over character
   1-4-grams, no location learning; scripts/knn_transcripts.py) reaches 39.6 R@1 [37.1, 42.0] on W2V2
   transcripts under the random split (ZIPA 39.0) and 18.2 [14.5, 22.2] under the speaker-disjoint split
@@ -97,6 +97,10 @@ TP-GRU and representation-probe results are still running; this file is updated 
   each). Order helps the BiGRU under the random split with both recognizers; on new speakers it brings no
   Recall@1 gain with either (W2V2 loses), and only ZIPA's km improves. Whether the random-split gain is speaker
   memorisation (see the nearest-neighbour result in RQ0) is open until seeds 44-46 (Ada) are in.
+  MDL agrees (W2V2 phones, 3 speaker orderings; saving over the location prior): random split BiGRU 21.0 +- 0.4
+  kbits, shuffled BiGRU 17.2 +- 0.1, bigram 19.4 +- 0.1; new speakers 6.4 +- 1.8, 5.5 +- 1.4, 6.6 +- 1.1. Paired by
+  ordering, order saves 3.4-4.2 kbits on the random split but 0.4-1.6 on new speakers, and the BiGRU beats the
+  bigram bag by 1.3-2.0 kbits on the random split but not on new speakers (-0.9 to +0.6).
   The BiGRU is below the bigram bag on both splits (W2V2 phone GRU vs phone bigram -5.7 [-7.4, -4.0] random,
   -6.1 [-9.9, -3.1] speaker-disjoint) and far below PRiSM's 45.7 on the official data; see
   docs/prism_reproduction.md (reproduction status).
