@@ -5,3 +5,5 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 rsync -az --update pc:~/developer/sal-project/results/runs/ results/runs/
+# per-run MDL files only; the summary table is rebuilt on the Mac from all of them (scripts/mdl.py)
+rsync -az --update --include='mdl_*_s*.json' --exclude='*' pc:~/developer/sal-project/results/mdl/ results/mdl/
