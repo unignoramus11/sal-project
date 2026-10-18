@@ -57,6 +57,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--limit", type=int, default=None)
+    ap.add_argument("--shard", default="0/1", help="i/n: align only utterances with index %% n == i")
+    ap.add_argument("--out", default=None, help="output parquet (default data/vaani_districts/alignments.parquet)")
     args = ap.parse_args()
 
     ur = uroman.Uroman()
@@ -82,8 +84,15 @@ def main():
                 seen += 1
                 yield r
 
-    rows, fails, t0 = [], 0, time.time()
+    si, sn = map(int, args.shard.split("/"))
+    rows, fails, done, t0 = [], 0, 0, time.time()
     for k, r in enumerate(records()):
+        if k % sn != si:
+            continue
+        done += 1
+        if done % 250 == 0:
+            print(f"{done}/{n_total // sn} utterances, {len(rows)} tokens, {fails} failures, "
+                  f"{done / (time.time() - t0):.1f} utt/s", flush=True)
         words = spoken_words(r.transcript)
         romans = [rom(w) for w in words]
         keep = [i for i, x in enumerate(romans) if x]
@@ -120,11 +129,8 @@ def main():
                     "next_vowel_end": chars[after[0]].end * sec_per_frame if after else np.nan,
                     "score": float(np.mean([c.score for c in chars])),
                 })
-        if (k + 1) % 250 == 0:
-            print(f"{k + 1}/{n_total} utterances, {len(rows)} tokens, {fails} failures, "
-                  f"{(k + 1) / (time.time() - t0):.1f} utt/s", flush=True)
     out = pd.DataFrame(rows)
-    out.to_parquet(DATA / "vaani_districts" / "alignments.parquet", index=False)
+    out.to_parquet(args.out or DATA / "vaani_districts" / "alignments.parquet", index=False)
     print(f"{len(out)} tokens from {out['audio_path'].nunique()} utterances; {fails} alignment failures")
 
 
