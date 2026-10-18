@@ -175,9 +175,27 @@ than our duration measure \todo{manual audit; recognizer doubling vs measured le
 \label{tab:order}
 \end{table*}
 
+\section{Discussion}
+Three results bear on PRiSM's comparison. First, its random split rewards speaker recognition: a voice
+embedding reaches about four times the majority baseline, and a transcript matcher finds the same speaker's
+earlier utterances. Scores on \geov{} therefore mix dialect with speaker and topic, and any TP--RP gap measured
+under that split inherits the mix. Second, on new speakers what transcripts carry is mostly topic and local
+phone patterns: bigram bags beat a sequence model, and a sequence model's gain from order is clear only when
+speakers are shared. Third, a dialect feature that PRiSM highlights, Haryanvi consonant lengthening, is real in
+the audio (14\% longer voiceless intervals, 26\% longer closures) and is encoded in the recognizer's hidden
+states along the direction that separates lexical geminates, yet the recognizers write it out inconsistently as
+doubled phones. Gradient features of this kind are lost or blurred when speech is reduced to a phone string,
+which is where a representation probe could have an advantage once speaker leakage is removed
+\todo{test with the RP results}.
+
 \section{Limitations}
-Rebuilt rather than official data; 12 Haryana speakers in Vaani-Hi; picture prompts tie topic to place;
-recognizer output is not a phonetic gold standard; the gemination audit covers 50 tokens.
+The study uses a rebuilt rather than the official Vaani-Hi; the two differ in size and utterance length, and
+our transcript BiGRU scores well below PRiSM's on it. Vaani-Hi has only 12 Haryana speakers; the gemination
+study uses separate Vaani audio from three Haryana districts and New Delhi with thousands of speakers, but
+New Delhi stands for standard Hindi only approximately. Picture prompts tie topic to place, and the
+shared-picture subset is small (119 test speakers). Recognizer output is not a phonetic gold standard, and the
+acoustic landmarks are automatic; a blind manual audit covers 50 tokens. Speaker codes come from file names
+and may merge or split some speakers.
 
 \section*{Ethics}
 Vaani is released under CC-BY 4.0 with speaker consent; we report only aggregate results and do not attempt to
