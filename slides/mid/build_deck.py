@@ -467,20 +467,22 @@ def build():
         sig = L[L["haryana_lo"] > 0]
         s = d._slide()
         d.header(s, "Results  ·  RQ2 duration, layers",
-                 f"W2V2 represents consonant length best around layer {int(best.layer)}")
+                 "W2V2 encodes length; Haryana single stops lean geminate")
         pic = d.image(s, RES / "figures" / "fig_geminate_layers_w2v2.png", LM, Inches(1.5), w=Inches(7.6))
         tx = LM + Inches(7.9)
         d.bullets(s, [
             f"A linear probe per layer separates lexical geminates from single stops (speaker-grouped "
             f"cross-validation, {int(best.tokens):,} tokens). Best within place of articulation: layer "
-            f"{int(best.layer)}, AUC {best.auc_within:.2f} (all tokens {best.auc:.2f} [{best.auc_lo:.2f}, {best.auc_hi:.2f}]).",
+            f"{int(best.layer)}, AUC {best.auc_within:.3f} (all tokens {best.auc:.3f} [{best.auc_lo:.3f}, {best.auc_hi:.3f}]); "
+            f"0.96 already at the convolutional output.",
             f"Haryana single stops look more geminate-like than New Delhi ones in {len(sig)} of {len(L)} layers "
             f"(at layer {int(best.layer)}: {best.haryana_logit:+.2f} logit [{best.haryana_lo:+.2f}, {best.haryana_hi:+.2f}]).",
-            f"Controls: with test words never seen in training the best within-place AUC is {LW['auc_within'].max():.2f}; "
-            f"along an unrelated direction (aspirated vs plain stops) the Haryana shift is "
-            f"{LA.loc[LA['auc_within'].idxmax(), 'haryana_logit']:+.2f} logit at the best layer; holding the measured "
-            f"interval constant it is {best.haryana_given_length:+.2f} [{best.haryana_given_length_lo:+.2f}, "
-            f"{best.haryana_given_length_hi:+.2f}]. ZIPA and Whisper follow on Ada.",
+            f"Controls: with test words never seen in training, AUC stays {LW['auc'].min():.2f}-{LW['auc'].max():.2f} and the "
+            f"Haryana shift persists in {(LW['haryana_lo'] > 0).sum()} of {len(LW)} layers; along an unrelated direction "
+            f"(aspirated vs plain stops) the Haryana shift is null in {len(LA) - ((LA['haryana_lo'] > 0) | (LA['haryana_hi'] < 0)).sum()} of {len(LA)} layers; "
+            f"holding the measured interval constant keeps {best.haryana_given_length:+.2f} "
+            f"[{best.haryana_given_length_lo:+.2f}, {best.haryana_given_length_hi:+.2f}] at layer {int(best.layer)}. "
+            "ZIPA and Whisper follow on Ada.",
         ], tx, Inches(1.7), W - tx - Inches(0.6), Inches(4.8), size=12)
         d.caption(s, "Figure. Left: probe AUC by layer, all tokens and within place. Right: Haryana shift for single stops.",
                   LM, Inches(6.75), Inches(7.6))

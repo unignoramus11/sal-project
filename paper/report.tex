@@ -152,7 +152,12 @@ Delhi speakers: the voiceless interval by $\times$1.14 [1.11, 1.18] and the clos
 variation ($\times$1.11 [1.08, 1.14]), and within Lee bounds for the unequal measurement rates ($\times$1.07 to
 $\times$1.12). Lexical geminates measure $\times$1.59 [1.51, 1.67] the single stops, so the measure tracks length;
 Haryana single stops are lengthened by about a quarter of the geminate--single difference, a lengthening rather
-than a categorical doubling \todo{manual audit; recognizer doubling vs measured length; layer probe}.
+than a categorical doubling. A linear probe on W2V2's layers separates lexical geminates from single stops
+(AUC 0.96 at the convolutional output, 0.99 from layer 6 on; 0.93 to 0.98 with word-disjoint folds), and
+Haryana single stops sit further toward the geminate side at every layer ($+$0.55 logit [0.44, 0.66] at layer 8),
+while along an unrelated direction (aspirated vs plain stops) there is no regional shift. Holding the measured
+interval constant leaves most of the shift (72--86\%), so the encoder carries the lengthening and possibly more
+than our duration measure \todo{manual audit; recognizer doubling vs measured length; ZIPA and Whisper layers}.
 
 \begin{table*}[t]
 \centering\small
