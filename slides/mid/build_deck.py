@@ -422,7 +422,8 @@ def build():
         f"W2V2: Haryana doubles least, {100 * hv_w.haryana:.2f}% of consonants vs {100 * hv_w.rest:.2f}% elsewhere "
         f"(p = {hv_w.p:.3f}). ZIPA: {100 * hv_z.haryana:.2f}% vs {100 * hv_z.rest:.2f}% (p = {hv_z.p:.2f}). Neither shows "
         "the Haryanvi doubling PRiSM's attribution example suggests; Haryana has only 12 speakers.",
-        "So the recognizers' output cannot settle gemination; next slide measures it in the audio.",
+        "So the recognizers' output cannot settle gemination; the next slides measure it in the audio and in the "
+        "encoder.",
     ], LM, Inches(5.35), Inches(12.1), Inches(1.6), size=12)
 
     # 10b. RQ2 acoustics
@@ -454,7 +455,8 @@ def build():
             f"Lee bounds for that difference x{float(lee[1]):.2f} to x{float(lee[2]):.2f}.",
             "Lexical geminates (अच्छा, बच्चे, मिट्टी) come out much longer, so the measure tracks length. Haryana single "
             "stops move about a quarter of the way toward geminate length: lengthening, not categorical doubling. "
-            "A blind manual audit of 50 tokens by both authors is the next check.",
+            "The recognizers write a double consonant for only 1-2% of these stops (W2V2's doubled ones are the long ones, "
+            "ZIPA's are not); a blind manual audit of 50 tokens is the next check.",
         ], LM, Inches(3.55), Inches(12.1), Inches(3), size=12.5)
 
     # 10c. RQ2 layers (when the layer-wise geminate probe has run)

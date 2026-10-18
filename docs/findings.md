@@ -148,6 +148,14 @@ All on the speaker-disjoint split, paired on the same test utterances (speaker-c
     lengthening, not a categorical doubling. Still to do: the blind manual audit of 50 tokens
     (internal/audit/), and whether the recognizers' doubling tracks the measured length (needs the PC's
     district transcripts).
+- Recognizer doubling vs measured length (results/gemination/model_doubling.csv; W2V2 transcribed on the Mac
+  with transformers, frame-identical to PRiSM's runner; ZIPA on the PC). Inside each token's window W2V2 writes
+  a doubled consonant for 0.7% [0.4, 0.9] of New Delhi and 1.0% [0.8, 1.1] of Haryana single stops, and its
+  doubled tokens are longer (Haryana median voiceless interval 125 vs 80 ms; AUC of length for predicting
+  doubling 0.73 Haryana, 0.64 New Delhi). ZIPA doubles 1.7% [1.3, 2.2] and 1.9% [1.7, 2.1], unrelated to length
+  (AUC 0.46). So the lengthening is gradient and mostly below the threshold at which a recognizer writes a double
+  consonant: only W2V2's rare doubling follows it, and ZIPA's does not. (An earlier run counted a vowel's length
+  mark cut off at the window start as a doubled consonant; fixed in sal.phones, Vaani-Hi DPR unchanged.)
 - Layers (W2V2; scripts/token_frames.py + scripts/geminate_layers.py; results/gemination/geminate_layers_w2v2*.csv).
   A linear probe per layer on each token's frames (closure + VOT span) separates lexical geminates from single
   stops: AUC 0.96 at layer 0 rising to 0.99 (best within place of articulation: layer 8, 0.967; all tokens 0.990
