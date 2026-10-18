@@ -24,39 +24,39 @@ reproduction: [`docs/prism_reproduction.md`](docs/prism_reproduction.md).
 
 ## Layout
 
-| Path | Contents |
-|---|---|
-| `src/sal/` | Library: dataset rebuild and splits, phone segmentation, probes (PRiSM-faithful TP and RP, order-aware variants), training, statistics (speaker-cluster bootstrap), closure measurement |
-| `scripts/` | One script per step: build data, transcribe, extract features, run probes, baselines, analyses, figures |
-| `slurm/` | Ada (SLURM) jobs; how to run them: [`docs/ada.md`](docs/ada.md) |
-| `tools/` | Environment setup for the PRiSM stack, PC sync, job queues for the PC and the Mac |
-| `results/` | Every number in the write-up: per-run metrics and predictions (`runs/`), tables, figures, DPR, MDL, gemination |
-| `docs/` | Design decisions, plan, data notes, findings, reproduction notes, Ada guide |
-| `slides/` | Evaluation decks, generated from `results/` |
-| `proposal/` | ACL-format proposal (LaTeX and PDF) |
-| `tests/` | Unit tests (`uv run pytest`) |
+| Path        | Contents                                                                                                                                                                                |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/sal/`  | Library: dataset rebuild and splits, phone segmentation, probes (PRiSM-faithful TP and RP, order-aware variants), training, statistics (speaker-cluster bootstrap), closure measurement |
+| `scripts/`  | One script per step: build data, transcribe, extract features, run probes, baselines, analyses, figures                                                                                 |
+| `slurm/`    | Ada (SLURM) jobs; how to run them: [`docs/ada.md`](docs/ada.md)                                                                                                                         |
+| `tools/`    | Environment setup for the PRiSM stack, PC sync, job queues for the PC and the Mac                                                                                                       |
+| `results/`  | Every number in the write-up: per-run metrics and predictions (`runs/`), tables, figures, DPR, MDL, gemination                                                                          |
+| `docs/`     | Design decisions, plan, data notes, findings, reproduction notes, Ada guide                                                                                                             |
+| `slides/`   | Evaluation decks, generated from `results/`                                                                                                                                             |
+| `proposal/` | ACL-format proposal (LaTeX and PDF)                                                                                                                                                     |
+| `tests/`    | Unit tests (`uv run pytest`)                                                                                                                                                            |
 
 Datasets, features, transcripts and checkpoints are not tracked (see `.gitignore`); the scripts rebuild them.
 
 ## Documents
 
-| File | What it is |
-|---|---|
-| `docs/design.md` | Every methodological decision and why, where we depart from PRiSM, pre-registered predictions |
-| `docs/plan.md` | Timeline, task split, risks |
-| `docs/findings.md` | Results so far; numbers only from `results/` |
-| `docs/prism_reproduction.md` | What PRiSM's code does (settings we copy) and the reproduction status |
-| `docs/data.md` | Datasets and models, with sources and licences |
-| `docs/compute.md` | Hardware and storage estimates |
-| `docs/ada.md` | Step-by-step guide to every Ada job (Nidhi) |
+| File                         | What it is                                                                                    |
+| ---------------------------- | --------------------------------------------------------------------------------------------- |
+| `docs/design.md`             | Every methodological decision and why, where we depart from PRiSM, pre-registered predictions |
+| `docs/plan.md`               | Timeline, task split, risks                                                                   |
+| `docs/findings.md`           | Results so far; numbers only from `results/`                                                  |
+| `docs/prism_reproduction.md` | What PRiSM's code does (settings we copy) and the reproduction status                         |
+| `docs/data.md`               | Datasets and models, with sources and licences                                                |
+| `docs/compute.md`            | Hardware and storage estimates                                                                |
+| `docs/ada.md`                | Step-by-step guide to every Ada job (Nidhi)                                                   |
 
 ## Where things run
 
-| Machine | Jobs |
-|---|---|
-| Mac (Apple silicon, `uv`) | dataset rebuild, baselines, bag probes, MDL, control task, prosody features, forced alignment and closure measurement, all analyses, figures, slides |
-| PC (RTX 4050, WSL, `envs/prism`) | phone transcription (W2V2, ZIPA), TP-GRU runs, district transcription |
-| Ada (SLURM, `envs/prism`) | feature extraction, layer sweep, representation probes, TP-GRU seeds 44-46, topic and control checks |
+| Machine                          | Jobs                                                                                                                                                 |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Mac (Apple silicon, `uv`)        | dataset rebuild, baselines, bag probes, MDL, control task, prosody features, forced alignment and closure measurement, all analyses, figures, slides |
+| PC (RTX 4050, WSL, `envs/prism`) | phone transcription (W2V2, ZIPA), TP-GRU runs, district transcription                                                                                |
+| Ada (SLURM, `envs/prism`)        | feature extraction, layer sweep, representation probes, TP-GRU seeds 44-46, topic and control checks                                                 |
 
 ## Reproduce
 

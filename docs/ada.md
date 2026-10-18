@@ -188,8 +188,7 @@ for M in w2v2 zipa whisper; do bash slurm/submit.sh slurm/geminate_layers.sbatch
 ```
 
 For the accepted single voiceless stops between vowels (roughly 25,000; exact count in the token table) and
-lexical geminates (roughly 2,600) (अच्छा, बच्चे, मिट्टी,
-पत्थर, ...) from Haryana and New Delhi Vaani audio, each job averages every layer's frames over each token's
+lexical geminates (roughly 2,600: अच्छा, बच्चे, मिट्टी, पत्थर, ...) from Haryana and New Delhi Vaani audio, each job averages every layer's frames over each token's
 measured closure and burst, then trains a geminate-vs-single linear probe per layer (speaker-grouped
 cross-validation). It reports the AUC by layer, the AUC within place of articulation, and whether Haryana single
 stops look more geminate-like than New Delhi ones. The first job also fetches the district audio (~12 GB
