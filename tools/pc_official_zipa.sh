@@ -4,7 +4,7 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 . tools/prism_env.sh
 export PYTHONUNBUFFERED=1
-until grep -q OFFICIAL_CLEAN_DONE outputs/logs/pc_official_clean.log 2>/dev/null; do sleep 120; done
+until grep -q OFFICIAL_CLEAN_DONE outputs/logs/pc_official_clean.log 2>/dev/null && grep -q OFFICIAL_CLEAN_DONE outputs/logs/pc_official_clean2.log 2>/dev/null; do sleep 120; done
 for f in data/vaani_hi_official/data/train-*.parquet; do
   n=$(basename "$f" .parquet)
   [ -f outputs/transcripts/official/zipa_$n.parquet ] && continue
