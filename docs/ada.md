@@ -24,7 +24,7 @@ transcript probes; the Mac runs the analyses. Results from all three meet in thi
 | 8 | RP topic check and control task | 12 GPU | 2-5 h each | final (RQ0) |
 | 9 | Send results back | – | minutes | after every step |
 | 10 | Geminate probe by layer, all three models (token table is pushed) | 3 GPU | 2-6 h each | final (RQ2) |
-| 11 | Official Vaani-Hi: download, features, RP-Attn on the released and the corrected split | 3 + 6 GPU | 1-5 h each | final (RQ0, reproduction) |
+| 11 | Official Vaani-Hi: download, features, RP-Attn on the release and its corrected version | 3 + 9 GPU | 1-5 h each | final (RQ0, reproduction) |
 
 Priority if the queue is slow: 2 → 3 → 5 and 6 → 4 → 7 (speaker-disjoint jobs first; the scripts already
 submit those first) → 8. Steps 3 and 6 can run at the same time; 4, 5 and 8 need step 3.
@@ -209,13 +209,13 @@ envs/prism/bin/hf download changelinglab/vaani-hi-geo --repo-type dataset \
 python scripts/official_merge.py                     # -> data/vaani_hi_official/vaani_hi_official.parquet
 # 2. features (3 GPU jobs, ~1 h each; the release is ~33 h of audio)
 for M in w2v2 whisper zipa; do bash slurm/submit.sh slurm/extract_official.sbatch $M; done
-# 3. RP-Attn, last layer, 5 seeds, released split and corrected speaker-disjoint split (6 GPU jobs)
-git pull                                              # needs results/official/meta*.parquet and splits*.parquet
+# 3. RP-Attn, last layer, 5 seeds: the release as published, and the corrected version (deduplicated, consistent
+#    labels, fixed coordinates) under the released split and a pseudo-speaker-disjoint split (9 GPU jobs)
+git pull                                              # brings results/official/{meta,splits}_{released,clean}.parquet
 bash slurm/rp_official.sh
 ```
 
-Step 3 waits for the split tables, which Mohit pushes once the speakers of the release are recovered
-(results/official/). Results land in `results/runs/rp_<model>_official_*`.
+The split tables are in the repo. Results land in `results/runs/rp_<model>_official_*`.
 
 ## Troubleshooting
 

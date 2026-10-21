@@ -79,48 +79,58 @@ def seen(x, info, split_col, thr):
     return pd.concat(out).set_index("row")
 
 
-# 2. leakage estimator on the rebuild (truth known)
-cal = {}
-for proto in ("prism", "speaker_split"):
-    s = seen(xr, ir, proto, thr)
-    train_pairs = set(zip(ir.loc[ir[proto] == "train", "district"], ir.loc[ir[proto] == "train", "speaker"], strict=True))
-    sub = ir.loc[s.index]
-    truth = pd.Series([(d, sp) in train_pairs for d, sp in zip(sub["district"], sub["speaker"], strict=True)], index=s.index)
-    cal[proto] = {"observed": s["seen"].mean(), "true": truth.mean(),
-                  "hit": s.loc[truth, "seen"].mean() if truth.any() else np.nan,
-                  "false_alarm": s.loc[~truth, "seen"].mean() if (~truth).any() else np.nan}
-hit, fa = cal["prism"]["hit"], cal["speaker_split"]["false_alarm"]
-for k, v in cal.items():
-    lines.append(f"rebuild {k}: true leakage {v['true']:.1%}, observed 'speaker seen' {v['observed']:.1%}")
-lines.append(f"estimator: hit rate {hit:.1%} (rebuild random split), false-alarm rate {fa:.1%} (speaker-disjoint split)")
-
-# apply to the official release
+# 2. leakage estimator: a threshold on each clip's best score against the train clips of its district, set so that
+# 5% of clips are called "seen" on the rebuild's speaker-disjoint split (no clip truly seen there); its hit rate is
+# measured on the rebuild's random split (98% truly seen). The pairwise EER threshold is far too low for a maximum
+# over hundreds of train clips.
+best_prism = seen(xr, ir, "prism", 0)["best"]
+best_spk = seen(xr, ir, "speaker_split", 0)["best"]
+train_pairs = set(zip(ir.loc[ir["prism"] == "train", "district"], ir.loc[ir["prism"] == "train", "speaker"], strict=True))
+sub = ir.loc[best_prism.index]
+truth = np.array([(d, sp) in train_pairs for d, sp in zip(sub["district"], sub["speaker"], strict=True)])
+t_seen = float(np.quantile(best_spk, 0.95))
+fa = float((best_spk >= t_seen).mean())
+hit = float((best_prism[truth] >= t_seen).mean())
+lines.append(f"leakage estimator: best-score threshold {t_seen:.3f} (5% false alarms on the rebuild speaker-disjoint "
+             f"split); hit rate {hit:.1%} on rebuild random-split clips whose speaker is in train (true leakage there "
+             f"{truth.mean():.1%})")
 of_meta = pd.read_parquet(DATA / "vaani_hi_official" / "splits.parquet")
 xo, io_ = load("ecapa_official", of_meta)
-so = seen(xo, io_, "prism", thr)
-obs = so["seen"].mean()
+best_off = seen(xo, io_, "prism", 0)["best"]
+obs = float((best_off >= t_seen).mean())
 est = (obs - fa) / (hit - fa)
-lines.append(f"official released split: observed 'speaker seen' {obs:.1%} of val/test clips -> estimated true speaker "
-             f"leakage {100 * min(max(est, 0), 1):.1f}% (rebuild PRiSM-recipe split, measured: {cal['prism']['true']:.1%})")
-pd.DataFrame([{"data": f"rebuild_{k}", **v} for k, v in cal.items()] +
-             [{"data": "official_released", "observed": obs, "true": est, "hit": hit, "false_alarm": fa}]).to_csv(
-    OUT / "speaker_leakage.csv", index=False)
+obs_rb = float((best_prism >= t_seen).mean())
+lines.append(f"rebuild random split: observed {obs_rb:.1%}, corrected {(obs_rb - fa) / (hit - fa):.1%} (true {truth.mean():.1%})")
+lines.append(f"official released split: observed {obs:.1%} of val/test clips -> estimated speaker leakage "
+             f"{100 * min(max(est, 0), 1):.1f}%")
+pd.DataFrame([{"data": "rebuild_random", "observed": obs_rb, "estimated": (obs_rb - fa) / (hit - fa), "true": truth.mean()},
+              {"data": "rebuild_speaker_disjoint", "observed": fa, "estimated": 0.0, "true": 0.0},
+              {"data": "official_released", "observed": obs, "estimated": est, "true": np.nan}]).assign(
+    threshold=t_seen, hit=hit, false_alarm=fa).to_csv(OUT / "speaker_leakage.csv", index=False)
 
-# 3. pseudo-speakers: choose the clustering threshold on the rebuild
+# 3. pseudo-speakers: cluster within district; the threshold is chosen by what matters for a split built on the
+# clusters: the true speaker leakage of a pincode-stratified "speaker-disjoint" split over pseudo-speakers, measured
+# on the rebuild with its real speakers (merging speakers is harmless, splitting one speaker leaks)
+from sal.data.splits import leakage, speaker_disjoint_splits  # noqa: E402
+
 best = None
-for dt in (0.45, 0.5, 0.55, 0.6, 0.65, 0.7):
-    aris = []
-    for _, g in ir.groupby("district"):
-        if len(g) < 3:
-            continue
-        lab = AgglomerativeClustering(n_clusters=None, metric="cosine", linkage="average",
-                                      distance_threshold=dt).fit_predict(xr[g.index])
-        aris.append((adjusted_rand_score(g["speaker"], lab), len(g)))
-    ari = np.average([a for a, _ in aris], weights=[n for _, n in aris])
-    lines.append(f"pseudo-speakers, distance threshold {dt}: rebuild ARI {ari:.3f}")
-    if best is None or ari > best[1]:
-        best = (dt, ari)
-lines.append(f"chosen threshold {best[0]} (ARI {best[1]:.3f})")
+for dt in (0.5, 0.6, 0.7, 0.8, 0.9):
+    lab = pd.Series(index=ir.index, dtype=object)
+    for di, g in ir.groupby("district"):
+        lab.loc[g.index] = [f"{di}_{k}" for k in AgglomerativeClustering(
+            n_clusters=None, metric="cosine", linkage="average", distance_threshold=dt).fit_predict(xr[g.index])] \
+            if len(g) > 1 else [f"{di}_0"]
+    tmp = ir.assign(pseudo=lab.values)
+    tmp["split_ps"] = speaker_disjoint_splits(tmp, speaker_col="pseudo", group_col="pincode", seed=42)
+    lk = leakage(tmp, "split_ps", speaker_col="speaker")
+    sizes = tmp["split_ps"].value_counts(normalize=True)
+    ari = adjusted_rand_score(tmp["speaker"], tmp["pseudo"])
+    lines.append(f"pseudo-speakers, distance threshold {dt}: rebuild ARI {ari:.3f}, clusters {tmp['pseudo'].nunique()}, "
+                 f"true test leakage of the pseudo-speaker split {lk['test']:.1%}, test share {sizes.get('test', 0):.1%}")
+    if best is None and lk["test"] <= 0.05 and sizes.get("test", 0) >= 0.10:
+        best = (dt, lk["test"])
+best = best or (0.9, np.nan)
+lines.append(f"chosen threshold {best[0]} (rebuild true test leakage {best[1]:.1%})")
 labels = pd.Series(index=io_.index, dtype=object)
 for di, g in io_.groupby("district"):
     lab = AgglomerativeClustering(n_clusters=None, metric="cosine", linkage="average",

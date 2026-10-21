@@ -1,0 +1,11 @@
+verification (rebuild, within district): 51620 same-speaker and 330148 different-speaker pairs; EER 6.4% at cosine 0.445
+leakage estimator: best-score threshold 0.790 (5% false alarms on the rebuild speaker-disjoint split); hit rate 63.4% on rebuild random-split clips whose speaker is in train (true leakage there 98.0%)
+rebuild random split: observed 62.2%, corrected 98.0% (true 98.0%)
+official released split: observed 88.3% of val/test clips -> estimated speaker leakage 100.0%
+pseudo-speakers, distance threshold 0.5: rebuild ARI 0.682, clusters 1584, true test leakage of the pseudo-speaker split 33.1%, test share 15.3%
+pseudo-speakers, distance threshold 0.6: rebuild ARI 0.609, clusters 832, true test leakage of the pseudo-speaker split 6.6%, test share 15.6%
+pseudo-speakers, distance threshold 0.7: rebuild ARI 0.291, clusters 350, true test leakage of the pseudo-speaker split 2.1%, test share 14.5%
+pseudo-speakers, distance threshold 0.8: rebuild ARI 0.144, clusters 109, true test leakage of the pseudo-speaker split 0.6%, test share 9.9%
+pseudo-speakers, distance threshold 0.9: rebuild ARI 0.076, clusters 27, true test leakage of the pseudo-speaker split 27.3%, test share 0.1%
+chosen threshold 0.7 (rebuild true test leakage 2.1%)
+official: 375 pseudo-speakers, clips per pseudo-speaker median 11, max 1526

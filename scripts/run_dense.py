@@ -29,11 +29,14 @@ ap.add_argument("--control", action="store_true",
 ap.add_argument("--prompts", choices=["all", "generic"], default="all",
                 help="generic: train and test only on utterances about shared pictures (no topic cue)")
 ap.add_argument("--device", default="cpu")
+ap.add_argument("--dataset", type=Path, default=DATA / "vaani_hi_rebuild" / "vaani_hi_rebuild.parquet")
+ap.add_argument("--splits", type=Path, default=DATA / "vaani_hi_rebuild" / "splits.parquet")
+ap.add_argument("--tag", default="", help="inserted after the protocol in the run name")
 ap.add_argument("--zscore", action="store_true", help="standardise each feature with train-split mean and sd")
 args = ap.parse_args()
 
-meta = pd.read_parquet(DATA / "vaani_hi_rebuild" / "vaani_hi_rebuild.parquet", columns=["metadata_idx", "latitude", "longitude"])
-meta = meta.merge(pd.read_parquet(DATA / "vaani_hi_rebuild" / "splits.parquet"), on="metadata_idx")
+meta = pd.read_parquet(args.dataset, columns=["metadata_idx", "latitude", "longitude"])
+meta = meta.merge(pd.read_parquet(args.splits), on="metadata_idx")
 index = pd.read_parquet(args.features / "index.parquet")
 x_all = np.load(args.features / args.file).astype(np.float32)
 x_all = x_all.reshape(len(x_all), -1)                  # e.g. pooled.npy stores (N, 1, D)
@@ -55,7 +58,7 @@ for seed in args.seeds:
                       seed=seed, device=args.device, extra={"features": str(args.features), "dim": d})
     make = lambda: VectorMLP(d)  # noqa: E731
     res = train_probe(make, DenseBatcher(x, targets), targets, splits, cfg, log=lambda s: None)
-    name = (f"dense_{args.features.name}_{args.protocol}{'_control' if args.control else ''}"
+    name = (f"dense_{args.features.name}_{args.protocol}{args.tag}{'_control' if args.control else ''}"
             f"{'_generic' if args.prompts == 'generic' else ''}_s{seed}")
     save_run(res, RESULTS / "runs" / name, meta=meta[["metadata_idx", "speaker", "pincode", "state", "district"]])
     print(name, json.dumps({k: round(v, 2) for k, v in res["metrics"]["test"].items()}), flush=True)
