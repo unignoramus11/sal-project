@@ -1,0 +1,49 @@
+{
+  "config": {
+    "lr": 0.001,
+    "batch_size": 256,
+    "min_epochs": 10,
+    "max_epochs": 200,
+    "patience": 20,
+    "val_per_epoch": 4,
+    "warmup_steps": 200,
+    "warmup_start_factor": 0.3333333333333333,
+    "grad_clip": 1.0,
+    "weight_decay": 0.0,
+    "seed": 42,
+    "device": "cpu",
+    "eval_batch_size": 256,
+    "extra": {
+      "features": "outputs/features/ecapa_official",
+      "dim": 192
+    }
+  },
+  "best_epoch": 5,
+  "best_check": 22,
+  "epochs_run": 11,
+  "seconds": 1.4532079696655273,
+  "n_params": 50563,
+  "metrics": {
+    "train": {
+      "recall1": 30.170029401779175,
+      "recall5": 73.22366833686829,
+      "mean_km": 182.33025959418995,
+      "median_km": 136.28765035120136,
+      "n": 14468
+    },
+    "val": {
+      "recall1": 5.842696502804756,
+      "recall5": 31.404495239257812,
+      "mean_km": 448.1473153294571,
+      "median_km": 440.5163221503821,
+      "n": 1780
+    },
+    "test": {
+      "recall1": 3.4165948629379272,
+      "recall5": 21.9351127743721,
+      "mean_km": 486.86242319532795,
+      "median_km": 469.8332340329457,
+      "n": 3483
+    }
+  }
+}
