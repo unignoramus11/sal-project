@@ -1,0 +1,5 @@
+official rows 26385; sample rates {16000: 26385}; mean duration 4.50 s; source clips indexed 83958 (42 ambiguous dropped); matched 1.0%
+split sizes {'train': 19777, 'test': 3985, 'val': 2623}; pincodes 30; states 10; districts 20
+val: 100.0% of 29 matched utterances have their speaker in train
+test: 100.0% of 44 matched utterances have their speaker in train
+speakers 22 among matched; utterances per speaker median 7, mean 12.3, max 107

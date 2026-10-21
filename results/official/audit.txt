@@ -1,0 +1,9 @@
+rows 26385, splits {'train': 19777, 'test': 3985, 'val': 2623}, pincodes 30, districts 20, states 10
+distinct audio clips 21481; copies per clip {1: 16922, 2: 4223, 3: 327, 4: 9}
+duplicated clips 4559 (9463 rows): copies with different pincodes 38.4%, different genders 33.6%, different districts 0.0%
+val: 27.3% of 2623 rows have their exact audio in train
+test: 28.0% of 3985 rows have their exact audio in train
+test rows with their exact audio in train: 28.0%; the train copy has the same pincode in 64.1% of them
+majority: Recall@1 7.6, mean km 1384 (test 3985)
+exact_audio_lookup_else_majority: Recall@1 22.7, mean km 1006 (test 3985)
+pincode 171202 (Shimla, 2014 rows): released at 36.94N 71.54E, 844 km from its valid offices; 3 of 16 offices have invalid coordinates and the release equals their unfiltered mean (36.9432, 71.5404)
