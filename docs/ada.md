@@ -24,6 +24,7 @@ transcript probes; the Mac runs the analyses. Results from all three meet in thi
 | 8 | RP topic check and control task | 12 GPU | 2-5 h each | final (RQ0) |
 | 9 | Send results back | – | minutes | after every step |
 | 10 | Geminate probe by layer, all three models (token table is pushed) | 3 GPU | 2-6 h each | final (RQ2) |
+| 11 | Official Vaani-Hi: download, features, RP-Attn on the released and the corrected split | 3 + 6 GPU | 1-5 h each | final (RQ0, reproduction) |
 
 Priority if the queue is slow: 2 → 3 → 5 and 6 → 4 → 7 (speaker-disjoint jobs first; the scripts already
 submit those first) → 8. Steps 3 and 6 can run at the same time; 4, 5 and 8 need step 3.
@@ -194,6 +195,27 @@ stops look more geminate-like than New Delhi ones. The first job also fetches th
 streamed, ~3.5 GB kept); if compute nodes have no internet, run `python scripts/district_audio_files.py
 --workers 4` on the login node first. Results: `results/gemination/geminate_layers_<model>.csv` and
 `results/figures/fig_geminate_layers_<model>.*`.
+
+## 11. Official Vaani-Hi (access granted 21 Oct)
+
+The official GEO-v release has problems that change how its scores should be read (docs/official_data.md):
+duplicated audio with conflicting labels, 28% of test rows with their exact audio in training, and one pincode
+placed in Afghanistan. We run PRiSM's probes on the release as published and on a corrected version.
+
+```bash
+# 1. access: request https://huggingface.co/datasets/changelinglab/vaani-hi-geo with your HF account (or ask Mohit)
+envs/prism/bin/hf download changelinglab/vaani-hi-geo --repo-type dataset \
+  --revision 264fb053bd1e8f060cd09b9677950d5be96fe77a --local-dir data/vaani_hi_official
+python scripts/official_merge.py                     # -> data/vaani_hi_official/vaani_hi_official.parquet
+# 2. features (3 GPU jobs, ~1 h each; the release is ~29 h of audio)
+for M in w2v2 whisper zipa; do bash slurm/submit.sh slurm/extract_official.sbatch $M; done
+# 3. RP-Attn, last layer, 5 seeds, released split and corrected speaker-disjoint split (6 GPU jobs)
+git pull                                              # needs results/official/meta*.parquet and splits*.parquet
+bash slurm/rp_official.sh
+```
+
+Step 3 waits for the split tables, which Mohit pushes once the speakers of the release are recovered
+(results/official/). Results land in `results/runs/rp_<model>_official_*`.
 
 ## Troubleshooting
 
