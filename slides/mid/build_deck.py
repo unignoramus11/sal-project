@@ -13,6 +13,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 from pptx import Presentation
 from pptx.dml.color import RGBColor
@@ -283,6 +284,56 @@ def build():
         "All further results are reported under both splits; the speaker-disjoint numbers measure dialect.",
     ], LM, Inches(3.55), Inches(12.1), Inches(3))
 
+    # 5b. official release: data problems and scores
+    off = RES / "official"
+    if (off / "scores_clean.csv").exists():
+        import json as _json
+        import re as _re
+
+        def seedmean(cfg):
+            v = [_json.loads((dd / "metrics.json").read_text())["metrics"]["test"]["recall1"]
+                 for dd in sorted((RES / "runs").glob(f"{cfg}_s*")) if (dd / "metrics.json").exists()]
+            return float(np.mean(v)), float(np.std(v, ddof=1)) if len(v) > 1 else 0.0, len(v)
+        audit = (off / "audit.txt").read_text()
+        leak = pd.read_csv(off / "leakage.csv").set_index("split")
+        dups = _re.search(r"copies with different pincodes ([\d.]+)%", audit)
+        coords = pd.read_csv(off / "coordinates_audit.csv").iloc[0]
+        s = d._slide()
+        d.header(s, "Results  ·  official GEO-v data", "PRiSM's released data repeats recordings and misplaces a pincode")
+        d.stats(s, [(f"{100 * leak.loc['test', 'exact_audio_in_train']:.0f}%", "test clips whose exact audio\nis also in training"),
+                    (f"{dups[1]}%", "of repeated recordings carry\ndifferent pincodes in different rows"),
+                    (f"{coords.km_from_valid_median:.0f} km", f"error in the location of the largest\nclass (Shimla, {int(coords.rows):,} clips)")],
+                Inches(1.9))
+        d.bullets(s, [
+            "Access to the official release arrived on 21 October: 26,385 rows but only 21,481 distinct recordings, "
+            "30 pincodes in 20 districts, a different sample from our rebuild.",
+            "PRiSM's sampling script writes each district's first 600 clips from four shards to the same 600 file names, "
+            "so shards overwrite each other's audio while the metadata keeps all four label sets.",
+            "Pincode 171202 is placed in Afghanistan: the release averages all 16 post offices of the pincode, three of "
+            "which have latitude and longitude swapped in the India Post directory.",
+        ], LM, Inches(3.55), Inches(12.1), Inches(3))
+
+        cl = pd.read_csv(off / "scores_clean.csv")
+        gru, bg, ec = (seedmean("tp_w2v2_official_char_gru_prism"), seedmean("tp_w2v2_official_phone_bigram_prism"),
+                       seedmean("dense_ecapa_official_prism"))
+        nn_rel = pd.read_csv(off / "scores_by_duplication.csv").set_index("probe").loc["nearest-neighbour transcript (1-NN)", "all_recall1"]
+        sp = cl[cl.protocol == "speaker_split"].set_index("probe")
+        bg_sp = seedmean("tp_w2v2_official_phone_bigram_speaker_split_clean")
+        ec_sp = seedmean("dense_ecapa_official_speaker_split_clean")
+        s = d._slide()
+        d.header(s, "Results  ·  official GEO-v scores", "On PRiSM's own data the voice alone beats PRiSM's probe")
+        d.stats(s, [(f"{gru[0]:.1f}", f"PRiSM's TP-GRU with our code\n({gru[2]} seeds; paper: 45.7)"),
+                    (f"{bg[0]:.1f}", "bag of phone bigrams\n(released split)"),
+                    (f"{ec[0]:.1f}", "ECAPA voice embedding,\nno words (released split)"),
+                    (f"{nn_rel:.1f}", "nearest-neighbour transcript\nmatch, nothing learned")], Inches(1.9), best=2)
+        d.bullets(s, [
+            "Our pipeline reproduces PRiSM's number on its data; the gap to our rebuild was the data, not the code.",
+            "On a corrected version (one row per recording, consistent labels, fixed coordinates) with a speaker-disjoint "
+            f"split from clustered voice embeddings, everything falls to the majority level ({sp.loc['majority', 'recall1']:.1f}): "
+            f"phone bigrams {bg_sp[0]:.1f}, ECAPA {ec_sp[0]:.1f}, matcher {sp.loc['nearest-neighbour transcript (1-NN)', 'recall1']:.1f}.",
+            "So GEO-v as released rewards recognising speakers, and both of PRiSM's probes are measured on that.",
+        ], LM, Inches(3.55), Inches(12.1), Inches(3))
+
     # 6. results table
     rows, bold = [], []
     order = [("Majority baseline", None), ("Speaker lookup (ID only)", None),
@@ -338,7 +389,7 @@ def build():
     # 7. figure: lift
     s = d._slide()
     d.header(s, "Results  ·  common reference", "Only bigrams beat the majority baseline on new speakers")
-    pic = d.image(s, RES / "figures" / "fig_probes.png", LM, Inches(1.5), w=Inches(8.3))
+    pic = d.image(s, RES / "figures" / "fig_probes.png", LM, Inches(1.45), h=Inches(5.15))
     tx = LM + Inches(8.6)
     d.bullets(s, [
         "Left: Recall@1 minus the majority baseline on the same test utterances. Right: km saved over the best "
@@ -506,8 +557,8 @@ def build():
     s = d._slide(dark=True)
     d.header(s, "Conclusion", "Takeaways", dark=True)
     d.bullets(s, [
-        "PRiSM's random split leaks speakers: a lookup on the speaker ID reaches 98 Recall@1, and a voice "
-        "embedding drops from 41.6 to the majority level once speakers are disjoint.",
+        "PRiSM's random split leaks speakers: on the official data a voice-only embedding (55.1) beats PRiSM's own "
+        "transcript probe (45.5, reproduced), and every probe falls to chance once speakers are separated.",
         "On new speakers, phone bigrams keep a real but small advantage (+8 to +11 points over majority), and "
         "most of it comes from what speakers describe rather than how they pronounce.",
         "Local order (bigrams) and richer phone strings help on new speakers, by Recall@1, km and MDL alike; the "
