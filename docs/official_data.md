@@ -31,9 +31,20 @@ few districts. The release includes four Uttar Pradesh districts (about 6,800 ro
    64 km of the median of their offices. Mean-km metrics on GEO-v are dominated by this point (the majority
    baseline's mean error is 1,384 km).
 4. **Speakers.** The release has no speaker column. Clips matched sample-for-sample to our cached Vaani shards
-   (1%, 271 rows) all have their speaker in training when they are in val/test. Recovering the source of every
-   row is in progress (`scripts/official_sources.py`: metadata-only scan of all 1,181 shards of the 20 districts,
-   matched by duration within district).
+   (1%, 271 rows) all have their speaker in training when they are in val/test. Recovering every row's source by
+   metadata failed: a district holds 120,000-160,000 Vaani clips, so duration alone identifies only 0.1% of rows
+   (`scripts/official_sources.py`, kept for the record). Speaker overlap is instead estimated from ECAPA
+   speaker embeddings calibrated on our rebuild, where speakers are known (`scripts/speaker_calibration.py`).
+
+5. **Reproduction.** PRiSM's char TP-GRU with W2V2 transcripts, run with our code on the release and its own split,
+   scores 46.1 Recall@1 and 124 km (seed 42; PRiSM reports 45.7 and 146 km). Our pipeline reproduces PRiSM; the
+   gap to our rebuilt data (about 21) comes from the data. (More seeds in progress.)
+6. **Memorisation is enough.** A nearest-neighbour matcher over the transcripts, which learns nothing about location
+   (TF-IDF over character 1-4-grams; the location of the most similar training transcript), scores 58.9 Recall@1
+   on the official test set, above PRiSM's trained probe, and 57.7 on test rows whose audio is not duplicated in
+   training (`scripts/official_eval.py`, `results/official/scores_by_duplication.csv`). On our rebuild the same
+   matcher scores 39.6. Speakers in the release repeat recognisable content across their utterances even more
+   than in our sample.
 
 ## Why exact matching to Vaani is limited
 

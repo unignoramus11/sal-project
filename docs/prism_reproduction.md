@@ -106,3 +106,11 @@ Leads, not yet tested:
 - Once access arrives: rerun the TP-GRU on the official data (same code), measure speaker leakage there with
   the file-name speaker codes if the official rows can be matched to Vaani files (metadata_idx), and compare
   utterances per speaker.
+
+## Update 21 Oct 2026: official data
+
+Access to the official release arrived. With our code and PRiSM's settings, the char TP-GRU on W2V2 transcripts
+scores 46.1 Recall@1 and 124 km on the official split (seed 42; PRiSM: 45.7, 146 km), so the probe reproduction
+holds and the gap to the rebuild is the data. The release itself has duplicated audio with conflicting labels,
+28% of test rows with their exact audio in training, a misplaced Shimla pincode, and enough repeated content that
+a nearest-neighbour transcript matcher scores 58.9 Recall@1: see docs/official_data.md.
