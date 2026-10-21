@@ -36,8 +36,8 @@ few districts. The release includes four Uttar Pradesh districts (about 6,800 ro
    (`scripts/official_sources.py`, kept for the record). Speaker overlap is instead estimated from ECAPA
    speaker embeddings calibrated on our rebuild, where speakers are known (`scripts/speaker_calibration.py`).
 5. **Reproduction.** PRiSM's char TP-GRU with W2V2 transcripts, run with our code on the release and its own split,
-   scores 46.1 Recall@1 and 124 km (seed 42; PRiSM reports 45.7 and 146 km). Our pipeline reproduces PRiSM; the
-   gap to our rebuilt data (about 21) comes from the data. (More seeds in progress.)
+   scores 45.5 +- 1.3 Recall@1 and 124 km (4 seeds; PRiSM reports 45.7 and 146 km). Our pipeline reproduces PRiSM;
+   the gap to our rebuilt data (about 21) comes from the data.
 6. **Memorisation is enough.** A nearest-neighbour matcher over the transcripts, which learns nothing about location
    (TF-IDF over character 1-4-grams; the location of the most similar training transcript), scores 58.9 Recall@1
    on the official test set, above PRiSM's trained probe, and 57.7 on test rows whose audio is not duplicated in
@@ -50,15 +50,21 @@ few districts. The release includes four Uttar Pradesh districts (about 6,800 ro
    speaker-disjoint split recovers the rebuild's true 98.0% leakage exactly), 88.3% of official val/test clips have a
    same-speaker-looking clip in training, more than the 62.2% observed on the rebuild at 98% true leakage: speaker
    leakage in the release is at least as high as in our rebuild (`scripts/speaker_calibration.py`).
-8. **Simple probes beat PRiSM's on its own benchmark.** On the released split a bag of W2V2 phone bigrams scores
-   60.2 Recall@1 (77 km, 5 seeds), above PRiSM's TP-GRU (46.1 here, 45.7 in the paper).
+8. **Simple probes, and the voice alone, beat PRiSM's probe on its own benchmark.** Released split, mean +- sd over
+   5 seeds: W2V2 phone bigrams 59.6 +- 0.7 Recall@1 (88 km), char bigrams 58.7 +- 0.6, ECAPA speaker embeddings,
+   which encode voice and channel and no words, 55.1 +- 1.4 (80 km; seed ensemble 60.1, 64 km); PRiSM's TP-GRU
+   45.5 +- 1.3. On test rows whose audio is not duplicated in training the ranking is the same.
 9. **A corrected version** (`scripts/official_prepare.py`): one row per recording, recordings with conflicting
    pincodes removed, Shimla moved to its valid offices; 19,731 rows. Pseudo-speakers come from clustering the ECAPA
    embeddings within district at a threshold whose pseudo-speaker split has 2.1% true speaker leakage on the
    rebuild (375 pseudo-speakers). The 1-NN transcript matcher scores 57.5 Recall@1 [50.2, 65.7] on the corrected
    rows under the released split (pseudo-speaker overlap 99.8%) and 9.6 [6.4, 13.6] under the pseudo-speaker
    split (majority 6.8): removing duplicates changes little, removing shared speakers removes almost everything
-   (`results/official/scores_clean.csv`).
+   (`results/official/scores_clean.csv`). The probes behave the same (5 seeds): released split on the corrected
+   rows, phone bigrams 57.3 +- 1.6, ECAPA 54.0 +- 2.0; pseudo-speaker split, phone bigrams 8.7 +- 0.6, char bigrams
+   9.2 +- 1.3, unigrams 6.9, ECAPA 3.4 +- 0.5, against a majority of 6.8. On new speakers the bag probes still
+   beat the majority on distance (about 450 km against 585), the same coarse regional signal as on the rebuild;
+   only 59 pseudo-speakers are in that test set, so Recall@1 CIs are wide.
 
 ## Why exact matching to Vaani is limited
 

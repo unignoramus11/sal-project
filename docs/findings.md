@@ -20,18 +20,19 @@ TP-GRU and representation-probe results are still running; this file is updated 
 
 ## The official GEO-v release (access 21 Oct 2026; details in docs/official_data.md)
 
-- Reproduction: PRiSM's char TP-GRU with our code on the official data and split scores 46.1 and 43.6 Recall@1
-  (seeds 42, 43; PRiSM: 45.7). The probe reproduction holds; our lower rebuild scores come from the data.
+- Reproduction: PRiSM's char TP-GRU with our code on the official data and split scores 45.5 +- 1.3 Recall@1
+  (4 seeds; PRiSM: 45.7). The probe reproduction holds; our lower rebuild scores come from the data.
 - The release duplicates audio: 26,385 rows, 21,481 distinct recordings; 38% of duplicated recordings carry
   different pincodes in different rows (a file-name collision in PRiSM's sampling script). 28.0% of test rows
   have their byte-identical audio in training.
 - Pincode 171202 (Shimla, the largest class) is placed in Afghanistan, 844 km off (unfiltered mean of post offices,
   three with latitude and longitude swapped).
 - Memorisation solves the benchmark: a nearest-neighbour transcript matcher with no location learning scores
-  58.9 Recall@1 on the official test set, and a bag of phone bigrams 60.2, both above PRiSM's TP-GRU.
+  58.9 Recall@1 on the official test set, phone bigrams 59.6 +- 0.7, and ECAPA speaker embeddings (voice only, no
+  words) 55.1 +- 1.4, all above PRiSM's TP-GRU (45.5).
 - On a corrected version (deduplicated, consistent labels, fixed coordinates) the matcher still scores 57.5 under
-  the released split but 9.6 [6.4, 13.6] under a pseudo-speaker-disjoint split (majority 6.8): speaker overlap,
-  not duplicate audio, carries the scores. Speaker leakage in the release, estimated from calibrated ECAPA
+  the released split but 9.6 [6.4, 13.6] under a pseudo-speaker-disjoint split (majority 6.8), and so do the probes:
+  phone bigrams 57.3 -> 8.7, ECAPA 54.0 -> 3.4. Speaker overlap, not duplicate audio, carries the scores. Speaker leakage in the release, estimated from calibrated ECAPA
   embeddings, is at least the rebuild's 98%.
 
 ## RQ0: speaker leakage
