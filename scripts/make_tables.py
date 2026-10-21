@@ -11,6 +11,7 @@ Run:    uv run python scripts/make_tables.py
 """
 import re
 
+import numpy as np
 import pandas as pd
 
 from sal.paths import RESULTS, ROOT
@@ -113,8 +114,40 @@ def tab_gemination():
     write("tab_gemination.tex", "\n".join(lines).replace("_", r"\_") + "\n")
 
 
+def tab_official():
+    """Official release: probes under the released split, and on the corrected version under the released split
+    and a pseudo-speaker-disjoint split (mean +- sd over seeds)."""
+    import glob
+    import json
+    runs = RESULTS / "runs"
+
+    def sm(cfg):
+        v = [json.load(open(f))["metrics"]["test"]["recall1"] for f in sorted(glob.glob(str(runs / f"{cfg}_s*" / "metrics.json")))]
+        return (f"${np.mean(v):.1f} \\pm {np.std(v, ddof=1):.1f}$" if len(v) > 1 else (f"${v[0]:.1f}$" if v else "--"))
+    off = pd.read_csv(RESULTS / "official" / "scores_by_duplication.csv").set_index("probe")
+    cl = pd.read_csv(RESULTS / "official" / "scores_clean.csv")
+    nn = "nearest-neighbour transcript (1-NN)"
+    rows = [("Majority", f"{off.loc['majority', 'all_recall1']:.1f}",
+             f"{cl[(cl.protocol == 'prism') & (cl.probe == 'majority')].recall1.iloc[0]:.1f}",
+             f"{cl[(cl.protocol == 'speaker_split') & (cl.probe == 'majority')].recall1.iloc[0]:.1f}"),
+            ("1-NN transcript match", f"{off.loc[nn, 'all_recall1']:.1f}",
+             f"{cl[(cl.protocol == 'prism') & (cl.probe == nn)].recall1.iloc[0]:.1f}",
+             f"{cl[(cl.protocol == 'speaker_split') & (cl.probe == nn)].recall1.iloc[0]:.1f}")]
+    for lab, key in [("ECAPA speaker embedding", "dense_ecapa_official"), ("W2V2 char unigram", "tp_w2v2_official_char_unigram"),
+                     ("W2V2 phone unigram", "tp_w2v2_official_phone_unigram"), ("W2V2 char bigram", "tp_w2v2_official_char_bigram"),
+                     ("W2V2 phone bigram", "tp_w2v2_official_phone_bigram"), ("W2V2 char BiGRU (PRiSM)", "tp_w2v2_official_char_gru"),
+                     ("W2V2 phone BiGRU", "tp_w2v2_official_phone_gru"), ("W2V2 shuffled phone BiGRU", "tp_w2v2_official_phone_shuffle")]:
+        rows.append((lab, sm(f"{key}_prism"), sm(f"{key}_prism_clean"), sm(f"{key}_speaker_split_clean")))
+    lines = [r"\begin{tabular}{lrrr}", r"\toprule", r" & Released & \multicolumn{2}{c}{Corrected} \\",
+             r"\cmidrule(lr){3-4}", r"Probe & released split & released split & speaker-disjoint \\", r"\midrule"]
+    lines += [" & ".join(r) + r" \\" for r in rows]
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    write("tab_official.tex", "\n".join(lines) + "\n")
+
+
 if __name__ == "__main__":
     tab_probes()
     tab_order()
     tab_mdl()
     tab_gemination()
+    tab_official()

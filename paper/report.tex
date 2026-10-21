@@ -31,9 +31,11 @@
 
 \begin{abstract}
 PRiSM reports that a transcript probe over predicted phones locates Hindi-belt speakers better than a
-representation probe over the recognizer's hidden states. We rebuild its dialect geolocation task from public
-data and find that its random split places the speaker of 98\% of test utterances in training, where a lookup
-on the speaker ID alone reaches 98.0 Recall@1. On new speakers a voice embedding falls to the majority level,
+representation probe over the recognizer's hidden states. We reproduce its transcript probe on the official data
+(45.5 Recall@1 against 45.7) and find that the benchmark rewards recognising speakers: its random split places
+nearly every test speaker in training, 28\% of test clips have their exact audio in training, and a voice
+embedding that sees no words scores 55.1, above the probe. On a corrected, speaker-disjoint version every probe
+falls to the majority level. On new speakers a voice embedding falls to the majority level,
 and transcript probes keep a small advantage that comes mostly from what speakers describe. Local phone order
 helps on new speakers; a sequence model's gain from order is clear only when speakers are shared. In the audio,
 Haryana speakers hold intervocalic voiceless stops 14\% longer than New Delhi speakers, a lengthening that the
@@ -105,6 +107,27 @@ models with word fixed effects, a rate control and speaker random intercepts; Le
 utterances (seed ensemble, 95\% speaker-bootstrap CI). Open markers: trained and tested on shared pictures.}
 \label{fig:probes}
 \end{figure*}
+
+\paragraph{The official GEO-v data.} With our code and PRiSM's settings, PRiSM's char TP-GRU scores
+45.5\,$\pm$\,1.3 Recall@1 on the official release and split (4 seeds; the paper reports 45.7), so our pipeline
+reproduces the anchor. The release, however, holds 26,385 rows but only 21,481 distinct recordings: PRiSM's
+sampling script writes each district's first 600 clips from four shards to the same file names, so the shards
+overwrite each other's audio while the metadata keeps every row. 28.0\% of test rows have their byte-identical
+audio in training, 38\% of repeated recordings carry different pincodes in different rows, and the largest class
+(pincode 171202, Shimla) is placed 844\,km away in Afghanistan because three of its post offices have latitude and
+longitude swapped. Table~\ref{tab:official} shows what the released split rewards: a speaker-verification
+embedding that sees no words scores 55.1, a bag of phone bigrams 59.6 and a nearest-neighbour transcript matcher
+that learns nothing 58.9, all above PRiSM's probe. On a corrected version (one row per recording, consistent labels,
+fixed coordinates) the same probes keep their scores under the released split, but under a speaker-disjoint split
+built from clustered voice embeddings (2.1\% true leakage when the same procedure is checked on our rebuild) every
+probe falls to the majority level.
+
+\begin{table}[t]
+\centering\scriptsize
+\input{tables/tab_official.tex}
+\caption{Official GEO-v: test Recall@1 (mean $\pm$ sd over seeds) on the release and on a corrected version.}
+\label{tab:official}
+\end{table}
 
 \paragraph{RQ0: speakers and topic.} Under PRiSM's random split the task is almost solved by the speaker
 identity alone: a lookup that knows only the speaker ID reaches 98.0 Recall@1 (Table~\ref{tab:probes}). An
