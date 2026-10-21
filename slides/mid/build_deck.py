@@ -331,7 +331,8 @@ def build():
             "On a corrected version (one row per recording, consistent labels, fixed coordinates) with a speaker-disjoint "
             f"split from clustered voice embeddings, everything falls to the majority level ({sp.loc['majority', 'recall1']:.1f}): "
             f"phone bigrams {bg_sp[0]:.1f}, ECAPA {ec_sp[0]:.1f}, matcher {sp.loc['nearest-neighbour transcript (1-NN)', 'recall1']:.1f}.",
-            "So GEO-v as released rewards recognising speakers, and both of PRiSM's probes are measured on that.",
+            "Phone order is memorisation too: PRiSM's BiGRU beats shuffled phones by 19 points when speakers are shared "
+            "and by nothing (-0.3) on new speakers. GEO-v as released rewards recognising speakers.",
         ], LM, Inches(3.55), Inches(12.1), Inches(3))
 
     # 6. results table

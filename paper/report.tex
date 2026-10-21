@@ -121,7 +121,9 @@ embedding that sees no words scores 55.1, a bag of phone bigrams 59.6 and a near
 that learns nothing 58.9, all above PRiSM's probe. On a corrected version (one row per recording, consistent labels,
 fixed coordinates) the same probes keep their scores under the released split, but under a speaker-disjoint split
 built from clustered voice embeddings (2.1\% true leakage when the same procedure is checked on our rebuild) every
-probe falls to the majority level.
+probe falls to the majority level. The same split settles the order question: on the corrected rows PRiSM's phone BiGRU beats the
+same probe on shuffled phones by $+$19.2 Recall@1 [15.7, 22.9] when speakers are shared and by $-$0.3 [$-$3.7, 2.5]
+when they are not.
 
 \begin{table}[t]
 \centering\scriptsize

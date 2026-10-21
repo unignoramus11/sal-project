@@ -66,6 +66,12 @@ few districts. The release includes four Uttar Pradesh districts (about 6,800 ro
    beat the majority on distance (about 450 km against 585), the same coarse regional signal as on the rebuild;
    only 59 pseudo-speakers are in that test set, so Recall@1 CIs are wide.
 
+10. **Phone order is speaker memorisation.** PRiSM's BiGRU on the corrected rows (3 seeds; shuffled: 2-3 seeds):
+    released split, phone BiGRU 46.6 +- 0.8 against the same probe on phones shuffled within each utterance 30.3 +-
+    0.6; pseudo-speaker split 9.0 +- 0.8 against 8.0 +- 1.0. Paired on the same test rows (seed ensembles,
+    pseudo-speaker bootstrap): order adds +19.2 Recall@1 [15.7, 22.9] when speakers are shared and -0.3 [-3.7, 2.5]
+    when they are not. The order effect PRiSM points to exists only for speakers seen in training.
+
 ## Why exact matching to Vaani is limited
 
 The Vaani revision PRiSM sampled from (on or before 22 Dec 2025) was later re-sharded (Chandigarh: 47 shards then,
