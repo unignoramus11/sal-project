@@ -45,6 +45,21 @@ few districts. The release includes four Uttar Pradesh districts (about 6,800 ro
    matcher scores 39.6. Speakers in the release repeat recognisable content across their utterances even more
    than in our sample.
 
+7. **Speaker leakage, estimated.** With ECAPA embeddings calibrated on the rebuild (EER 6.4% for same- vs
+   different-speaker pairs within district; a best-match threshold with 5% false alarms on the rebuild's
+   speaker-disjoint split recovers the rebuild's true 98.0% leakage exactly), 88.3% of official val/test clips have a
+   same-speaker-looking clip in training, more than the 62.2% observed on the rebuild at 98% true leakage: speaker
+   leakage in the release is at least as high as in our rebuild (`scripts/speaker_calibration.py`).
+8. **Simple probes beat PRiSM's on its own benchmark.** On the released split a bag of W2V2 phone bigrams scores
+   60.2 Recall@1 (77 km, 5 seeds), above PRiSM's TP-GRU (46.1 here, 45.7 in the paper).
+9. **A corrected version** (`scripts/official_prepare.py`): one row per recording, recordings with conflicting
+   pincodes removed, Shimla moved to its valid offices; 19,731 rows. Pseudo-speakers come from clustering the ECAPA
+   embeddings within district at a threshold whose pseudo-speaker split has 2.1% true speaker leakage on the
+   rebuild (375 pseudo-speakers). The 1-NN transcript matcher scores 57.5 Recall@1 [50.2, 65.7] on the corrected
+   rows under the released split (pseudo-speaker overlap 99.8%) and 9.6 [6.4, 13.6] under the pseudo-speaker
+   split (majority 6.8): removing duplicates changes little, removing shared speakers removes almost everything
+   (`results/official/scores_clean.csv`).
+
 ## Why exact matching to Vaani is limited
 
 The Vaani revision PRiSM sampled from (on or before 22 Dec 2025) was later re-sharded (Chandigarh: 47 shards then,
