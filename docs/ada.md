@@ -207,7 +207,7 @@ placed in Afghanistan. We run PRiSM's probes on the release as published and on 
 envs/prism/bin/hf download changelinglab/vaani-hi-geo --repo-type dataset \
   --revision 264fb053bd1e8f060cd09b9677950d5be96fe77a --local-dir data/vaani_hi_official
 python scripts/official_merge.py                     # -> data/vaani_hi_official/vaani_hi_official.parquet
-# 2. features (3 GPU jobs, ~1 h each; the release is ~29 h of audio)
+# 2. features (3 GPU jobs, ~1 h each; the release is ~33 h of audio)
 for M in w2v2 whisper zipa; do bash slurm/submit.sh slurm/extract_official.sbatch $M; done
 # 3. RP-Attn, last layer, 5 seeds, released split and corrected speaker-disjoint split (6 GPU jobs)
 git pull                                              # needs results/official/meta*.parquet and splits*.parquet
