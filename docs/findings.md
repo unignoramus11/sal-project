@@ -20,8 +20,8 @@ TP-GRU and representation-probe results are still running; this file is updated 
 
 ## The official GEO-v release (access 21 Oct 2026; details in docs/official_data.md)
 
-- Reproduction: PRiSM's char TP-GRU with our code on the official data and split scores 45.5 +- 1.3 Recall@1
-  (4 seeds; PRiSM: 45.7). The probe reproduction holds; our lower rebuild scores come from the data.
+- Reproduction: PRiSM's char TP-GRU with our code on the official data and split scores 45.5 +- 1.1 Recall@1
+  (5 seeds; PRiSM: 45.7). The probe reproduction holds; our lower rebuild scores come from the data.
 - The release duplicates audio: 26,385 rows, 21,481 distinct recordings; 38% of duplicated recordings carry
   different pincodes in different rows (a file-name collision in PRiSM's sampling script). 28.0% of test rows
   have their byte-identical audio in training.

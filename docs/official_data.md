@@ -36,7 +36,7 @@ few districts. The release includes four Uttar Pradesh districts (about 6,800 ro
    (`scripts/official_sources.py`, kept for the record). Speaker overlap is instead estimated from ECAPA
    speaker embeddings calibrated on our rebuild, where speakers are known (`scripts/speaker_calibration.py`).
 5. **Reproduction.** PRiSM's char TP-GRU with W2V2 transcripts, run with our code on the release and its own split,
-   scores 45.5 +- 1.3 Recall@1 and 124 km (4 seeds; PRiSM reports 45.7 and 146 km). Our pipeline reproduces PRiSM;
+   scores 45.5 +- 1.1 Recall@1 and 124 km (5 seeds; PRiSM reports 45.7 and 146 km). Our pipeline reproduces PRiSM;
    the gap to our rebuilt data (about 21) comes from the data.
 6. **Memorisation is enough.** A nearest-neighbour matcher over the transcripts, which learns nothing about location
    (TF-IDF over character 1-4-grams; the location of the most similar training transcript), scores 58.9 Recall@1
@@ -53,7 +53,7 @@ few districts. The release includes four Uttar Pradesh districts (about 6,800 ro
 8. **Simple probes, and the voice alone, beat PRiSM's probe on its own benchmark.** Released split, mean +- sd over
    5 seeds: W2V2 phone bigrams 59.6 +- 0.7 Recall@1 (88 km), char bigrams 58.7 +- 0.6, ECAPA speaker embeddings,
    which encode voice and channel and no words, 55.1 +- 1.4 (80 km; seed ensemble 60.1, 64 km); PRiSM's TP-GRU
-   45.5 +- 1.3. On test rows whose audio is not duplicated in training the ranking is the same.
+   45.5 +- 1.1. On test rows whose audio is not duplicated in training the ranking is the same.
 9. **A corrected version** (`scripts/official_prepare.py`): one row per recording, recordings with conflicting
    pincodes removed, Shimla moved to its valid offices; 19,731 rows. Pseudo-speakers come from clustering the ECAPA
    embeddings within district at a threshold whose pseudo-speaker split has 2.1% true speaker leakage on the
