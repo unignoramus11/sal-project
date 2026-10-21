@@ -35,9 +35,10 @@ representation probe over the recognizer's hidden states. We reproduce its trans
 (45.5 Recall@1 against 45.7) and find that the benchmark rewards recognising speakers: its random split places
 nearly every test speaker in training, 28\% of test clips have their exact audio in training, and a voice
 embedding that sees no words scores 55.1, above the probe. On a corrected, speaker-disjoint version every probe
-falls to the majority level. On new speakers a voice embedding falls to the majority level,
-and transcript probes keep a small advantage that comes mostly from what speakers describe. Local phone order
-helps on new speakers; a sequence model's gain from order is clear only when speakers are shared. In the audio,
+falls to the majority level in Recall@1. On a larger rebuild of the task from public Vaani data, with
+1,570 speakers, transcript probes keep a small advantage on new speakers that comes mostly from what speakers
+describe; local phone order helps there, and a sequence model's gain from order is clear only when speakers are
+shared. In the audio,
 Haryana speakers hold intervocalic voiceless stops 14\% longer than New Delhi speakers, a lengthening that the
 two recognizers transcribe inconsistently. \todo{representation-probe results (Ada).}
 \end{abstract}
