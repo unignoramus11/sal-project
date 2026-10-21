@@ -35,7 +35,6 @@ few districts. The release includes four Uttar Pradesh districts (about 6,800 ro
    metadata failed: a district holds 120,000-160,000 Vaani clips, so duration alone identifies only 0.1% of rows
    (`scripts/official_sources.py`, kept for the record). Speaker overlap is instead estimated from ECAPA
    speaker embeddings calibrated on our rebuild, where speakers are known (`scripts/speaker_calibration.py`).
-
 5. **Reproduction.** PRiSM's char TP-GRU with W2V2 transcripts, run with our code on the release and its own split,
    scores 46.1 Recall@1 and 124 km (seed 42; PRiSM reports 45.7 and 146 km). Our pipeline reproduces PRiSM; the
    gap to our rebuilt data (about 21) comes from the data. (More seeds in progress.)
@@ -50,8 +49,8 @@ few districts. The release includes four Uttar Pradesh districts (about 6,800 ro
 
 The Vaani revision PRiSM sampled from (on or before 22 Dec 2025) was later re-sharded (Chandigarh: 47 shards then,
 61 now) and its files are no longer downloadable (HTTP 403 on the old LFS objects). The same clips exist at the
-current revision in other shards, so sources are recovered from metadata (district + duration) rather than by
-shard and row.
+current revision in other shards, but among 120,000-160,000 clips per district; identifying them would need the
+audio of every shard (about 500 GB), so speakers are estimated from speaker embeddings instead.
 
 ## Plan
 

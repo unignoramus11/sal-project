@@ -17,6 +17,7 @@ Output: data/vaani_hi_official/sources_parts/<state>__<district>.parquet (resuma
 Run:    uv run python scripts/official_sources.py --workers 8
 """
 import argparse
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import numpy as np
@@ -43,9 +44,17 @@ def fetch_district(state: str, district: str) -> int:
     con.execute("INSTALL httpfs; LOAD httpfs;")
     con.execute(f"CREATE SECRET hf (TYPE huggingface, TOKEN '{get_token()}')")
     glob_ = f"hf://datasets/{REPO}@{REV}/audio/{state}/{district}/*.parquet"
-    t = con.execute(f"""SELECT audio.path AS source_path, duration, CAST(pincode AS VARCHAR) AS pincode, gender,
-                               referenceImage, filename AS source_shard
-                        FROM read_parquet('{glob_}', filename=true, union_by_name=true)""").df()
+    query = f"""SELECT audio.path AS source_path, duration, CAST(pincode AS VARCHAR) AS pincode, gender,
+                       referenceImage, filename AS source_shard
+                FROM read_parquet('{glob_}', filename=true, union_by_name=true)"""
+    for attempt in range(8):                    # the hub rate-limits bursts of range requests; links drop
+        try:
+            t = con.execute(query).df()
+            break
+        except (duckdb.HTTPException, duckdb.IOException, duckdb.Error):   # rate limits (429), dropped connections
+            if attempt == 7:
+                raise
+            time.sleep(60 * (attempt + 1))
     t["pincode"] = pd.to_numeric(t["pincode"], errors="coerce")
     t["source_shard"] = t["source_shard"].str.split("/audio/").str[-1]
     tmp = out.with_suffix(".tmp")
@@ -56,7 +65,7 @@ def fetch_district(state: str, district: str) -> int:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--workers", type=int, default=4)
+    ap.add_argument("--workers", type=int, default=1)
     args = ap.parse_args()
     PARTS.mkdir(parents=True, exist_ok=True)
     off = pd.read_parquet(D / "matched.parquet", columns=["metadata_idx", "state", "district", "pincode", "gender",
