@@ -77,6 +77,10 @@ speakers identified from the file names. A rebuild on a second machine reproduce
 (0\% of test speakers in training, against 97.9\% under the random split).
 \paragraph{Prompts.} Speakers describe pictures; 68\% of utterances describe a picture named after the
 speaker's own district. The shared-picture subset has its own location prior and gets its own baselines.
+\paragraph{Coordinates.} PRiSM's recipe places a pincode at the mean of its India Post offices, and some
+directory rows are hundreds of km off with the district unchanged. Against the densest cluster of each pincode's
+offices, pincode 454552 (Dhar, 677 utterances) is 266\,km off in our rebuild and Ranchi 834008 61\,km; the
+median shift is 4\,km. Recall@1 hardly changes, since candidates move with the labels; km errors include it.
 
 \section{Method}
 \paragraph{Probes.} PRiSM's TP (two-layer BiGRU over characters) with its settings, the same over phones and
@@ -144,12 +148,22 @@ identifiable: a nearest-neighbour matcher over character n-grams, which learns n
 reaches 39.6 [37.1, 42.0] under the random split and 18.2 [14.5, 22.2] on new speakers, and its nearest
 training transcript comes from the same speaker for 25\% of test utterances (chance 0.3\%). Its leakage rises
 from 15.3 for speakers absent from training to 46.3 for speakers with more than 50 training utterances.
+Speaker codes come from file names, and some codes of one district sound alike: grouping codes whose voice
+embeddings are as close as two halves of one speaker's recordings, 49 of the 223 test speakers of our
+speaker-disjoint split have a look-alike code in training. ECAPA's small lift on new speakers ($+$0.4) comes from
+them ($+$9.1, against $-$4.2 [$-$12.1, 2.2] on the remaining test utterances); the transcript probes are unaffected
+(ZIPA phone bigrams $+$11.6 [5.2, 17.6] without look-alikes, $+$10.6 overall).
 
 On new speakers only bigram probes beat the majority baseline (Figure~\ref{fig:probes}): ZIPA phone bigrams
 by $+$10.6 [6.2, 15.9] points and W2V2 phone bigrams by $+$7.9 [2.6, 13.9]. Trained and tested on shared
 pictures only, where the topic cannot reveal the district and the subset's own baselines apply, no transcript
 probe beats the majority on Recall@1 or on the state; km gains are 48 to 94\,km, and only the two W2V2 ones
-have CIs above zero. Most of the transcript probes' signal on new speakers is what speakers describe.
+have CIs above zero. Most of the transcript probes' signal on new speakers is what speakers describe. The
+picture alone goes further: predicting the location from the picture ID (the majority pincode of training
+utterances about the same picture) scores 61.8 Recall@1 [58.9, 64.7] under the random split, above PRiSM's 45.7,
+and 27.5 [20.7, 36.5] on new speakers, above every transcript probe, because a district's own pictures are shown
+to all its speakers. On shared pictures the same lookup falls below the majority on new speakers (10.1 against
+21.3), so that subset does remove topic.
 \paragraph{RQ1: order.} Local order helps on new speakers: W2V2 phone bigrams beat phone unigrams by
 $+$4.8 [2.6, 6.9] Recall@1 and 33\,km (Table~\ref{tab:order}), and phone units beat raw characters for W2V2
 ($+$3.5 [2.1, 5.1]). MDL agrees (Table~\ref{tab:mdl}): every bag probe codes the pincode of new speakers more
@@ -219,8 +233,8 @@ utterance length; on the official release speakers are estimated from voice embe
 study uses separate Vaani audio from three Haryana districts and New Delhi with thousands of speakers, but
 New Delhi stands for standard Hindi only approximately. Picture prompts tie topic to place, and the
 shared-picture subset is small (119 test speakers). Recognizer output is not a phonetic gold standard, and the
-acoustic landmarks are automatic; a blind manual audit covers 50 tokens. Speaker codes come from file names
-and may merge or split some speakers.
+acoustic landmarks are automatic; a blind manual audit covers 50 tokens. Speaker codes come from file names;
+look-alike codes (above) suggest that some speakers or devices appear under several codes.
 
 \section*{Ethics}
 Vaani is released under CC-BY 4.0 with speaker consent; we report only aggregate results and do not attempt to

@@ -29,7 +29,8 @@ few districts. The release includes four Uttar Pradesh districts (about 6,800 ro
    71.54°E, in Afghanistan, 844 km from its post offices. The release equals the unfiltered mean of the 16 India
    Post offices of that pincode, 3 of which have latitude and longitude swapped. All other pincodes are within
    64 km of the median of their offices. Mean-km metrics on GEO-v are dominated by this point (the majority
-   baseline's mean error is 1,384 km).
+   baseline's mean error is 1,384 km). Against the densest cluster of each pincode's offices
+   (a stricter check, scripts/rebuild_checks.py), Sarguja (497001, 680 rows) is also 64 km off; median shift 2 km.
 4. **Speakers.** The release has no speaker column. Clips matched sample-for-sample to our cached Vaani shards
    (1%, 271 rows) all have their speaker in training when they are in val/test. Recovering every row's source by
    metadata failed: a district holds 120,000-160,000 Vaani clips, so duration alone identifies only 0.1% of rows

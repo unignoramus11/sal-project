@@ -1,4 +1,4 @@
-# Findings so far (18 Oct 2026)
+# Findings so far (24 Oct 2026)
 
 Every number below comes from `results/` (tables: `results/tables/configs.csv`, `comparisons.csv`,
 `results/baselines.csv`, `results/dpr/`, `results/mdl/summary.csv`; regenerate with `scripts/summarise.py`,
@@ -111,6 +111,40 @@ TP-GRU and representation-probe results are still running; this file is updated 
   survives without topic is at most a coarse regional signal (transcript km gains of 48-94 km, only the two
   W2V2 ones with CIs above zero; R@1 and state accuracy not significant). The subset has 1,222 test utterances from 119 speakers, so
   the CIs are wide; state accuracy: results/tables/state_level.csv.
+
+## Checks of our own evaluation (24 Oct 2026; scripts/rebuild_checks.py, results/rebuild_checks/)
+
+- The picture alone locates the speaker. Predicting the pincode from the picture ID only (majority pincode of the
+  training utterances that describe the same picture) scores 61.8 R@1 [58.9, 64.7] under PRiSM's split, above
+  PRiSM's 45.7 and every probe, and 27.5 [20.7, 36.5] on new speakers (majority 10.0), above every transcript
+  probe on new speakers (ZIPA phone bigram 21.3). District-specific pictures are shared by the speakers of a
+  district. On shared pictures the same lookup is below the majority on new speakers (10.1 against 21.3): there the
+  picture carries no location, so the shared-picture subset is a valid topic control.
+- Look-alike speaker codes. Speaker codes come from file names; codes of one district whose ECAPA centroids are as
+  close as two halves of one speaker's recordings (cosine >= 0.757, the 5th percentile of same-speaker split-half
+  cosines; average linkage) merge 1,570 codes into 1,327 groups (126 with several codes; gender agrees in 98% of
+  pairs above 0.85, against 54% for random pairs of the district). In our speaker-disjoint split 49 of 223 test
+  speakers (1,246 of 3,581 test utterances) have a look-alike code in training. ECAPA's speaker-disjoint lift of
+  +0.4 comes from them (+9.1 on look-alike utterances, -4.2 [-12.1, 2.2] on the rest). The transcript probes are
+  unaffected: ZIPA phone bigram lift +10.6 overall, +11.6 [5.2, 17.6] without look-alikes; W2V2 phone bigram +7.9
+  and +7.2 [0.0, 15.0]. The voice embedding's residual signal on new speakers is leakage; the transcript signal is not.
+- Coordinates. PRiSM's recipe (and our rebuild) places a pincode at the mean of its India Post offices, and the
+  directory misplaces some offices by hundreds of km with the district label unchanged. Against the densest cluster
+  of each pincode's offices (sal.data.rebuild.robust_pincode_coordinates), pincode 454552 (Dhar, 677 utterances) is
+  266 km off in the rebuild, placed 88 km from Bhopal instead of 45 km from the other Dhar pincode; 834008 (Ranchi,
+  479) is 61 km off. In the official release: Shimla 837 km, Sarguja (497001) 64 km. Median shift 4 km (rebuild),
+  2 km (official). Recall@1 is barely affected (the candidate set moves with the labels); km errors and the
+  geometry the regression learns are. 197 of 3,581 speaker-split test utterances are at the two pincodes.
+- Duplicates: 3 recordings appear twice in the rebuild (same speaker each time), against 4,559 in the release.
+
+## Benchmark for the final evaluation (prepared, runs in November; docs/benchmark.md)
+
+- 5-fold cross-validation over speaker groups (look-alike codes merged), pincode-stratified, every utterance tested
+  once; tracks "all" (22,548 utterances, 1,327 groups, 26 pincodes) and "shared" (shared pictures only; 7,157
+  utterances, 650 groups, 24 pincodes); corrected coordinates; duplicates removed.
+- Baselines on it (no training): all track majority 10.6, picture lookup 29.0 (+18.4 [15.1, 22.1]), 1-NN
+  transcript 15.7 (W2V2) and 18.1 (ZIPA); shared track majority 20.3, picture lookup 10.1, 1-NN 17.6-18.7 (below
+  the majority).
 
 ## RQ1: inventory, local order, units
 
