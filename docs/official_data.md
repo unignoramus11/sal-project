@@ -64,13 +64,17 @@ few districts. The release includes four Uttar Pradesh districts (about 6,800 ro
    rows, phone bigrams 57.3 +- 1.6, ECAPA 54.0 +- 2.0; pseudo-speaker split, phone bigrams 8.7 +- 0.6, char bigrams
    9.2 +- 1.3, unigrams 6.9, ECAPA 3.4 +- 0.5, against a majority of 6.8. On new speakers the bag probes still
    beat the majority on distance (about 450 km against 585), the same coarse regional signal as on the rebuild;
-   only 59 pseudo-speakers are in that test set, so Recall@1 CIs are wide.
+   only 59 pseudo-speakers are in that test set, so Recall@1 CIs are wide. ZIPA transcripts give the same
+   picture (5 seeds): phone bigrams 59.5 +- 1.0 on the released split, 59.8 +- 0.6 on the corrected rows under it,
+   9.2 +- 1.3 under the pseudo-speaker split; char bigrams 58.9, 58.2 and 8.0.
 
-10. **Phone order is speaker memorisation.** PRiSM's BiGRU on the corrected rows (3 seeds; shuffled: 2-3 seeds):
-    released split, phone BiGRU 46.6 +- 0.8 against the same probe on phones shuffled within each utterance 30.3 +-
-    0.6; pseudo-speaker split 9.0 +- 0.8 against 8.0 +- 1.0. Paired on the same test rows (seed ensembles,
-    pseudo-speaker bootstrap): order adds +19.2 Recall@1 [15.7, 22.9] when speakers are shared and -0.3 [-3.7, 2.5]
-    when they are not. The order effect PRiSM points to exists only for speakers seen in training.
+10. **Phone order is speaker memorisation.** PRiSM's BiGRU on the corrected rows (3 seeds each): released split,
+    phone BiGRU 46.6 +- 0.8 against the same probe on phones shuffled within each utterance 29.6 +- 1.3;
+    pseudo-speaker split 9.0 +- 0.8 against 8.0 +- 1.0. Paired on the same test rows (seed ensembles,
+    pseudo-speaker bootstrap; `results/official/order_clean.csv`): order adds +18.6 Recall@1 [15.5, 22.3] when
+    speakers are shared and -0.3 [-3.5, 2.4] when they are not. Bigram over unigram bags: +9.2 to +11.4 (W2V2 and
+    ZIPA, phones and chars) when speakers are shared, +0.2 to +1.8 with every CI including 0 when they are not. The
+    order effect PRiSM points to exists only for speakers seen in training.
 
 ## Why exact matching to Vaani is limited
 

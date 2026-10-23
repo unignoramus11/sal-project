@@ -33,9 +33,12 @@ TP-GRU and representation-probe results are still running; this file is updated 
 - On a corrected version (deduplicated, consistent labels, fixed coordinates) the matcher still scores 57.5 under
   the released split but 9.6 [6.4, 13.6] under a pseudo-speaker-disjoint split (majority 6.8), and so do the probes:
   phone bigrams 57.3 -> 8.7, ECAPA 54.0 -> 3.4. Speaker overlap, not duplicate audio, carries the scores.
+  ZIPA transcripts behave the same: phone bigrams 59.5 +- 1.0 on the released split, 59.8 on the corrected rows,
+  9.2 +- 1.3 on the pseudo-speaker split.
 - Phone order is speaker memorisation: on the corrected rows, PRiSM's phone BiGRU beats the same probe on
-  shuffled phones by +19.2 Recall@1 [15.7, 22.9] when speakers are shared and by -0.3 [-3.7, 2.5] when they are
-  not (paired, pseudo-speaker bootstrap). Speaker leakage in the release, estimated from calibrated ECAPA
+  shuffled phones by +18.6 Recall@1 [15.5, 22.3] when speakers are shared and by -0.3 [-3.5, 2.4] when they are
+  not (paired, pseudo-speaker bootstrap; 3 seeds each). Bigram bags over unigram bags: +9.2 to +11.4 with shared
+  speakers, +0.2 to +1.8 (all CIs include 0) on new speakers, for both recognizers. Speaker leakage in the release, estimated from calibrated ECAPA
   embeddings, is at least the rebuild's 98%.
 
 ## RQ0: speaker leakage

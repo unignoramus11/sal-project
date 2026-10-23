@@ -320,6 +320,8 @@ def build():
         sp = cl[cl.protocol == "speaker_split"].set_index("probe")
         bg_sp = seedmean("tp_w2v2_official_phone_bigram_speaker_split_clean")
         ec_sp = seedmean("dense_ecapa_official_speaker_split_clean")
+        oc = pd.read_csv(off / "order_clean.csv").set_index(["protocol", "a"])
+        o_rel, o_sp = (oc.loc[(P, "tp_w2v2_official_phone_gru")] for P in ("prism", "speaker_split"))
         s = d._slide()
         d.header(s, "Results  ·  official GEO-v scores", "On PRiSM's own data the voice alone beats PRiSM's probe")
         d.stats(s, [(f"{gru[0]:.1f}", f"PRiSM's TP-GRU with our code\n({gru[2]} seeds; paper: 45.7)"),
@@ -331,8 +333,9 @@ def build():
             "On a corrected version (one row per recording, consistent labels, fixed coordinates) with a speaker-disjoint "
             f"split from clustered voice embeddings, everything falls to the majority level ({sp.loc['majority', 'recall1']:.1f}): "
             f"phone bigrams {bg_sp[0]:.1f}, ECAPA {ec_sp[0]:.1f}, matcher {sp.loc['nearest-neighbour transcript (1-NN)', 'recall1']:.1f}.",
-            "Phone order is memorisation too: PRiSM's BiGRU beats shuffled phones by 19 points when speakers are shared "
-            "and by nothing (-0.3) on new speakers. GEO-v as released rewards recognising speakers.",
+            f"Phone order is memorisation too: PRiSM's BiGRU beats shuffled phones by {o_rel['diff']:.0f} points when speakers "
+            f"are shared and by nothing ({o_sp['diff']:+.1f}) on new speakers; ZIPA transcripts give the same picture. "
+            "GEO-v as released rewards recognising speakers.",
         ], LM, Inches(3.55), Inches(12.1), Inches(3))
 
     # 6. results table

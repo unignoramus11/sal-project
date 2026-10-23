@@ -1,0 +1,11 @@
+protocol,a,b,diff,lo,hi,p,n_clusters
+prism,tp_w2v2_official_phone_gru,tp_w2v2_official_phone_shuffle,18.61884776802747,15.469801676754818,22.334669361821195,0.0,249
+prism,tp_w2v2_official_phone_bigram,tp_w2v2_official_phone_unigram,9.156810377718427,5.984337879684682,12.450495553006515,0.0,249
+prism,tp_w2v2_official_char_bigram,tp_w2v2_official_char_unigram,11.369706219000381,7.835136838652595,14.644921367023787,0.0,249
+prism,tp_zipa_official_phone_bigram,tp_zipa_official_phone_unigram,10.492178557802365,7.272554708209884,13.809277635510028,0.0,249
+prism,tp_zipa_official_char_bigram,tp_zipa_official_char_unigram,10.606638687523846,7.427549841896347,13.875446005215741,0.0,249
+speaker_split,tp_w2v2_official_phone_gru,tp_w2v2_official_phone_shuffle,-0.34453057708871665,-3.502430542503877,2.41939460900755,0.836,59
+speaker_split,tp_w2v2_official_phone_bigram,tp_w2v2_official_phone_unigram,1.8087855297157622,-0.8758639838162054,4.7351528003583425,0.188,59
+speaker_split,tp_w2v2_official_char_bigram,tp_w2v2_official_char_unigram,1.7226528854435832,-0.5998549885068483,4.14635643752671,0.144,59
+speaker_split,tp_zipa_official_phone_bigram,tp_zipa_official_phone_unigram,1.205857019810508,-0.5524866981702028,2.838576554068801,0.178,59
+speaker_split,tp_zipa_official_char_bigram,tp_zipa_official_char_unigram,0.20097616996841802,-3.0942688683691957,3.1162045553667017,0.926,59

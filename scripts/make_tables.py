@@ -136,7 +136,9 @@ def tab_official():
     for lab, key in [("ECAPA speaker embedding", "dense_ecapa_official"), ("W2V2 char unigram", "tp_w2v2_official_char_unigram"),
                      ("W2V2 phone unigram", "tp_w2v2_official_phone_unigram"), ("W2V2 char bigram", "tp_w2v2_official_char_bigram"),
                      ("W2V2 phone bigram", "tp_w2v2_official_phone_bigram"), ("W2V2 char BiGRU (PRiSM)", "tp_w2v2_official_char_gru"),
-                     ("W2V2 phone BiGRU", "tp_w2v2_official_phone_gru"), ("W2V2 shuffled phone BiGRU", "tp_w2v2_official_phone_shuffle")]:
+                     ("W2V2 phone BiGRU", "tp_w2v2_official_phone_gru"), ("W2V2 shuffled phone BiGRU", "tp_w2v2_official_phone_shuffle"),
+                     ("ZIPA char unigram", "tp_zipa_official_char_unigram"), ("ZIPA phone unigram", "tp_zipa_official_phone_unigram"),
+                     ("ZIPA char bigram", "tp_zipa_official_char_bigram"), ("ZIPA phone bigram", "tp_zipa_official_phone_bigram")]:
         rows.append((lab, sm(f"{key}_prism"), sm(f"{key}_prism_clean"), sm(f"{key}_speaker_split_clean")))
     lines = [r"\begin{tabular}{lrrr}", r"\toprule", r" & Released & \multicolumn{2}{c}{Corrected} \\",
              r"\cmidrule(lr){3-4}", r"Probe & released split & released split & speaker-disjoint \\", r"\midrule"]

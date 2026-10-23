@@ -6,7 +6,11 @@ seed-ensemble prediction is scored on all test rows, on the rows whose byte-iden
 matcher (TF-IDF over character 1-4-grams, no location learning) and an exact-audio lookup. CIs: bootstrap over
 clusters of identical audio (pseudo-speaker clusters once available would be stricter).
 
-Output: results/official/scores_by_duplication.csv
+On the corrected version (scripts/official_prepare.py) the probes are scored under the released split and the
+pseudo-speaker split, and order is tested by paired comparisons on the same test rows (seed ensembles, bootstrap over
+pseudo-speakers): BiGRU vs the same BiGRU on phones shuffled within each utterance, and bigram vs unigram bags.
+
+Output: results/official/scores_by_duplication.csv, scores_clean.csv, order_clean.csv
 Run:    uv run python scripts/official_eval.py
 """
 import re
@@ -18,7 +22,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 
 from sal.paths import DATA, OUTPUTS, RESULTS
 from sal.probes import geo
-from sal.stats import cluster_bootstrap
+from sal.stats import cluster_bootstrap, paired_cluster_bootstrap
 
 D = DATA / "vaani_hi_official"
 h = pd.read_parquet(D / "audio_hash.parquet")[["metadata_idx", "h", "split", "pincode", "latitude", "longitude"]]
@@ -82,7 +86,7 @@ print(out[cols].round(1).to_string(index=False))
 # ---- corrected version (scripts/official_prepare.py): released split on clean rows, and pseudo-speaker split
 R = RESULTS / "official"
 cm = pd.read_parquet(R / "meta_clean.parquet").merge(pd.read_parquet(R / "splits_clean.parquet"), on=["metadata_idx", "pincode", "state", "district"])
-crow = []
+crow, hits, orow = [], {}, []
 for proto in ("prism", "speaker_split"):
     tr_c, te_c = cm[cm[proto] == "train"], cm[cm[proto] == "test"]
     cand = te_c.groupby("pincode")[["latitude", "longitude"]].first()
@@ -93,6 +97,7 @@ for proto in ("prism", "speaker_split"):
     def cscore(name, pred, proto=proto, te_c=te_c, t=t):
         p = torch.tensor(pred, dtype=torch.float64)
         hit = 100 * geo.recall_at_k(p, t, 1).numpy().astype(float)
+        hits[proto, re.sub(r" \(\d+ seeds\)$", "", name)] = hit
         ci = cluster_bootstrap(hit, te_c["speaker"].to_numpy(), n=1000)
         crow.append({"protocol": proto, "probe": name, "recall1": ci["estimate"], "lo": ci["lo"], "hi": ci["hi"],
                      "mean_km": float(geo.error_km(p, t).numpy().mean()), "test_rows": len(te_c),
@@ -114,6 +119,15 @@ for proto in ("prism", "speaker_split"):
             parts.append(p)
         e = pd.concat(parts).groupby("metadata_idx")[["x", "y", "z"]].mean()
         cscore(f"{cfg} ({len(parts)} seeds)", e.loc[te_c["metadata_idx"]].to_numpy())
+    for a, b in [("tp_w2v2_official_phone_gru", "tp_w2v2_official_phone_shuffle")] + [
+            (f"tp_{m}_official_{tok}_bigram", f"tp_{m}_official_{tok}_unigram") for m in ("w2v2", "zipa") for tok in ("phone", "char")]:
+        ka, kb = (proto, f"{a}_{proto}_clean"), (proto, f"{b}_{proto}_clean")
+        if ka in hits and kb in hits:
+            r = paired_cluster_bootstrap(hits[ka], hits[kb], te_c["speaker"].to_numpy(), n=1000)
+            orow.append({"protocol": proto, "a": a, "b": b, **r})
 cr = pd.DataFrame(crow)
 cr.to_csv(R / "scores_clean.csv", index=False)
 print(cr.round(1).to_string(index=False))
+orr = pd.DataFrame(orow)
+orr.to_csv(R / "order_clean.csv", index=False)
+print(orr.round(3).to_string(index=False))

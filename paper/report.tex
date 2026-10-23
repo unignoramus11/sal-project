@@ -70,8 +70,8 @@ singletons \citep{ohala2007geminates}. Intonation also carries dialect
 identity \citep{grabe2002intonational,vicenik2013intonation}, which transcripts discard.
 
 \section{Data}
-\paragraph{Rebuilt Vaani-Hi.} Access to the official copy is pending, so we rerun PRiSM's selection code on
-the public Vaani corpus at a pinned commit: 22,551 utterances (40.3\,h), 26 pincodes in 9 states, 1,570
+\paragraph{Rebuilt Vaani-Hi.} The official copy has no speaker labels, so our main analyses use a rebuild:
+we rerun PRiSM's selection code on the public Vaani corpus at a pinned commit: 22,551 utterances (40.3\,h), 26 pincodes in 9 states, 1,570
 speakers identified from the file names. A rebuild on a second machine reproduces the dataset bit for bit.
 \paragraph{Splits.} PRiSM's random split within pincode, and a speaker-disjoint split stratified by pincode
 (0\% of test speakers in training, against 97.9\% under the random split).
@@ -122,8 +122,9 @@ that learns nothing 58.9, all above PRiSM's probe. On a corrected version (one r
 fixed coordinates) the same probes keep their scores under the released split, but under a speaker-disjoint split
 built from clustered voice embeddings (2.1\% true leakage when the same procedure is checked on our rebuild) every
 probe falls to the majority level. The same split settles the order question: on the corrected rows PRiSM's phone BiGRU beats the
-same probe on shuffled phones by $+$19.2 Recall@1 [15.7, 22.9] when speakers are shared and by $-$0.3 [$-$3.7, 2.5]
-when they are not.
+same probe on shuffled phones by $+$18.6 Recall@1 [15.5, 22.3] when speakers are shared and by $-$0.3 [$-$3.5, 2.4]
+when they are not, and bigram bags beat unigram bags by 9 to 11 points with shared speakers but by at most 1.8
+(every CI including zero) on new speakers, with W2V2 and ZIPA transcripts alike.
 
 \begin{table}[t]
 \centering\scriptsize
@@ -160,8 +161,8 @@ $+$4.3 [2.5, 6.0] for ZIPA, against the same probe on shuffled phones); on new s
 improves (43\,km [9, 83]). In description length the same pattern holds: order saves 3.4 to 4.2\,kbits per ordering under the
 random split but only 0.4 to 1.6 on new speakers, where the BiGRU codes the pincode no better than the bigram
 bag. It stays below the bigram bag
-on both splits, and far below PRiSM's 45.7 on the official data, which we cannot access yet
-\todo{final seeds; official-data rerun}.
+on both splits, and below the 45.5 it reaches on the official data, where speakers are shared
+\todo{final seeds}.
 
 \begin{table}[t]
 \centering\scriptsize
@@ -213,8 +214,8 @@ which is where a representation probe could have an advantage once speaker leaka
 \todo{test with the RP results}.
 
 \section{Limitations}
-The study uses a rebuilt rather than the official Vaani-Hi; the two differ in size and utterance length, and
-our transcript BiGRU scores well below PRiSM's on it. Vaani-Hi has only 12 Haryana speakers; the gemination
+The main analyses use a rebuilt Vaani-Hi, which differs from the official release in size, districts and
+utterance length; on the official release speakers are estimated from voice embeddings, not known. Vaani-Hi has only 12 Haryana speakers; the gemination
 study uses separate Vaani audio from three Haryana districts and New Delhi with thousands of speakers, but
 New Delhi stands for standard Hindi only approximately. Picture prompts tie topic to place, and the
 shared-picture subset is small (119 test speakers). Recognizer output is not a phonetic gold standard, and the

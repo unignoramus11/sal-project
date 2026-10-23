@@ -1,0 +1,55 @@
+{
+  "config": {
+    "lr": 0.001,
+    "batch_size": 64,
+    "min_epochs": 10,
+    "max_epochs": 200,
+    "patience": 100,
+    "val_per_epoch": 4,
+    "warmup_steps": 200,
+    "warmup_start_factor": 0.3333333333333333,
+    "grad_clip": 1.0,
+    "weight_decay": 0.0,
+    "seed": 42,
+    "device": "cpu",
+    "eval_batch_size": 256,
+    "extra": {
+      "vocab_size": 65,
+      "tokens": "char",
+      "probe": "bigram",
+      "protocol": "speaker_split",
+      "transcripts": "outputs/transcripts/zipa_official.parquet",
+      "mean_len": 53.44321119051239,
+      "unigrams": 65,
+      "bigrams": 1163
+    }
+  },
+  "best_epoch": 2,
+  "best_check": 11,
+  "epochs_run": 28,
+  "seconds": 210.58307242393494,
+  "n_params": 894467,
+  "metrics": {
+    "train": {
+      "recall1": 23.451755940914154,
+      "recall5": 64.2936110496521,
+      "mean_km": 209.69706204418884,
+      "median_km": 141.57770897404998,
+      "n": 14468
+    },
+    "val": {
+      "recall1": 8.820224553346634,
+      "recall5": 40.16853868961334,
+      "mean_km": 406.79189303452404,
+      "median_km": 321.97146500309464,
+      "n": 1780
+    },
+    "test": {
+      "recall1": 8.125179260969162,
+      "recall5": 31.955212354660034,
+      "mean_km": 424.40818320420976,
+      "median_km": 352.8840008434753,
+      "n": 3483
+    }
+  }
+}
