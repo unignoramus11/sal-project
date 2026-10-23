@@ -49,6 +49,8 @@ Datasets, features, transcripts and checkpoints are not tracked (see `.gitignore
 | `docs/data.md`               | Datasets and models, with sources and licences                                                |
 | `docs/compute.md`            | Hardware and storage estimates                                                                |
 | `docs/ada.md`                | Step-by-step guide to every Ada job (Nidhi)                                                   |
+| `docs/official_data.md`      | Audit of PRiSM's released GEO-v data and a corrected version                                  |
+| `docs/benchmark.md`          | Cross-validated, speaker-disjoint, topic-controlled benchmark for the final evaluation        |
 
 ## Where things run
 

@@ -11,30 +11,33 @@ transcript probes; the Mac runs the analyses. Results from all three meet in thi
 
 ## At a glance
 
-| Step | What | Jobs | Time (wall) | Needed for |
+**Now, before the mid evaluation (3 Nov): steps 0, 1, 2, 3, 5 and 6 only.** Everything marked "final" waits until
+after 3 Nov (November); please do not start those yet, so the queue and the GPU-hours go to the mid-evaluation jobs.
+
+| Step | What | Jobs | Time (wall) | When |
 |---|---|---|---|---|
-| 0 | Accounts, storage | – | 15 min | everything |
-| 1 | Code and environment | login node | 15-30 min | everything |
-| 2 | Rebuild the dataset, checksum check | 1 CPU | 1-2 h | everything |
-| 3 | Extract features (W2V2, Whisper, ZIPA) | 3 GPU | 1-2 h each | 4, 5, 6, 7 |
-| 4 | Layer sweep | 3 GPU | < 1 h each | 7 |
-| 5 | RP baselines (last layer, PRiSM's probe) | 6 GPU | 3-5 h each | **mid evaluation (3 Nov)** |
-| 6 | Light jobs: transcription check, TP-GRU seeds 44-46, topic check, prosody | 2 GPU + 1 CPU, then 26 GPU | 1-6 h each | mid evaluation |
+| 0 | Accounts, storage | – | 15 min | **now** |
+| 1 | Code and environment | login node | 15-30 min | **now** |
+| 2 | Rebuild the dataset, checksum check | 1 CPU | 1-2 h | **now** |
+| 3 | Extract features (W2V2, Whisper, ZIPA) | 3 GPU | 1-2 h each | **now** |
+| 5 | RP baselines (last layer, PRiSM's probe) | 6 GPU | 3-5 h each | **now: mid evaluation (3 Nov)** |
+| 6 | Light jobs: transcription check, TP-GRU seeds 44-46, topic check, prosody | 2 GPU + 1 CPU, then 26 GPU | 1-6 h each | **now: mid evaluation** |
+| 9 | Send results back | – | minutes | after every step |
+| 4 | Layer sweep | 3 GPU | < 1 h each | final (November) |
 | 7 | RP sweep (order x layers), per model | 1 extract + 19 GPU per model | 3-5 h each | final (RQ1, the core result) |
 | 8 | RP topic check and control task | 12 GPU | 2-5 h each | final (RQ0) |
-| 9 | Send results back | – | minutes | after every step |
 | 10 | Geminate probe by layer, all three models (token table is pushed) | 3 GPU | 2-6 h each | final (RQ2) |
 | 11 | Official Vaani-Hi: download, features, RP-Attn on the release and its corrected version | 3 + 9 GPU | 1-5 h each | final (RQ0, reproduction) |
+| 12 | RP-Attn on the cross-validated benchmark | 30 GPU | 2-3 h each | final (all RQs) |
 
-Priority if the queue is slow: 2 → 3 → 5 and 6 → 4 → 7 (speaker-disjoint jobs first; the scripts already
-submit those first) → 8. Steps 3 and 6 can run at the same time; 4, 5 and 8 need step 3.
+Order now: 2 → 3 → 5 and 6 (steps 3 and 6 can run at the same time; 5 needs 3). In November: 4 → 7 → 12 → 8 →
+10 → 11 (speaker-disjoint jobs first; the scripts already submit those first).
 
 ## 0. Before starting
 
 - Hugging Face: log in, open https://huggingface.co/datasets/ARTPARK-IISc/Vaani and accept the terms
-  (approved automatically). Create a read token at https://huggingface.co/settings/tokens. Also request
-  https://huggingface.co/datasets/changelinglab/vaani-hi-geo (manual approval; Mohit's request is still
-  pending, so a second request helps; not needed to start).
+  (approved automatically). Create a read token at https://huggingface.co/settings/tokens. For step 11 only
+  (November), also request https://huggingface.co/datasets/changelinglab/vaani-hi-geo (manual approval).
 - Storage: about **200 GB** in a directory that persists between jobs (not node-local `/scratch`): 12 GB raw
   Vaani shards, 4.6 GB dataset, ~15 GB per cached frame layer per model (last layer + 3 top layers for 3
   models), and a few GB of transcripts and prosody features.
@@ -90,7 +93,7 @@ Each writes `outputs/features/<model>_rebuild/`: `pooled.npy` (every layer, time
 be 22551. Models: W2V2 phone recognizer (wav2vec2-lv-60-espeak-cv-ft, 25 layers, 1024-d), Whisper-small
 encoder (13 layers, 768-d), ZIPA-CR-CTC-NS large.
 
-## 4. Layer sweep (3 GPU jobs, under 1 h each)
+## 4. Layer sweep (final, November; 3 GPU jobs, under 1 h each)
 
 ```bash
 for M in w2v2 whisper zipa; do bash slurm/submit.sh slurm/sweep.sbatch $M; done
@@ -130,7 +133,7 @@ Submits:
 
 Results land in `results/runs/tp_*_s44..46/`, `results/runs/tp_*_generic_s*/`, `results/runs/prosody_gru_*/`.
 
-## 7. RP sweep: order x layers (per model; after steps 3 and 4)
+## 7. RP sweep: order x layers (final, November; per model, after steps 3 and 4)
 
 ```bash
 DRY=1 bash slurm/rp_sweep.sh w2v2     # prints what it would submit; check the layer list
@@ -152,7 +155,7 @@ layer choice held fixed? Per model the script
 Total: 57 jobs, 285 runs, roughly 150-300 GPU-hours; the speaker-disjoint jobs are submitted first. Results in
 `results/runs/rp_<model>_rebuild_L<layers>_<probe>_<protocol>_s<seed>/`.
 
-## 8. RP topic check and control task (12 GPU jobs; after step 3)
+## 8. RP topic check and control task (final, November; 12 GPU jobs)
 
 ```bash
 bash slurm/rp_extra.sh
@@ -179,7 +182,7 @@ Only `results/` is versioned (CSV, JSON and small prediction parquet files). Dat
 stay on Ada; they are gitignored and too large. Without push access: `tar czf ada_results_<date>.tgz results/`
 and send the file to Mohit.
 
-## 10. Where the encoders represent consonant length (3 GPU jobs; ready now)
+## 10. Where the encoders represent consonant length (final, November; 3 GPU jobs)
 
 The token table `results/gemination/layer_probe_tokens.parquet` is in the repo (29,004 tokens).
 
@@ -196,7 +199,7 @@ streamed, ~3.5 GB kept); if compute nodes have no internet, run `python scripts/
 --workers 4` on the login node first. Results: `results/gemination/geminate_layers_<model>.csv` and
 `results/figures/fig_geminate_layers_<model>.*`.
 
-## 11. Official Vaani-Hi (access granted 21 Oct)
+## 11. Official Vaani-Hi (final, November)
 
 The official GEO-v release has problems that change how its scores should be read (docs/official_data.md):
 duplicated audio with conflicting labels, 28% of test rows with their exact audio in training, and one pincode
@@ -217,6 +220,21 @@ bash slurm/rp_official.sh
 
 The split tables are in the repo. Results land in `results/runs/rp_<model>_official_*`.
 
+## 12. RP-Attn on the cross-validated benchmark (final, November; 30 GPU jobs, 2-3 h each)
+
+The benchmark (`docs/benchmark.md`, tables in `results/benchmark/`) tests every speaker exactly once: 5 folds over
+speaker groups (look-alike speaker codes merged), a track with all utterances and one with shared pictures only,
+and corrected pincode coordinates. The transcript probes run on the Mac and the PC; this step runs PRiSM's
+representation probe on the same folds so the two are compared on identical test speakers.
+
+```bash
+git pull                                              # brings results/benchmark/{meta,splits}.parquet
+bash slurm/rp_benchmark.sh                            # 3 models x {all, shared} x 5 folds, seeds 42-44
+```
+
+Uses the step-3 features. Results land in `results/runs/rp_<model>_rebuild_L-1_attn_<track>_f<fold>_bench_s<seed>/`;
+`scripts/benchmark_eval.py` (Mac) pools the folds.
+
 ## Troubleshooting
 
 - `CUDA error: no kernel image is available`: the GPU is too old for the torch build; report the GPU model.
@@ -230,12 +248,6 @@ The split tables are in the repo. Results land in `results/runs/rp_<model>_offic
 - A job hit the time limit: resubmit it with fewer seeds (`"45 46"` instead of `"42 43 44 45 46"`); finished
   seeds are already saved in `results/runs/`.
 - Re-running is safe: a finished run is just overwritten with the same configuration.
-
-## Coming later (not ready yet)
-
-- **Official Vaani-Hi reproduction**: if either access request is approved, rerun the TP-GRU and RP-Attn on
-  the official data (scripts will accept `--dataset`); this settles the gap between PRiSM's 45.7 Recall@1 and
-  our ~21 on the rebuilt data.
 
 ## If you want to do more
 
