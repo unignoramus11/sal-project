@@ -24,8 +24,20 @@ def speaker_disjoint_splits(
     seed: int = 42,
 ) -> pd.Series:
     """Return a split label per row of `df` (index aligned)."""
+    return _assign(df, speaker_col, group_col, {s: fractions[s] for s in SPLITS}, seed)
+
+
+def speaker_folds(df: pd.DataFrame, k: int = 5, speaker_col: str = "speaker", group_col: str = "pincode",
+                  seed: int = 42) -> pd.Series:
+    """Fold index 0..k-1 per row of `df` (index aligned): speakers balanced over k equal folds within each group,
+    with the same greedy assignment as speaker_disjoint_splits."""
+    return _assign(df, speaker_col, group_col, dict.fromkeys(range(k), 1 / k), seed)
+
+
+def _assign(df: pd.DataFrame, speaker_col: str, group_col: str, fractions: dict, seed: int) -> pd.Series:
     if abs(sum(fractions.values()) - 1) > 1e-9:
         raise ValueError("fractions must sum to 1")
+    labels = list(fractions)
     rng = np.random.default_rng(seed)
 
     counts = df.groupby([speaker_col, group_col]).size().rename("n").reset_index()
@@ -34,26 +46,26 @@ def speaker_disjoint_splits(
                   .drop_duplicates(speaker_col).set_index(speaker_col)[group_col])
     per_speaker = df.groupby(speaker_col).size()
 
-    assignment: dict[str, str] = {}
+    assignment: dict = {}
     for g in sorted(home.unique()):
         spk = home.index[home == g].to_numpy()
         spk = spk[rng.permutation(len(spk))]               # seeded tie-breaking
         n = per_speaker.loc[spk].to_numpy()
         order = np.argsort(-n, kind="stable")
         total = n.sum()
-        filled = dict.fromkeys(SPLITS, 0)
-        target = {s: fractions[s] * total for s in SPLITS}
-        for k, i in enumerate(order):
-            remaining = len(order) - k
-            empty = [s for s in SPLITS if filled[s] == 0 and fractions[s] > 0]
+        filled = dict.fromkeys(labels, 0)
+        target = {s: fractions[s] * total for s in labels}
+        for j, i in enumerate(order):
+            remaining = len(order) - j
+            empty = [s for s in labels if filled[s] == 0 and fractions[s] > 0]
             if empty and remaining <= len(empty):
                 # make sure every split gets at least one speaker when possible
                 choice = max(empty, key=lambda s: target[s] - filled[s])
             else:
                 def cost(s, n_i=n[i]):
                     return sum((filled[t] + (n_i if t == s else 0) - target[t]) ** 2 / max(target[t], 1e-9)
-                               for t in SPLITS)
-                choice = min(SPLITS, key=cost)
+                               for t in labels)
+                choice = min(labels, key=cost)
             assignment[spk[i]] = choice
             filled[choice] += n[i]
     return df[speaker_col].map(assignment)

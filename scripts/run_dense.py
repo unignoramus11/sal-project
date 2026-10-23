@@ -22,7 +22,8 @@ from sal.probes.train import TrainConfig, save_run, train_probe
 ap = argparse.ArgumentParser()
 ap.add_argument("--features", type=Path, required=True)
 ap.add_argument("--file", default="emb.npy")
-ap.add_argument("--protocol", choices=["prism", "speaker_split"], default="prism")
+ap.add_argument("--protocol", default="prism",
+                help="split column of --splits: prism, speaker_split, or a benchmark fold such as all_f0")
 ap.add_argument("--seeds", type=int, nargs="+", default=[42])
 ap.add_argument("--control", action="store_true",
                 help="control task: each speaker gets another speaker's location (sal.data.control)")

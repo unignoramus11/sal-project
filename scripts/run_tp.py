@@ -31,7 +31,8 @@ ap.add_argument("--dataset", type=Path, default=DATA / "vaani_hi_rebuild" / "vaa
 ap.add_argument("--splits", type=Path, default=DATA / "vaani_hi_rebuild" / "splits.parquet")
 ap.add_argument("--tokens", choices=["char", "phone"], default="char")
 ap.add_argument("--probe", choices=["gru", "shuffle", "unigram", "bigram"], default="gru")
-ap.add_argument("--protocol", choices=["prism", "speaker_split"], default="prism")
+ap.add_argument("--protocol", default="prism",
+                help="split column of --splits: prism, speaker_split, or a benchmark fold such as all_f0")
 ap.add_argument("--seeds", type=int, nargs="+", default=[42])
 ap.add_argument("--patience", type=int, default=100)
 ap.add_argument("--max-epochs", type=int, default=200)

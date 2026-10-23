@@ -1,0 +1,18 @@
+duplicates: 3 recordings appear more than once (6 rows, 0 across speaker codes); one copy kept -> 22548 rows
+coordinates: each pincode placed at the densest cluster of its offices; shift from the rebuild's mean of offices: median 4 km, above 50 km for 454552 (Dhar, 677 rows, 266 km; cluster 5 of 13 offices), 834008 (Ranchi, 479 rows, 61 km; cluster 4 of 5 offices)
+speaker groups: same-speaker split-half centroid cosine, 5th percentile 0.757 (945 codes with >= 4 utterances); 1570 codes -> 1327 groups, 126 with several codes (max 13 codes, largest group 652 utterances = 2.9%)
+all: 22548 utterances, 1570 speaker codes, 1327 groups, 26 pincodes
+  all_f0: train 14353, val 2173, test 6022 utterances; test groups 255; group leakage 0%; test pincodes without training groups 0
+  all_f1: train 15343, val 2395, test 4810 utterances; test groups 270; group leakage 0%; test pincodes without training groups 0
+  all_f2: train 15872, val 2728, test 3948 utterances; test groups 279; group leakage 0%; test pincodes without training groups 0
+  all_f3: train 16276, val 2471, test 3801 utterances; test groups 255; group leakage 0%; test pincodes without training groups 0
+  all_f4: train 16259, val 2322, test 3967 utterances; test groups 268; group leakage 0%; test pincodes without training groups 0
+  all: every utterance of the track is tested exactly once
+shared: pincodes left out (fewer than 4 speaker groups): {345001: 2, 462001: 1}
+shared: 7157 utterances, 820 speaker codes, 650 groups, 24 pincodes
+  shared_f0: train 4448, val 685, test 2024 utterances; test groups 127; group leakage 0%; test pincodes without training groups 0
+  shared_f1: train 5049, val 689, test 1419 utterances; test groups 127; group leakage 0%; test pincodes without training groups 0
+  shared_f2: train 5064, val 847, test 1246 utterances; test groups 142; group leakage 0%; test pincodes without training groups 0
+  shared_f3: train 5085, val 765, test 1307 utterances; test groups 125; group leakage 0%; test pincodes without training groups 0
+  shared_f4: train 5266, val 730, test 1161 utterances; test groups 129; group leakage 0%; test pincodes without training groups 0
+  shared: every utterance of the track is tested exactly once

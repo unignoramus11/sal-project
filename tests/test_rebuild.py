@@ -121,3 +121,17 @@ def test_normalise_all_null_float_column():
     bad = pa.table({"speakerID": pa.array([1.0, None])})
     with pytest.raises(TypeError):
         rebuild._normalise(bad)
+
+
+def test_robust_coordinates_ignore_misplaced_offices(tmp_path):
+    rows = [("454552", 22.22, 75.47), ("454552", 22.19, 75.41), ("454552", 22.24, 75.42),   # one cluster
+            ("454552", 27.22, 77.49), ("454552", 26.20, 83.46), ("454552", 46.16, 107.45),  # misplaced, out of box
+            ("342310", 26.92, 70.91), ("342310", 26.75, 72.53), ("342310", 27.56, 71.25)]   # no cluster
+    f = tmp_path / "pin.csv"
+    pd.DataFrame(rows, columns=["Pincode", "Latitude", "Longitude"]).to_csv(f, index=False)
+    r = rebuild.robust_pincode_coordinates(f)
+    assert r.loc["454552", "cluster"] == 3 and r.loc["454552", "offices"] == 5
+    assert abs(r.loc["454552", "latitude"] - 22.22) < 0.01 and abs(r.loc["454552", "longitude"] - 75.42) < 0.01
+    assert r.loc["342310", "cluster"] == 3 and abs(r.loc["342310", "latitude"] - 26.92) < 0.01   # median of all
+    mean = rebuild.pincode_coordinates(f)[0]["454552"]
+    assert mean[0] > 23                                    # the mean is pulled 100+ km away

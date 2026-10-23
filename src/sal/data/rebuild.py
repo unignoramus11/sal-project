@@ -170,6 +170,31 @@ def pincode_coordinates(pincode_csv: Path) -> tuple[dict[str, tuple[float, float
     return {p: (r.Latitude, r.Longitude) for p, r in means.iterrows()}, stats
 
 
+def robust_pincode_coordinates(pincode_csv: Path, radius_km: float = 25.0) -> pd.DataFrame:
+    """Location of each pincode that survives misplaced offices: within India's bounding box, the office with the most
+    other offices within radius_km and the median of that cluster; the median of all offices when no two offices are
+    within radius_km. The mean used by pincode_coordinates (and PRiSM) moves with every misplaced office: some
+    directory rows of a pincode lie hundreds of km away in other states while the district label is unchanged.
+    Returns one row per pincode: latitude, longitude, offices, cluster (offices in the cluster)."""
+    pm = pd.read_csv(pincode_csv, usecols=["Pincode", "Latitude", "Longitude"], low_memory=False)
+    pm["Pincode"] = pm["Pincode"].astype(str).str.extract(r"(\d{6})")[0]
+    pm["Latitude"] = pm["Latitude"].apply(parse_coord)
+    pm["Longitude"] = pm["Longitude"].apply(parse_coord)
+    pm = pm.dropna()
+    pm = pm[pm["Latitude"].between(*INDIA_BBOX["lat"]) & pm["Longitude"].between(*INDIA_BBOX["lon"])]
+    rows = {}
+    for p, g in pm.groupby("Pincode"):
+        la, lo = np.radians(g["Latitude"].to_numpy()), np.radians(g["Longitude"].to_numpy())
+        h = (np.sin((la[:, None] - la[None]) / 2) ** 2
+             + np.cos(la[:, None]) * np.cos(la[None]) * np.sin((lo[:, None] - lo[None]) / 2) ** 2)
+        near = 2 * 6378.1 * np.arcsin(np.sqrt(np.clip(h, 0, 1))) < radius_km
+        c = near.sum(1).argmax()
+        k = near[c] if near[c].sum() > 1 else np.ones(len(g), bool)
+        rows[p] = {"latitude": float(np.median(g["Latitude"].to_numpy()[k])),
+                   "longitude": float(np.median(g["Longitude"].to_numpy()[k])), "offices": len(g), "cluster": int(k.sum())}
+    return pd.DataFrame.from_dict(rows, orient="index").rename_axis("pincode")
+
+
 def speaker_from_path(path: str) -> str:
     """Speaker code from a Vaani file name.
 

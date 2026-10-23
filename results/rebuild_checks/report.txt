@@ -1,0 +1,33 @@
+look-alike codes: 1246 of 3581 speaker-split test utterances (49 of 223 test speakers) have a look-alike code in train
+                                      probe  all_lift  strict_lift  strict_lift_lo  strict_lift_hi  lookalike_lift
+          dense_ecapa_rebuild_speaker_split       0.4         -4.2           -12.1             2.2             9.1
+        dense_prosody_rebuild_speaker_split      -5.4         -4.8           -11.9             1.5            -6.7
+  tp_w2v2_rebuild_char_bigram_speaker_split       4.4          4.8            -1.8            12.5             3.5
+     tp_w2v2_rebuild_char_gru_speaker_split       4.3          4.2            -2.7            11.0             4.5
+ tp_w2v2_rebuild_char_unigram_speaker_split       2.8          3.4            -2.3             9.6             1.8
+ tp_w2v2_rebuild_phone_bigram_speaker_split       7.9          7.2            -0.0            15.0             9.2
+    tp_w2v2_rebuild_phone_gru_speaker_split       1.8          0.6            -4.8             5.8             4.1
+tp_w2v2_rebuild_phone_shuffle_speaker_split       5.3          6.0            -1.0            13.2             4.1
+tp_w2v2_rebuild_phone_unigram_speaker_split       3.1          3.7            -2.1            10.2             2.0
+  tp_zipa_rebuild_char_bigram_speaker_split      11.6         11.7             5.1            18.2            11.2
+     tp_zipa_rebuild_char_gru_speaker_split       4.0          3.8            -2.8            10.2             4.6
+ tp_zipa_rebuild_char_unigram_speaker_split       3.2          3.5            -1.9             8.9             2.6
+ tp_zipa_rebuild_phone_bigram_speaker_split      10.6         11.6             5.2            17.6             8.9
+    tp_zipa_rebuild_phone_gru_speaker_split       6.3          7.8             1.5            14.3             3.5
+tp_zipa_rebuild_phone_shuffle_speaker_split       5.9          7.8             1.9            14.5             2.3
+tp_zipa_rebuild_phone_unigram_speaker_split       2.9          2.7            -2.3             7.7             3.1
+picture lookup:
+prompts      protocol       baseline  recall1   lo   hi  state_acc  test_utts  test_speakers  test_pictures_unseen
+ shared         prism picture lookup     32.2 28.4 36.0       44.4       1098            365                   3.6
+ shared         prism       majority     19.6 14.5 26.0       35.4       1098            365                   3.6
+ shared speaker_split picture lookup     10.1  6.2 14.0       24.7       1222            119                  11.9
+ shared speaker_split       majority     21.3  9.6 36.5       38.6       1222            119                  11.9
+    all         prism picture lookup     61.8 58.9 64.7       69.2       3404            862                  15.0
+    all         prism       majority     10.5  7.9 13.3       21.9       3404            862                  15.0
+    all speaker_split picture lookup     27.5 20.7 36.5       39.6       3581            223                  43.8
+    all speaker_split       majority     10.0  5.2 16.9       22.3       3581            223                  43.8
+coordinates, rebuild: 26 pincodes; median shift to the office cluster 4 km; above 50 km: 454552 (Dhar, 677 rows) 266 km, 834008 (Ranchi, 479 rows) 61 km
+coordinates, official: 30 pincodes; median shift to the office cluster 2 km; above 50 km: 171202 (Shimla, 2014 rows) 837 km, 497001 (Sarguja, 680 rows) 64 km
+rebuild speaker-split test utterances at misplaced pincodes [454552, 834008]: 197 of 3581
+  454552 (Dhar): nearest other pincode in the rebuild 462001 (Bhopal, 88 km); at its office cluster 454001 (Dhar, 45 km)
+  834008 (Ranchi): nearest other pincode in the rebuild 834001 (Ranchi, 63 km); at its office cluster 834001 (Ranchi, 3 km)
