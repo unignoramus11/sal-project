@@ -1,0 +1,784 @@
+{
+  "sources": [
+    "nidhi_transcripts_2026-10-31.zip",
+    "nidhi_prosody_2026-10-31.zip",
+    "nidhi_audit_2026-10-31.zip"
+  ],
+  "files": [
+    {
+      "source": "nidhi_transcripts_2026-10-31.zip",
+      "member": "transcripts/w2v2_rebuild.parquet",
+      "destination": "outputs/transcripts/w2v2_rebuild.parquet",
+      "sha256": "2c32fd115d5dc10deaef2b69b8732344a0de31b477072f4c6a78ae004ef206b6",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_transcripts_2026-10-31.zip",
+      "member": "transcripts/zipa_rebuild.parquet",
+      "destination": "outputs/transcripts/zipa_rebuild.parquet",
+      "sha256": "8bd7b88f30597be3688bcb1f939e69bbd224def45d12943d4ee3c8c48cb74849",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_transcripts_2026-10-31.zip",
+      "member": "transcripts/transcripts_rebuild.csv",
+      "destination": "outputs/transcripts/transcripts_rebuild.csv",
+      "sha256": "f59385c2e491140496eb1ad774a2d41995a1445bcf813544094bd8c4b1e2b820",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_transcripts_2026-10-31.zip",
+      "member": "transcripts/splits.parquet",
+      "destination": "data/vaani_hi_rebuild/splits.parquet",
+      "sha256": "3cb5d3465db35281edeb37a01445d562189a15c44f4e438173544dd10ed51026",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_transcripts_2026-10-31.zip",
+      "member": "transcripts/prompts.parquet",
+      "destination": "data/vaani_hi_rebuild/prompts.parquet",
+      "sha256": "ad6a784e685e8be33e43709aed9544e025880dfa747e2a1b2cfa6f1a65ab1898",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_prosody_2026-10-31.zip",
+      "member": "prosody/frames_L0.npy",
+      "destination": "outputs/features/prosody_rebuild/frames_L0.npy",
+      "sha256": "9ab3b9640b5780af21807b337f10b29b7ff6932958c9f5465919d274c554466c",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_prosody_2026-10-31.zip",
+      "member": "prosody/index.parquet",
+      "destination": "outputs/features/prosody_rebuild/index.parquet",
+      "sha256": "bc10f05f5aeb9f3aae454d21e94b9b2d11c41861ff312528475f2ffdb668949f",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_prosody_2026-10-31.zip",
+      "member": "prosody/meta.json",
+      "destination": "outputs/features/prosody_rebuild/meta.json",
+      "sha256": "91c333944c2a9c19394b6f2f6395d84bd1e8a29fbbd7adf0440f8a6e24aac9c0",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_prosody_2026-10-31.zip",
+      "member": "prosody/pooled.npy",
+      "destination": "outputs/features/prosody_rebuild/pooled.npy",
+      "sha256": "d7c521ebe89acfc160b610536b4867f123274d93142f1114f9ff52ea7a60cc1b",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_01.wav",
+      "destination": "internal/audit/nidhi/audit_01.wav",
+      "sha256": "f20ad4a4939636b7cab8e40624b186d2a23830dca7e87bc7bc18cbe8e55e16bb",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_01.TextGrid",
+      "destination": "internal/audit/nidhi/audit_01.TextGrid",
+      "sha256": "c06e5017ce4e98d8e86bb3ee6c336ecb5f0d80b1b3e2b4b5fbd7a040395f3273",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_02.wav",
+      "destination": "internal/audit/nidhi/audit_02.wav",
+      "sha256": "81d3e9ca89ac491909da821fd32a8afd70ec331d11dd2c538825dbe0858c6fd5",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_02.TextGrid",
+      "destination": "internal/audit/nidhi/audit_02.TextGrid",
+      "sha256": "5f585fa81cee948f69d6313817dce9a5345f9ff15b2f74efe10fdae4823248df",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_03.wav",
+      "destination": "internal/audit/nidhi/audit_03.wav",
+      "sha256": "23c662009b4c6fe7c74375f9e9f735116638338e05809ccf77efa89ed529572a",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_03.TextGrid",
+      "destination": "internal/audit/nidhi/audit_03.TextGrid",
+      "sha256": "bb40b176517327b03ae08bb1f96d07b41351ab55ec30a4a741456753f4a2962e",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_04.wav",
+      "destination": "internal/audit/nidhi/audit_04.wav",
+      "sha256": "ec4d9184f6e598054f78cc244d539a2e0b22672e7bc9b0e6d931dbb358d0fce4",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_04.TextGrid",
+      "destination": "internal/audit/nidhi/audit_04.TextGrid",
+      "sha256": "b532c451543e900d4355dfd5a624b7a5afb7483b5a24f12a267846182939328e",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_05.wav",
+      "destination": "internal/audit/nidhi/audit_05.wav",
+      "sha256": "007326e3a7713869e90a5b71442ac64ff80a30de16e065e8e359711e4f2c8062",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_05.TextGrid",
+      "destination": "internal/audit/nidhi/audit_05.TextGrid",
+      "sha256": "0c5674bcf2329cf9675f8effe5b35c71196c8bef35556ae7b2551371551bc908",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_06.wav",
+      "destination": "internal/audit/nidhi/audit_06.wav",
+      "sha256": "84baca9375109abc7025a885ca206c45ea549bc2ff719ebb466c0831a201c758",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_06.TextGrid",
+      "destination": "internal/audit/nidhi/audit_06.TextGrid",
+      "sha256": "caaa0bbc60abf93d67ff4fd608727a2ceb7d26d0369e9d273a9c648635d02f51",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_07.wav",
+      "destination": "internal/audit/nidhi/audit_07.wav",
+      "sha256": "72b75e1cb79aa2b25cac7fc47d217c29f8bc414ca11024e919d09bbfd02760db",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_07.TextGrid",
+      "destination": "internal/audit/nidhi/audit_07.TextGrid",
+      "sha256": "290a2111cbe4621511a97088048a010582ff6c8c32e49b5782564bf516fe0e83",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_08.wav",
+      "destination": "internal/audit/nidhi/audit_08.wav",
+      "sha256": "93c6a38b4c35446662655fe8cc742101dffd58ee124d155399940acaffbf7796",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_08.TextGrid",
+      "destination": "internal/audit/nidhi/audit_08.TextGrid",
+      "sha256": "00e0667f3957a30b61e57c81882cde9c95a99d76527f37382031717d947dbfe5",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_09.wav",
+      "destination": "internal/audit/nidhi/audit_09.wav",
+      "sha256": "98310951e469f60db1bb15571fbf612d9e43f121d38782c8b03fc8235796ee5f",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_09.TextGrid",
+      "destination": "internal/audit/nidhi/audit_09.TextGrid",
+      "sha256": "69ec4682e044198bad2d680bc82e92de1a5461e81a918cc94d488027ae321691",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_10.wav",
+      "destination": "internal/audit/nidhi/audit_10.wav",
+      "sha256": "fc003af269763d76fe07c45d4baa4025d7d6146ebbe318c6115fbe6f40150724",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_10.TextGrid",
+      "destination": "internal/audit/nidhi/audit_10.TextGrid",
+      "sha256": "4a0af463e2c5a6d7515491d490082de87a58d5a117ce27d8eb0cf3c32f0e68fe",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_11.wav",
+      "destination": "internal/audit/nidhi/audit_11.wav",
+      "sha256": "0f75b2ccd06391e11125be0fa561d85c484d0888034ff08e9a5818a99c079b7f",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_11.TextGrid",
+      "destination": "internal/audit/nidhi/audit_11.TextGrid",
+      "sha256": "162595392d377e1a74c0710fbc544a1fd84cfec0e09dbd7e48d8191ab7e71521",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_12.wav",
+      "destination": "internal/audit/nidhi/audit_12.wav",
+      "sha256": "b61b036473d0c36b1e329e90370234442039ec0749d6a747c642fbe4f09cd5d7",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_12.TextGrid",
+      "destination": "internal/audit/nidhi/audit_12.TextGrid",
+      "sha256": "19e4c391fd1e86b2dac6d0014cb5e3534d885b58eb70fde6f520bf20b3d0e84e",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_13.wav",
+      "destination": "internal/audit/nidhi/audit_13.wav",
+      "sha256": "876cc0f31c7c4fa472be391596fcd1bed2d0a16b83626fe9409d5499c4845be3",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_13.TextGrid",
+      "destination": "internal/audit/nidhi/audit_13.TextGrid",
+      "sha256": "b95629c63314dee18980e30373aad518748e49beefa71b798eaf4eb1a7a6fd0a",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_14.wav",
+      "destination": "internal/audit/nidhi/audit_14.wav",
+      "sha256": "b172d56470957216ad0b70594b4c0e604112b45ac2b5096d59203cf49b9e18c4",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_14.TextGrid",
+      "destination": "internal/audit/nidhi/audit_14.TextGrid",
+      "sha256": "e173042033c4b6a273b20515ac4974a42b67cdc1c620316d91ad28f5b492ff56",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_15.wav",
+      "destination": "internal/audit/nidhi/audit_15.wav",
+      "sha256": "44cf787d1f82ad1cdb4a3dcaaf9e0c50689808a37c247cefb85bb7a437b73510",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_15.TextGrid",
+      "destination": "internal/audit/nidhi/audit_15.TextGrid",
+      "sha256": "acd6756b4a0128dd4b7b58afd69d7bd5783f40fc2c2664afab71111224165a74",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_16.wav",
+      "destination": "internal/audit/nidhi/audit_16.wav",
+      "sha256": "ecabfbb4cc609621f484a69a202d4066fcce27c6d40178d3082b7d40b01e02f8",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_16.TextGrid",
+      "destination": "internal/audit/nidhi/audit_16.TextGrid",
+      "sha256": "bffac66b27c80d713038325859de3c7183761a2b318c85f41abad73f8544ebfb",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_17.wav",
+      "destination": "internal/audit/nidhi/audit_17.wav",
+      "sha256": "778287bbe7dc3e39e6615f787cf1a0316c721de750031e722713474dc1f4426c",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_17.TextGrid",
+      "destination": "internal/audit/nidhi/audit_17.TextGrid",
+      "sha256": "e6de59bb30027be165ff92191f122080f024f20017c0344961fdeecea277d1e1",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_18.wav",
+      "destination": "internal/audit/nidhi/audit_18.wav",
+      "sha256": "148936d29ade27ecbea9ad5130168d5573aead7636626f0092f312d63678f7bc",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_18.TextGrid",
+      "destination": "internal/audit/nidhi/audit_18.TextGrid",
+      "sha256": "8cb213956d9d5d8c003d37c95e7741b8cbf0021b95d6a547ce56f2fbedbe2603",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_19.wav",
+      "destination": "internal/audit/nidhi/audit_19.wav",
+      "sha256": "8976b95bd4e6186a0301fdaba050ccf2b316b5f16907ab960f507a5bc98ee9c1",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_19.TextGrid",
+      "destination": "internal/audit/nidhi/audit_19.TextGrid",
+      "sha256": "e5a1c4faec19ddaa16d7ea17e961c272e887440cdd7faf672a854b1bdfd1412f",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_20.wav",
+      "destination": "internal/audit/nidhi/audit_20.wav",
+      "sha256": "ac1e108dbebd95134616285bd9e5046606a1eb46f0c06bb7676419ac35b7359b",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_20.TextGrid",
+      "destination": "internal/audit/nidhi/audit_20.TextGrid",
+      "sha256": "fbfd8ac825c5cf923d4c57897b85f2c74fe4c541747ae91507b61cdf976a85dd",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_21.wav",
+      "destination": "internal/audit/nidhi/audit_21.wav",
+      "sha256": "67b08bdf712a18035d22caaf617a5a7922b5baf34c8c77f9106bb8ba6e5108cc",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_21.TextGrid",
+      "destination": "internal/audit/nidhi/audit_21.TextGrid",
+      "sha256": "c618f6d90eaf1ac084d7d6fe3e953ad21fa893c343693f785ecf99e78c25b944",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_22.wav",
+      "destination": "internal/audit/nidhi/audit_22.wav",
+      "sha256": "a90f1f1462274d5d705cfd0244d4c242fd229f4c8ced4b70ed6ca8555b184d04",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_22.TextGrid",
+      "destination": "internal/audit/nidhi/audit_22.TextGrid",
+      "sha256": "69c2d025e7ac1b7e17939303d31bfd1cffeddbbb8db7d164ee2530445e4d572b",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_23.wav",
+      "destination": "internal/audit/nidhi/audit_23.wav",
+      "sha256": "9a0ef4fb364b6c90b3cab2b49719f5c90b58d28936917e669fabe6decabc4831",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_23.TextGrid",
+      "destination": "internal/audit/nidhi/audit_23.TextGrid",
+      "sha256": "373703a0cf741a46fe72a5dca2bd9413ac099409a706c2637a8d04bddfc3ec2a",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_24.wav",
+      "destination": "internal/audit/nidhi/audit_24.wav",
+      "sha256": "8d33d8c6b4945fa5209e500a3f6cbb1e11ef2e2f9140db18c08e877c000d8314",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_24.TextGrid",
+      "destination": "internal/audit/nidhi/audit_24.TextGrid",
+      "sha256": "98c86080af8956dd793280c80252ae4762937d024da2953daa7a515c1c9c2b3a",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_25.wav",
+      "destination": "internal/audit/nidhi/audit_25.wav",
+      "sha256": "5b8b7be2336fd3e87f4dea19dd86edb65aa1d560592d3843c122c2d722b2ca84",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_25.TextGrid",
+      "destination": "internal/audit/nidhi/audit_25.TextGrid",
+      "sha256": "c0c331f9573aa0f06547d9a598b8c4ced4ba2e749be60b10f48e97f7998226bf",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_26.wav",
+      "destination": "internal/audit/nidhi/audit_26.wav",
+      "sha256": "d8de3f516cabc5cdcfaa56c1e1de7713ffb56f569685b8611289775ee96e3214",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_26.TextGrid",
+      "destination": "internal/audit/nidhi/audit_26.TextGrid",
+      "sha256": "2ad377eff3f173ee630d5b68ce830694d0f3ee271dc05cd93ebb55acc6a2b418",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_27.wav",
+      "destination": "internal/audit/nidhi/audit_27.wav",
+      "sha256": "13924f9e9ccca81280773ca965ec26d8ddfdbcac45cc55e6ac41ef70856a41d8",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_27.TextGrid",
+      "destination": "internal/audit/nidhi/audit_27.TextGrid",
+      "sha256": "4579c4e776774a3789f95798ea42578c889cca5f04ec0c7d7cba70edc4a2d5f3",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_28.wav",
+      "destination": "internal/audit/nidhi/audit_28.wav",
+      "sha256": "fdeba30c66c9e951b78f961f9f2fa2f4e7bffdddf464ff560b2e82ca0c9c591c",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_28.TextGrid",
+      "destination": "internal/audit/nidhi/audit_28.TextGrid",
+      "sha256": "5dd84ad83691cf2d49357045e2ee7d8a292ee485dc48a8f630765ab3f2c28384",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_29.wav",
+      "destination": "internal/audit/nidhi/audit_29.wav",
+      "sha256": "7c22f29406cea5b7d7f56e5de8a571afadc4dd77cdc21b531a1562baff9f7698",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_29.TextGrid",
+      "destination": "internal/audit/nidhi/audit_29.TextGrid",
+      "sha256": "ce75683ab19f0949a4736f8ea25fb93593b12392eedcbb1316d5ecdcfe186d20",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_30.wav",
+      "destination": "internal/audit/nidhi/audit_30.wav",
+      "sha256": "a1f9e8a56299b7fd5d6f019da140c7f12266921be547481e423e90d66c056b8d",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_30.TextGrid",
+      "destination": "internal/audit/nidhi/audit_30.TextGrid",
+      "sha256": "ecee028ea3fa875eac3c6ad47334b60f7e53080192fafa2a52ad1ca119f77e54",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_31.wav",
+      "destination": "internal/audit/nidhi/audit_31.wav",
+      "sha256": "5d2d9ea2d5abfae2ffd105bc128d3e48e315771b859e03f179715387a2368609",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_31.TextGrid",
+      "destination": "internal/audit/nidhi/audit_31.TextGrid",
+      "sha256": "f46373b3d21dc3de2bff81bba6d8322e4c1a007d4ce6a03d51db31cd57b93e0b",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_32.wav",
+      "destination": "internal/audit/nidhi/audit_32.wav",
+      "sha256": "68afb56868282edc164fa56bd4b9a567ad37163e8c687b9e501b336a77ad610e",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_32.TextGrid",
+      "destination": "internal/audit/nidhi/audit_32.TextGrid",
+      "sha256": "819c7e05b533fc055dbb20e488a12939a9a52197edb5764fc4a70b0d4b0c458e",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_33.wav",
+      "destination": "internal/audit/nidhi/audit_33.wav",
+      "sha256": "e5804e673fc5ca34ec1b59d970795b776c91795a253a718375e1159e3103d7d4",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_33.TextGrid",
+      "destination": "internal/audit/nidhi/audit_33.TextGrid",
+      "sha256": "9987221788ff3072ce6f7eca0af1843de44146fb4c113182aad4387924cfc3e9",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_34.wav",
+      "destination": "internal/audit/nidhi/audit_34.wav",
+      "sha256": "97a2b02ddbbfe17881fc9327f1a8193edd4c6eedcfd514e25d339deee53a35ef",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_34.TextGrid",
+      "destination": "internal/audit/nidhi/audit_34.TextGrid",
+      "sha256": "bac47aef59125f754bce75e1af2793731ac8dcad2c2a3338475e3752a7e7e447",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_35.wav",
+      "destination": "internal/audit/nidhi/audit_35.wav",
+      "sha256": "803f123379755d3dd478880a453f55d9208e67df96f44ba6a188b1514c80dca8",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_35.TextGrid",
+      "destination": "internal/audit/nidhi/audit_35.TextGrid",
+      "sha256": "63e08a29436af82eb041be811cd76bfe912ce22a82e1c1c37b378da79ef86958",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_36.wav",
+      "destination": "internal/audit/nidhi/audit_36.wav",
+      "sha256": "ddf0631a7fe9c37adcac25f62cf9a0dac2db81303893afc4d0280a69aefdc8e5",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_36.TextGrid",
+      "destination": "internal/audit/nidhi/audit_36.TextGrid",
+      "sha256": "c23dc1eef3385ff3148c9befb4561b9f8eabb9fc7a7c8939c0bdbb1cb9c27a94",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_37.wav",
+      "destination": "internal/audit/nidhi/audit_37.wav",
+      "sha256": "12679f7c5abc8a9fe32bcc82bac230e221cf787623703a4a91e965e051912c87",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_37.TextGrid",
+      "destination": "internal/audit/nidhi/audit_37.TextGrid",
+      "sha256": "1315a26b11808d672d7a83a64af6dcdd57ba7c373a6cf06c59a830ddbd2eb43a",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_38.wav",
+      "destination": "internal/audit/nidhi/audit_38.wav",
+      "sha256": "3cd910f2739b689be9bbce18562eff70b03df0b800320f6147758143cf23365f",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_38.TextGrid",
+      "destination": "internal/audit/nidhi/audit_38.TextGrid",
+      "sha256": "65f59f3c21c10c3b09ed1e9ffb09d34ff36bff158eec4e96d10aebec4a725640",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_39.wav",
+      "destination": "internal/audit/nidhi/audit_39.wav",
+      "sha256": "11dd45df04e1469ffd123bc8313923e676e34fc256a7957da4785662165df40f",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_39.TextGrid",
+      "destination": "internal/audit/nidhi/audit_39.TextGrid",
+      "sha256": "00860d9dbe0e5bb97c12da133f2df885cdd7800c80713f75d387adc108145bfd",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_40.wav",
+      "destination": "internal/audit/nidhi/audit_40.wav",
+      "sha256": "2f11111cb8c69a234b5f097d9c4b2c9c25e354a045388429ffb05ee2c7b52470",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_40.TextGrid",
+      "destination": "internal/audit/nidhi/audit_40.TextGrid",
+      "sha256": "b4c61d3b090d2389d82d5975c8298f2541e400e55ff911ba11eb3f76898a240d",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_41.wav",
+      "destination": "internal/audit/nidhi/audit_41.wav",
+      "sha256": "6a0fc426e051194756442c58ae3c177f946b67bffcba332c3849cc9ad76d1a03",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_41.TextGrid",
+      "destination": "internal/audit/nidhi/audit_41.TextGrid",
+      "sha256": "2e4c3ae2b8000c9dbef810a43de31ec21cd4d7cfe695159f003c4841e5ff23d4",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_42.wav",
+      "destination": "internal/audit/nidhi/audit_42.wav",
+      "sha256": "24bf8c6e1f5e818155ca3b89557da00ccb3437173ef174ee7ea95b49cfb78c9a",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_42.TextGrid",
+      "destination": "internal/audit/nidhi/audit_42.TextGrid",
+      "sha256": "24db02ae023ba2eae2681635252c8264aa7e753ea0071cdf510a81f687aaa797",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_43.wav",
+      "destination": "internal/audit/nidhi/audit_43.wav",
+      "sha256": "57d5a4388d65c65e8cd3113edbeb77e8f7f1826338a3800d26fab26512be514c",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_43.TextGrid",
+      "destination": "internal/audit/nidhi/audit_43.TextGrid",
+      "sha256": "9d4424fa86c24238e4d2af7455f969c7010ac72ea35916ad8df9f563acc173d5",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_44.wav",
+      "destination": "internal/audit/nidhi/audit_44.wav",
+      "sha256": "3bd569db88225d5c08e240dd6a8ab300720db9701c2927f3b033033b32b29f1b",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_44.TextGrid",
+      "destination": "internal/audit/nidhi/audit_44.TextGrid",
+      "sha256": "0e8a23887c4f6833cb9c863b1e8910d7ed2dbb8c0166af1932f544242b7e3de2",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_45.wav",
+      "destination": "internal/audit/nidhi/audit_45.wav",
+      "sha256": "d27be53e253d7f4bf8fce26aff841b50ff63c9630024084d764e595712aff959",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_45.TextGrid",
+      "destination": "internal/audit/nidhi/audit_45.TextGrid",
+      "sha256": "2fc6c6744181b6961a5f972b65ac97ab73a0c65293da8ae772933fb8eaa98346",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_46.wav",
+      "destination": "internal/audit/nidhi/audit_46.wav",
+      "sha256": "89a37aa22c4c6fac2ad8480b7758546cc8cc2d25d96fb3e898219e4472a46701",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_46.TextGrid",
+      "destination": "internal/audit/nidhi/audit_46.TextGrid",
+      "sha256": "1d3a450d2c60e75185839ce47cd9e1bcfb4a936887582fc02c98350216ed9cb2",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_47.wav",
+      "destination": "internal/audit/nidhi/audit_47.wav",
+      "sha256": "b6c350e0e2ddd6de8c2db2288185bffbf73477ff514f4dbc342f9274d844426d",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_47.TextGrid",
+      "destination": "internal/audit/nidhi/audit_47.TextGrid",
+      "sha256": "7794664d6399f0dba80a5b63366b05b8bbcb419f9157bb91236ecdc82280468c",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_48.wav",
+      "destination": "internal/audit/nidhi/audit_48.wav",
+      "sha256": "c0981dc9d8e36f844b5e94c400b748d5fc88f5117a821ec2cccad4f7086b2b45",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_48.TextGrid",
+      "destination": "internal/audit/nidhi/audit_48.TextGrid",
+      "sha256": "f6f6328016edd02a5025e093893c1433969da6fb4f8f4ea3221881562510b7a6",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_49.wav",
+      "destination": "internal/audit/nidhi/audit_49.wav",
+      "sha256": "05e3f2f4f16eeaf528b250c80953c70416ec04623041fabd134f7345807f21f4",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_49.TextGrid",
+      "destination": "internal/audit/nidhi/audit_49.TextGrid",
+      "sha256": "101372cb96d646b2f083a203b32e1a1df15617201945eaed7021f18819f26670",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_50.wav",
+      "destination": "internal/audit/nidhi/audit_50.wav",
+      "sha256": "d868438996756843ac3b74868570eeb28374d67ff040d86a1ddca68b0ff176df",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/audit_50.TextGrid",
+      "destination": "internal/audit/nidhi/audit_50.TextGrid",
+      "sha256": "03b4c356439dce03c5d11fa6de3df5a205449b955755cc557c73cc570a685c32",
+      "status": "verified-and-imported"
+    },
+    {
+      "source": "nidhi_audit_2026-10-31.zip",
+      "member": "audit/nidhi/notes.csv",
+      "destination": "internal/audit/nidhi/notes.csv",
+      "sha256": "71a7c162ec7a9f5803abf555b5593b6cc7f65da8d5d5ce7aeb2a496ae8adde1c",
+      "status": "verified-and-imported"
+    }
+  ],
+  "records": 22551,
+  "pincodes": 26,
+  "coordinates_provenance": "results/rebuild_checks/coordinates.csv, data=rebuild, original lat/lon columns (not cluster_lat/lon)",
+  "original_metadata_not_provided": true,
+  "manual_audit_key_not_provided": true
+}

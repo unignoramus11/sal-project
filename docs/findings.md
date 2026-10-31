@@ -225,9 +225,24 @@ All on the speaker-disjoint split, paired on the same test utterances (speaker-c
 - Pooled utterance-level prosody statistics (12 within-utterance-normalised F0/intensity statistics, MLP):
   below the majority R@1 under both splits (random 5.5 ± 0.7, speaker-disjoint 4.8 ± 0.4) and close to the
   best constant on km (speaker-disjoint +12 km [-31, 53]). Speaker-normalised global prosody statistics
-  carry no usable location signal. The sequence model (prosody BiGRU on contours) is queued on the GPU.
+  carry no usable location signal.
+- Prosody BiGRU on F0/voicing/intensity contours (run by Nidhi on Ada, scripts/run_prosody.py, speaker-disjoint
+  split, 1 seed, early-stopping patience 12 checks instead of the default 100; results/runs/prosody_gru_*,
+  results/nidhi/FINAL_RQ3.md): 11.3 R@1 and 475 km against majority 10.0 / 675 km. Paired checks
+  (scripts/prosody_checks.py, results/tables/prosody_checks.csv, speaker bootstrap): no R@1 lift over the
+  majority (+1.3 [-5.1, 7.8]); km gain over the best constant +132 km [60, 207], but mostly on test speakers with
+  a look-alike code in training (+289 km; strict rest +48 [-14, 123], n.s.; R@1 lift +7.2 vs -1.8). Like
+  ECAPA, the contours' own signal on new speakers is largely voice leakage.
+- Late fusion with the ZIPA phone BiGRU (scripts/fuse.py, weight 0.85 chosen on validation): mean error 441 ->
+  426 km, -14.9 km [-21.6, -8.1], and -12.9 [-20.0, -5.1] on the strict subset; R@1 -1.2 [-3.4, 0.8] (n.s.).
+  Contours add a small amount of regional information to the transcript, in km only. Single seed.
+- Exploratory (Nidhi): heuristic syllabification of the recognizer strings (results/nidhi/SYLLABLE_COMPARISON.md);
+  the share of closed syllables does not single out Haryana with either recognizer.
 
 ## Open
-- TP-GRU (char, phone, shuffled phone; both recognizers; both splits; 5 seeds) running on the PC.
-- Representation probes, layer sweep and the layer-wise geminate probe: on Ada (Nidhi).
+- Representation probes (PRiSM's RP-Attn and the order sweep): not run; Nidhi's Ada storage (50 GB) and GPU
+  (11 GB) could not hold the frame caches. Owner and machine for the final to be decided.
+- TP-GRU seeds 44-46 (2 seeds so far); prosody BiGRU seeds beyond 42.
+- Manual 50-clip audit by both authors (key withheld until both annotate by hand).
+- Cross-validated benchmark runs (docs/benchmark.md), November.
 - Gemination acoustics and the blind manual audit of 50 tokens.

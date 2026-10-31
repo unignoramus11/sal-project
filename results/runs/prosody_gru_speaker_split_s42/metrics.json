@@ -1,0 +1,48 @@
+{
+  "config": {
+    "lr": 0.001,
+    "batch_size": 64,
+    "min_epochs": 10,
+    "max_epochs": 200,
+    "patience": 12,
+    "val_per_epoch": 4,
+    "warmup_steps": 200,
+    "warmup_start_factor": 0.3333333333333333,
+    "grad_clip": 1.0,
+    "weight_decay": 0.0,
+    "seed": 42,
+    "device": "cuda",
+    "eval_batch_size": 128,
+    "extra": {
+      "features": "/home2/nidhiv/sal-project-main/outputs/features/prosody_rebuild"
+    }
+  },
+  "best_epoch": 16,
+  "best_check": 66,
+  "epochs_run": 20,
+  "seconds": 2671.6743586063385,
+  "n_params": 447171,
+  "metrics": {
+    "train": {
+      "recall1": 20.641079545021057,
+      "recall5": 62.132155895233154,
+      "mean_km": 306.8229851013904,
+      "median_km": 230.07191230025236,
+      "n": 16753
+    },
+    "val": {
+      "recall1": 7.758232206106186,
+      "recall5": 31.21335208415985,
+      "mean_km": 526.2664548312575,
+      "median_km": 492.1047364705407,
+      "n": 2217
+    },
+    "test": {
+      "recall1": 11.309690028429031,
+      "recall5": 39.98883068561554,
+      "mean_km": 475.236159826278,
+      "median_km": 432.7241827388903,
+      "n": 3581
+    }
+  }
+}

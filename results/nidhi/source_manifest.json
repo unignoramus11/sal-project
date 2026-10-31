@@ -1,0 +1,58 @@
+{
+  "created_utc": "2026-10-31T12:49:46.004575+00:00",
+  "result_run_count": 391,
+  "family_counts": {
+    "dense": 55,
+    "tp": 336
+  },
+  "invalid_metrics": [],
+  "sources": {
+    "results/tables/configs.csv": {
+      "sha256": "c13ca2b1cddf462b887ec1377922455a4ec202edfe796ce697e152ccc55884ae",
+      "bytes": 32096
+    },
+    "results/tables/comparisons.csv": {
+      "sha256": "23166dedd2fe904b4ca1ee917e79878c98514f2f9aa952ee64f37692fac07fdb",
+      "bytes": 7782
+    },
+    "results/dpr/w2v2_haryana_vs_rest.csv": {
+      "sha256": "5494ea6e0d2742858a480f79514877d703088fea917bb95763cd1808927c69ad",
+      "bytes": 143
+    },
+    "results/dpr/zipa_haryana_vs_rest.csv": {
+      "sha256": "42ffa00495d28efc12d7e7e15231324a553368964b1a091d166ea91bf1fce319",
+      "bytes": 138
+    },
+    "results/gemination/acoustic_summary.csv": {
+      "sha256": "fd784037e6b1dcd8817a6880fb4e0789a1647baab8d28d901eb62da0777eefed",
+      "bytes": 12677
+    },
+    "results/gemination/robustness.txt": {
+      "sha256": "2dc458953d5a6928967453029bdefa64c4e6ae4ee8992c0fe5fdaf997929588e",
+      "bytes": 714
+    },
+    "results/gemination/model_doubling.csv": {
+      "sha256": "230f9eaee30e0bda8b89bd4ad5d8dae465bf5aca18e4d26edfaa8777d00a3880",
+      "bytes": 541
+    },
+    "results/gemination/geminate_vs_single.csv": {
+      "sha256": "1c0ea338bd516af8a1e937b175fd361075f022b4dfbaac549f07d4c7b5ce1997",
+      "bytes": 381
+    }
+  },
+  "data_dependencies_present": {
+    "rebuild_metadata": false,
+    "split_table": false,
+    "w2v2_transcripts": false,
+    "zipa_transcripts": false,
+    "prosody_frames": false,
+    "prosody_index": false,
+    "prosody_meta": false,
+    "prosody_pooled": false,
+    "w2v2_frame_cache": false,
+    "district_closures": false,
+    "district_clips": false,
+    "blinded_audit_key": false
+  },
+  "provenance": "Existing repository results only. No model or original audio was processed."
+}

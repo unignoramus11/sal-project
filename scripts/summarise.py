@@ -103,6 +103,8 @@ def main():
     for d in sorted(runs.iterdir()):
         if not (d / "metrics.json").exists():
             continue
+        if "_official_" in d.name or "_bench" in d.name:   # other data/splits: official_eval.py, benchmark_eval.py
+            continue
         cfg, seed = config_of(d.name)
         m = json.loads((d / "metrics.json").read_text())["metrics"]["test"]
         rows.setdefault(cfg, []).append(m)

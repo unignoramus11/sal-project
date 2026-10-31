@@ -1,0 +1,32 @@
+Traceback (most recent call last):
+  File "/home2/nidhiv/sal-project-main/scripts/run_prosody.py", line 40, in <module>
+    res = train_probe(lambda: ProsodyGRU(), FrameBatcher(store, meta["metadata_idx"].to_numpy(), targets, seed=seed),
+                      targets, splits, cfg)
+  File "/home2/nidhiv/sal-project-main/src/sal/probes/train.py", line 83, in train_probe
+    model = make_model().to(device)
+  File "/home2/nidhiv/miniconda3/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1343, in to
+    return self._apply(convert)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "/home2/nidhiv/miniconda3/lib/python3.13/site-packages/torch/nn/modules/module.py", line 903, in _apply
+    module._apply(fn)
+    ~~~~~~~~~~~~~^^^^
+  File "/home2/nidhiv/miniconda3/lib/python3.13/site-packages/torch/nn/modules/module.py", line 903, in _apply
+    module._apply(fn)
+    ~~~~~~~~~~~~~^^^^
+  File "/home2/nidhiv/miniconda3/lib/python3.13/site-packages/torch/nn/modules/rnn.py", line 290, in _apply
+    self._init_flat_weights()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home2/nidhiv/miniconda3/lib/python3.13/site-packages/torch/nn/modules/rnn.py", line 215, in _init_flat_weights
+    self.flatten_parameters()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home2/nidhiv/miniconda3/lib/python3.13/site-packages/torch/nn/modules/rnn.py", line 271, in flatten_parameters
+    torch._cudnn_rnn_flatten_weight(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self._flat_weights,  # type: ignore[arg-type]
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+        bool(self.bidirectional),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+RuntimeError: cuDNN error: CUDNN_STATUS_NOT_INITIALIZED
