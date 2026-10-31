@@ -554,7 +554,7 @@ def build():
         "Holds in each Haryana district (×1.13-1.15), in 45 of 57 words, and on speaker means without a model (×1.14); "
         "mixed model with word effects, speaking-rate control and a speaker intercept.",
         "Haryana single stops move about a quarter of the way to geminate length: lengthening, not doubling. A blind "
-        "manual audit of 50 tokens by both authors is due 31 Oct.",
+        "manual audit of 50 tokens by both authors is the next check.",
     ], y=Inches(3.7), h=Inches(3.2), size=15)
 
     # 19. plan
