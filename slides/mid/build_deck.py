@@ -59,7 +59,7 @@ def bl(name, proto, prompts="all", split="test"):
 
 def cd(a, b, unit="recall1"):
     r = comp.loc[(a, b)]
-    return f"{r[unit + '_diff']:+.1f} [{r[unit + '_lo']:.1f}, {r[unit + '_hi']:.1f}]"
+    return f"{sg(r[unit + '_diff'])} [{r[unit + '_lo']:.1f}, {r[unit + '_hi']:.1f}]".replace("-", "−")
 
 
 def seedmean(c):
@@ -201,8 +201,129 @@ def table_png(name, header, rows, col_align=None, bold_cells=(), group_rows=(), 
     return out
 
 
+def sg(x, nd=1):
+    """Signed number with a true minus sign."""
+    return f"{x:+.{nd}f}".replace("-", "−")
+
+
 def fmt(m, sd=None):
     return f"{m:.1f}" if sd is None else f"{m:.1f} ± {sd:.1f}"
+
+
+# ------------------------------------------------------------------ charts in the deck's colours
+
+from matplotlib import font_manager  # noqa: E402
+from matplotlib.lines import Line2D  # noqa: E402
+
+for _f in Path.home().glob("Library/Fonts/Carlito-*.ttf"):
+    font_manager.fontManager.addfont(str(_f))
+# two shades of one hue (ordinal pair, validated on the sage surface): speakers in training / new speakers
+SHARED, NEW, LINK = "#12352a", "#5c8f72", "#a9c3b2"
+
+
+def _axes(w, h):
+    plt.rcParams.update({"font.family": "Carlito", "font.size": 13})
+    fig, ax = plt.subplots(figsize=(w, h))
+    fig.patch.set_alpha(0)
+    ax.set_facecolor("none")
+    for side in ("top", "right", "left"):
+        ax.spines[side].set_visible(False)
+    ax.spines["bottom"].set_color("#9aa79f")
+    ax.tick_params(colors="#" + BODY, length=0, labelsize=13)
+    ax.xaxis.grid(True, color="#c9d9c1", lw=0.8)
+    ax.set_axisbelow(True)
+    return fig, ax
+
+
+def _legend(ax, labels):
+    h = [Line2D([], [], marker="o", ls="", ms=10, color=c, label=lab) for c, lab in zip((SHARED, NEW), labels)]
+    ax.legend(handles=h, loc="lower left", bbox_to_anchor=(0, 1.0), ncol=2, frameon=False, fontsize=12.5,
+              handletextpad=0.3, columnspacing=1.6, borderaxespad=0.3)
+
+
+def _save(fig, name):
+    out = BUILD / f"{name}.png"
+    fig.savefig(out, dpi=300, transparent=True, bbox_inches="tight", pad_inches=0.04)
+    plt.close(fig)
+    return out
+
+
+def dumbbell(name, rows, xlabel, labels, w=11.6, h=4.5, xmax=105):
+    """rows: (label, value with speakers shared, value on new speakers), top to bottom. Both values labelled."""
+    fig, ax = _axes(w, h)
+    y = np.arange(len(rows))[::-1]
+    for yi, (_, a, b) in zip(y, rows):
+        ax.plot([min(a, b), max(a, b)], [yi, yi], color=LINK, lw=3, zorder=1, solid_capstyle="round")
+        for v, c in ((a, SHARED), (b, NEW)):
+            ax.scatter([v], [yi], s=120, color=c, zorder=3, edgecolor="#" + SAGE, linewidth=2)
+        off = 0.02 * xmax + max(0.0, 0.03 * xmax - abs(a - b)) / 2       # keep labels clear of overlapping dots
+        ax.text(max(a, b) + off, yi, f"{max(a, b):.1f}", va="center", ha="left", fontsize=12.5, color="#" + INK)
+        ax.text(min(a, b) - off, yi, f"{min(a, b):.1f}", va="center", ha="right", fontsize=12.5, color="#" + BODY)
+    ax.set_yticks(y, [r[0] for r in rows])
+    ax.set_xlim(-6, xmax)
+    ax.set_ylim(-0.6, len(rows) - 0.4)
+    ax.set_xlabel(xlabel, fontsize=13, color="#" + CAP)
+    _legend(ax, labels)
+    return _save(fig, name)
+
+
+def forest(name, rows, xlabel, labels, w=8.2, h=4.7):
+    """rows: (label, (est, lo, hi) with speakers shared, (est, lo, hi) on new speakers); paired differences."""
+    fig, ax = _axes(w, h)
+    y = np.arange(len(rows))[::-1] * 1.0
+    for yi, (_, a, b) in zip(y, rows):
+        for (e, lo, hi), c, dy in ((a, SHARED, 0.17), (b, NEW, -0.17)):
+            ax.plot([lo, hi], [yi + dy] * 2, color=c, lw=2.2, solid_capstyle="round", zorder=2)
+            ax.scatter([e], [yi + dy], s=80, color=c, zorder=3, edgecolor="#" + SAGE, linewidth=1.5)
+            if hi < 0.5:                                         # interval left of zero: label on its left
+                ax.text(lo - 0.6, yi + dy, sg(e), va="center", ha="right", fontsize=12, color="#" + BODY)
+            else:
+                ax.text(hi + 0.6, yi + dy, sg(e), va="center", ha="left", fontsize=12, color="#" + BODY)
+    ax.axvline(0, color="#" + CAP, lw=1)
+    los = [v[1] for r in rows for v in r[1:]]
+    his = [v[2] for r in rows for v in r[1:]]
+    ax.set_xlim(min(los) - 4, max(his) + 3.5)                    # room for labels on both sides
+    ax.set_yticks(y, [r[0] for r in rows])
+    ax.set_ylim(-0.6, len(rows) - 0.4)
+    ax.set_xlabel(xlabel, fontsize=13, color="#" + CAP)
+    _legend(ax, labels)
+    return _save(fig, name)
+
+
+def _arrow(s, x1, y1, x2, y2):
+    c = s.shapes.add_connector(1, x1, y1, x2, y2)
+    c.line.color.rgb = rgb(KICK)
+    c.line.width = Pt(1.5)
+    ln = c.line._get_or_add_ln()
+    ln.append(ln.makeelement(qn("a:tailEnd"), {"type": "triangle", "w": "med", "len": "med"}))
+
+
+def _box(d, s, txt, x, y, w, h, dashed=False, size=13):
+    from pptx.enum.shapes import MSO_SHAPE
+    b = s.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, x, y, w, h)
+    b.adjustments[0] = 0.12
+    b.fill.solid()
+    b.fill.fore_color.rgb = rgb("f6faf3")
+    b.line.color.rgb = rgb("9aa79f" if dashed else KICK)
+    b.line.width = Pt(1.25)
+    if dashed:
+        b.line.dash_style = 4                                   # dash
+    b.shadow.inherit = False
+    tf = b.text_frame
+    tf.word_wrap = True
+    for m in ("margin_left", "margin_right"):
+        setattr(tf, m, Inches(0.08))
+    lines = txt.split("\n")
+    for i, line in enumerate(lines):
+        p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+        p.alignment = PP_ALIGN.CENTER
+        r = p.add_run()
+        r.text = line
+        r.font.size, r.font.name = Pt(size if i == 0 else size - 1.5), SANS
+        r.font.bold = i == 0
+        r.font.color.rgb = rgb(CAP if dashed else (INK if i == 0 else BODY))
+    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+    return b
 
 
 # ------------------------------------------------------------------ content
@@ -282,18 +403,35 @@ def build():
         "topic of an utterance can reveal its location without any dialect feature.",
     ], y=Inches(3.65), h=Inches(3.2))
 
-    # 5. method
+    # 5. method: what each probe sees
     s = d._slide()
-    d.header(s, "Method", "The same probes and references under two splits")
-    d.deflist(s, [
-        ("Splits", "PRiSM's random split within pincode, and a speaker-disjoint split stratified by pincode."),
-        ("Probes", "PRiSM's TP-GRU (2-layer BiGRU over characters) with its settings; the same over phones and over "
-                   "shuffled phones; MLPs over unigram or bigram counts; MLP over ECAPA voice embeddings."),
-        ("References", "Majority location; a lookup by speaker ID; a lookup by picture ID; a nearest-neighbour "
-                       "transcript matcher that learns nothing about location; a control task with permuted labels."),
-        ("Recognizers", "W2V2 (wav2vec2-lv-60-espeak-cv-ft) and ZIPA-CR-CTC-NS large, greedy CTC, PRiSM's wrappers."),
-        ("Statistics", "Recall@1 (PRiSM's metric) and mean km; 5 seeds; paired 95% CIs by bootstrap over speakers."),
-    ], label_w=Inches(2.1), size=15, row=Inches(0.95))
+    d.header(s, "Method", "Four views of each utterance, each probed for location")
+    I = Inches
+    ys, rh = [1.7, 2.62, 3.54, 4.46], 0.7                      # row tops and height (inches)
+    mid = [I(y + rh / 2) for y in ys]
+    _box(d, s, "Utterance\naudio", I(0.6), I(ys[0]), I(1.3), I(ys[3] + rh - ys[0]))
+    enc = [("Phone recognizer\nW2V2 · ZIPA", 0, 2), ("Voice encoder\nECAPA-TDNN", 2, 3), ("Praat\nF0 · voicing · intensity", 3, 4)]
+    for txt, r0, r1 in enc:
+        top, bot = ys[r0], ys[r1 - 1] + rh
+        _box(d, s, txt, I(2.25), I(top), I(2.3), I(bot - top))
+        _arrow(s, I(1.9), I((top + bot) / 2), I(2.25), I((top + bot) / 2))
+    reps = ["Phone string", "Hidden states", "Voice embedding", "Contours, 100 per s"]
+    probes = [("Transcript probes", "bag MLPs · BiGRU · shuffled BiGRU", False),
+              ("Representation probe", "PRiSM's RP-Attn · not run yet", True),
+              ("Voice probe", "MLP", False), ("Prosody probe", "BiGRU · late fusion", False)]
+    for k, (rep, (pt, ps, dash)) in enumerate(zip(reps, probes)):
+        _box(d, s, rep, I(4.9), I(ys[k]), I(2.1), I(rh), dashed=dash)
+        _box(d, s, f"{pt}\n{ps}", I(7.35), I(ys[k]), I(3.15), I(rh), dashed=dash)
+        _arrow(s, I(4.55), mid[k], I(4.9), mid[k])
+        _arrow(s, I(7.0), mid[k], I(7.35), mid[k])
+        _arrow(s, I(10.5), mid[k], I(10.85), mid[k])
+    _box(d, s, "Location\nlatitude, longitude", I(10.85), I(ys[0]), I(1.85), I(ys[3] + rh - ys[0]))
+    d.bullets(s, [
+        "References that learn nothing about dialect: majority location, speaker-ID lookup, picture-ID lookup, and a "
+        "nearest-neighbour transcript match.",
+        "Every probe under two splits: PRiSM's random split (test speakers also in training) and a speaker-disjoint "
+        "split (new speakers). Recall@1 and mean km, 95% CIs by bootstrap over speakers.",
+    ], y=Inches(5.5), h=Inches(1.5), size=15, gap=6)
 
     # 6. RQ0 speakers
     lk = ctrl.loc["dense_ecapa_rebuild_prism"]
@@ -301,9 +439,8 @@ def build():
     d.header(s, "Results  ·  RQ0 speakers", "Under PRiSM's split, the speaker ID alone solves the task")
     d.stats(s, [(f"{leak:.1f}%", "test utterances whose speaker\nis also in training"),
                 (f"{bl('speaker_lookup', 'prism').recall1:.1f}", "Recall@1 of a lookup that only\nknows the speaker ID"),
-                (f"{cfg.loc['dense_ecapa_rebuild_prism', 'recall1_mean']:.1f} → "
-                 f"{cfg.loc['dense_ecapa_rebuild_speaker_split', 'recall1_mean']:.1f}",
-                 "voice embedding (ECAPA),\nrandom → speaker-disjoint"),
+                (f"{cfg.loc['dense_ecapa_rebuild_speaker_split', 'recall1_mean']:.1f}",
+                 f"voice embedding (ECAPA) on new speakers\n({cfg.loc['dense_ecapa_rebuild_prism', 'recall1_mean']:.1f} on PRiSM's split)"),
                 (f"{lk.control_recall1:.1f}", f"ECAPA on control labels\n(control majority {lk.control_majority:.1f})")],
             best=1)
     d.bullets(s, [
@@ -335,53 +472,26 @@ def build():
         "shared pictures are a valid topic control.",
     ], y=Inches(3.7), h=Inches(3.2))
 
-    # 8. main table
-    rows, groups = [], []
-    for name, b in [("Majority baseline", "majority"), ("Speaker lookup (ID only)", "speaker_lookup")]:
-        rows.append([name, fmt(bl(b, "prism").recall1), f"{bl(b, 'prism').mean_km:.0f}",
-                     fmt(bl(b, "speaker_split").recall1), f"{bl(b, 'speaker_split').mean_km:.0f}"])
-    rows.append(["Picture lookup (ID only)", fmt(pr.recall1), "", fmt(ps.recall1), ""])
-    for name, key in [("ECAPA voice embedding", "dense_ecapa_rebuild"), ("Prosody statistics", "dense_prosody_rebuild")]:
-        a, b = cfg.loc[f"{key}_prism"], cfg.loc[f"{key}_speaker_split"]
-        rows.append([name, fmt(a.recall1_mean, a.recall1_sd), f"{a.ens_km:.0f}", fmt(b.recall1_mean, b.recall1_sd), f"{b.ens_km:.0f}"])
-    for rec, m in (("W2V2", "w2v2"), ("ZIPA", "zipa")):
-        groups.append(len(rows))
-        rows.append([f"Transcript probes, {rec}", "", "", "", ""])
-        for lab, k in [("phone unigram", "phone_unigram"), ("phone bigram", "phone_bigram"),
-                       ("char BiGRU (PRiSM)", "char_gru"), ("phone BiGRU", "phone_gru"), ("shuffled phone BiGRU", "phone_shuffle")]:
-            a, b = cfg.loc[f"tp_{m}_rebuild_{k}_prism"], cfg.loc[f"tp_{m}_rebuild_{k}_speaker_split"]
-            rows.append(["   " + lab, fmt(a.recall1_mean, a.recall1_sd), f"{a.ens_km:.0f}", fmt(b.recall1_mean, b.recall1_sd),
-                         f"{b.ens_km:.0f}"])
-    probe_rows = [(i, float(r[3].split(" ")[0])) for i, r in enumerate(rows) if r[3] and i > 2]
-    png = table_png("table_main", ["Probe", "R@1 random", "km", "R@1 new speakers", "km"], rows,
-                    bold_cells=[(max(probe_rows, key=lambda t: t[1])[0], 3)], group_rows=groups,
-                    widths=[2.5, 1.3, 0.75, 1.8, 0.75], fontsize=10.5)
+    # 8. synthesis: what solves the task
+    c1 = dumbbell("chart_lookups", [
+        ("Speaker-ID lookup", bl("speaker_lookup", "prism").recall1, bl("speaker_lookup", "speaker_split").recall1),
+        ("Picture-ID lookup", pr.recall1, ps.recall1),
+        ("Voice embedding (ECAPA)", cfg.loc["dense_ecapa_rebuild_prism", "recall1_mean"],
+         cfg.loc["dense_ecapa_rebuild_speaker_split", "recall1_mean"]),
+        ("Transcript match, nothing learned", knn.loc[("w2v2", "prism", 1), "recall1"],
+         knn.loc[("w2v2", "speaker_split", 1), "recall1"]),
+        ("ZIPA phone bigrams", cfg.loc["tp_zipa_rebuild_phone_bigram_prism", "recall1_mean"],
+         cfg.loc["tp_zipa_rebuild_phone_bigram_speaker_split", "recall1_mean"]),
+        ("PRiSM's BiGRU (W2V2 characters)", cfg.loc["tp_w2v2_rebuild_char_gru_prism", "recall1_mean"],
+         cfg.loc["tp_w2v2_rebuild_char_gru_speaker_split", "recall1_mean"]),
+        ("Majority location", bl("majority", "prism").recall1, bl("majority", "speaker_split").recall1),
+    ], "Test Recall@1 on rebuilt Vaani-Hi (%)", ("test speakers also in training (PRiSM's split)", "new speakers"))
     s = d._slide()
-    d.header(s, "Results  ·  rebuilt Vaani-Hi", "Every probe drops on new speakers; phone bigrams keep the most")
-    im = d.image(s, png, LM, Inches(1.55), h=Inches(5.1))
-    tx = LM + im.width + Inches(0.45)
-    d.bullets(s, [
-        "Recall@1 is mean ± sd over seeds (BiGRUs: 2 seeds so far); km is the seed ensemble's mean error.",
-        "ECAPA loses 31 points between splits, the bag probes 3-13: transcripts carry location beyond the voice.",
-        "On new speakers, ZIPA phone bigrams beat W2V2 phone bigrams by "
-        f"{cd('tp_zipa_rebuild_phone_bigram_speaker_split', 'tp_w2v2_rebuild_phone_bigram_speaker_split')} Recall@1.",
-    ], x=tx, y=Inches(1.7), w=W - tx - Inches(0.6), h=Inches(4.8), size=14.5)
-    d.caption(s, "Table 1. Test Recall@1 (higher is better) and mean km (lower is better).", LM, Inches(6.8), im.width)
-
-    # 9. lift figure
-    s = d._slide()
-    d.header(s, "Results  ·  common reference", "On new speakers, only bigrams beat the majority baseline")
-    d.image(s, RES / "figures" / "fig_probes.png", LM, Inches(1.45), h=Inches(5.2))
-    tx = LM + Inches(8.6)
-    d.bullets(s, [
-        "Left: Recall@1 minus the majority on the same utterances. Right: km saved over the best fixed location.",
-        f"New speakers: ZIPA phone bigram {cfg.loc['tp_zipa_rebuild_phone_bigram_speaker_split', 'lift_recall1']:+.1f}, "
-        f"W2V2 phone bigram {cfg.loc['tp_w2v2_rebuild_phone_bigram_speaker_split', 'lift_recall1']:+.1f}, ECAPA "
-        f"{cfg.loc['dense_ecapa_rebuild_speaker_split', 'lift_recall1']:+.1f} points.",
-        "Nearly every probe still saves 130-200 km on new speakers: coarse regional information survives.",
-    ], x=tx, y=Inches(1.7), w=W - tx - Inches(0.6), h=Inches(4.8), size=14.5)
-    d.caption(s, "Figure 1. Seed ensemble, 95% speaker-bootstrap CI. Open markers: trained and tested on shared pictures.",
-              LM, Inches(6.8), Inches(8.3))
+    d.header(s, "Results  ·  RQ0 summary", "Lookups that know nothing about dialect beat every probe")
+    d.image(s, c1, LM, Inches(1.5), w=Inches(12.1))
+    d.caption(s, "Figure 1. Trained probes: mean over seeds. Lookups predict the most frequent training location of the same "
+                 "speaker or picture; the transcript match takes the location of the most similar training transcript.",
+              LM, Inches(6.85), Inches(12.1))
 
     # 10. topic, shared pictures
     g = cfg.loc["tp_w2v2_rebuild_phone_bigram_speaker_split_generic"]
@@ -389,7 +499,7 @@ def build():
     s = d._slide()
     d.header(s, "Analysis  ·  topic", "Without topic, the transcript probes fall to the majority")
     d.stats(s, [(f"{st.all_state_acc:.0f}%", f"correct state, ZIPA phone bigrams,\nnew speakers (majority {st.all_majority:.0f}%)"),
-                (f"{g.lift_recall1:+.1f}", "Recall@1 lift when trained and\ntested on shared pictures only"),
+                (f"{sg(g.lift_recall1)}", "Recall@1 lift when trained and\ntested on shared pictures only"),
                 (f"+{g.km_gain:.0f} km", f"km gain on shared pictures\n(95% CI {g.km_gain_lo:.0f} to {g.km_gain_hi:.0f})")])
     d.bullets(s, [
         "Shared pictures carry no location (previous check), but their share differs by state (12-58%), so they get "
@@ -406,15 +516,15 @@ def build():
     s = d._slide()
     d.header(s, "Analysis  ·  checking our own split", "Look-alike speaker codes leak the voice, not the transcript")
     d.stats(s, [(f"{look.iloc[0].lookalike_n / look.iloc[0].all_n:.0%}", "of new-speaker test utterances have a\nlook-alike code in training"),
-                (f"{e.lookalike_lift:+.1f} / {e.strict_lift:+.1f}", "ECAPA lift: look-alike utterances /\nthe strict rest"),
-                (f"{z.strict_lift:+.1f}", f"ZIPA phone bigram lift on the strict\nrest ({z.all_lift:+.1f} on all)"),
+                (f"{sg(e.lookalike_lift)} / {sg(e.strict_lift)}", "ECAPA lift: look-alike utterances /\nthe strict rest"),
+                (sg(z.strict_lift), f"ZIPA phone bigram lift on the strict\nrest ({sg(z.all_lift)} on all)"),
                 (f"{rb.km_from_cluster:.0f} km", f"pincode {int(rb.pincode)} ({rb.district}) off its\npost offices in the rebuild")],
             best=2)
     d.bullets(s, [
         "Speaker codes come from file names. Codes of one district whose voices are as close as two halves of one "
         "speaker's recordings are grouped (1,570 codes → 1,327 groups); gender agrees in 98% of close pairs.",
         f"ECAPA's small lift on new speakers comes only from look-alike codes; the transcript probes keep theirs "
-        f"(W2V2 phone bigram {w.strict_lift:+.1f} on the strict rest).",
+        f"(W2V2 phone bigram {sg(w.strict_lift)} on the strict rest).",
         "PRiSM's recipe averages a pincode's post offices, and some directory rows are hundreds of km off; Dhar lands "
         "88 km from Bhopal instead of 45 km from the other Dhar pincode. Recall@1 hardly moves; km does.",
     ], y=Inches(3.7), h=Inches(3.2))
@@ -453,35 +563,37 @@ def build():
         f"ZIPA transcripts give the same picture (phone bigrams {seedmean('tp_zipa_official_phone_bigram_prism')[0]:.1f}).",
     ], y=Inches(3.7), h=Inches(3.2))
 
-    # 14. corrected release, table
+    # 14. corrected release
     def oc(proto, probe):
         return ocl[(ocl.protocol == proto) & (ocl.probe == probe)].recall1.iloc[0]
-    orows = [["Majority", fmt(odup.loc["majority", "all_recall1"]), fmt(oc("prism", "majority")), fmt(oc("speaker_split", "majority"))],
-             ["1-NN transcript match", fmt(odup.loc[NN, "all_recall1"]), fmt(oc("prism", NN)), fmt(oc("speaker_split", NN))]]
-    for lab, key in [("ECAPA voice embedding", "dense_ecapa_official"), ("W2V2 phone bigram", "tp_w2v2_official_phone_bigram"),
-                     ("ZIPA phone bigram", "tp_zipa_official_phone_bigram"), ("W2V2 char BiGRU (PRiSM)", "tp_w2v2_official_char_gru"),
-                     ("W2V2 phone BiGRU", "tp_w2v2_official_phone_gru"), ("W2V2 shuffled phone BiGRU", "tp_w2v2_official_phone_shuffle")]:
-        cells = []
-        for c in (f"{key}_prism", f"{key}_prism_clean", f"{key}_speaker_split_clean"):
-            m_, sd_, n_ = seedmean(c)
-            cells.append(fmt(m_, sd_) if n_ else "–")
-        orows.append([lab] + cells)
-    png = table_png("table_official", ["Probe", "Released", "Corrected", "Corrected, new speakers"],
-                    orows, widths=[2.7, 1.4, 1.9, 2.5], fontsize=12)
+
+    def osm(key, P):
+        return seedmean(f"{key}_{P}_clean")[0]
+    c2 = dumbbell("chart_release", [
+        ("Transcript match, nothing learned", oc("prism", NN), oc("speaker_split", NN)),
+        ("ZIPA phone bigrams", osm("tp_zipa_official_phone_bigram", "prism"), osm("tp_zipa_official_phone_bigram", "speaker_split")),
+        ("W2V2 phone bigrams", osm("tp_w2v2_official_phone_bigram", "prism"), osm("tp_w2v2_official_phone_bigram", "speaker_split")),
+        ("Voice embedding (ECAPA)", osm("dense_ecapa_official", "prism"), osm("dense_ecapa_official", "speaker_split")),
+        ("PRiSM's BiGRU (characters)", osm("tp_w2v2_official_char_gru", "prism"), osm("tp_w2v2_official_char_gru", "speaker_split")),
+        ("Phone BiGRU", osm("tp_w2v2_official_phone_gru", "prism"), osm("tp_w2v2_official_phone_gru", "speaker_split")),
+        ("Shuffled phone BiGRU", osm("tp_w2v2_official_phone_shuffle", "prism"), osm("tp_w2v2_official_phone_shuffle", "speaker_split")),
+        ("Majority location", oc("prism", "majority"), oc("speaker_split", "majority")),
+    ], "Test Recall@1 on the corrected release (%)", ("released split (speakers shared)", "speaker-disjoint split"),
+        w=8.4, h=5.4, xmax=75)
     ntest = ocl[ocl.protocol == "speaker_split"].test_pseudo_speakers.iloc[0]
     s = d._slide()
     d.header(s, "Results  ·  corrected release", "Once speakers are separated, every probe falls to the majority")
-    im = d.image(s, png, LM, Inches(1.65), w=Inches(7.9))
-    tx = LM + im.width + Inches(0.45)
+    im = d.image(s, c2, LM, Inches(1.5), w=Inches(8.2))
+    tx = LM + im.width + Inches(0.4)
     d.bullets(s, [
         "Corrected: one row per recording, conflicting labels removed, Shimla moved to its offices (19,731 rows).",
-        "No speaker IDs, so speakers are clustered from voice embeddings; checked on our rebuild, this split leaks "
-        "2.1% of test speakers.",
+        "No speaker IDs, so speakers are clustered from voice embeddings; checked on our rebuild, this split leaks 2.1% "
+        "of test speakers.",
         f"Removing duplicates changes little; removing shared speakers removes almost everything ({ntest} test "
-        "pseudo-speakers, so CIs are wide).",
+        "speakers, so CIs are wide).",
     ], x=tx, y=Inches(1.7), w=W - tx - Inches(0.6), h=Inches(4.8), size=14.5)
-    d.caption(s, "Table 2. Test Recall@1, mean ± sd over seeds. Released: data and split as published. Corrected: released "
-                 "split on the corrected rows, or a pseudo-speaker-disjoint split.", LM, Inches(6.8), Inches(12))
+    d.caption(s, "Figure 2. W2V2 transcripts unless named; probes: mean over seeds. Full table in the appendix.",
+              LM, Inches(6.85), Inches(8.2))
 
     # 15. RQ1 order and units (rebuild)
     k = lambda c: mdl.loc[c, "gain_over_prior"]  # noqa: E731
@@ -502,23 +614,42 @@ def build():
         "topic, not phonotactics. The 5-fold benchmark (1,327 speaker groups) will settle it.",
     ], y=Inches(3.7), h=Inches(3.2))
 
-    # 16. RQ1 sequence model
+    # 16. RQ1 sequence model and bags: order effects by split
+    def cpair(a, b):
+        r = comp.loc[(a, b)]
+        return r.recall1_diff, r.recall1_lo, r.recall1_hi
+
+    def opair(P, a):
+        r = oorder.loc[(P, a)]
+        return r["diff"], r.lo, r.hi
     o_rel, o_sp = (oorder.loc[(P, "tp_w2v2_official_phone_gru")] for P in ("prism", "speaker_split"))
-    r_w, r_z = comp.loc[("tp_w2v2_rebuild_phone_gru_speaker_split", "tp_w2v2_rebuild_phone_shuffle_speaker_split")], \
-        comp.loc[("tp_zipa_rebuild_phone_gru_speaker_split", "tp_zipa_rebuild_phone_shuffle_speaker_split")]
+    c3 = forest("chart_order", [
+        ("BiGRU vs shuffled\nrelease, W2V2", opair("prism", "tp_w2v2_official_phone_gru"),
+         opair("speaker_split", "tp_w2v2_official_phone_gru")),
+        ("BiGRU vs shuffled\nrebuild, W2V2", cpair("tp_w2v2_rebuild_phone_gru_prism", "tp_w2v2_rebuild_phone_shuffle_prism"),
+         cpair("tp_w2v2_rebuild_phone_gru_speaker_split", "tp_w2v2_rebuild_phone_shuffle_speaker_split")),
+        ("BiGRU vs shuffled\nrebuild, ZIPA", cpair("tp_zipa_rebuild_phone_gru_prism", "tp_zipa_rebuild_phone_shuffle_prism"),
+         cpair("tp_zipa_rebuild_phone_gru_speaker_split", "tp_zipa_rebuild_phone_shuffle_speaker_split")),
+        ("Bigram vs unigram\nrelease, W2V2", opair("prism", "tp_w2v2_official_phone_bigram"),
+         opair("speaker_split", "tp_w2v2_official_phone_bigram")),
+        ("Bigram vs unigram\nrebuild, W2V2", cpair("tp_w2v2_rebuild_phone_bigram_prism", "tp_w2v2_rebuild_phone_unigram_prism"),
+         cpair("tp_w2v2_rebuild_phone_bigram_speaker_split", "tp_w2v2_rebuild_phone_unigram_speaker_split")),
+        ("Bigram vs unigram\nrebuild, ZIPA", cpair("tp_zipa_rebuild_phone_bigram_prism", "tp_zipa_rebuild_phone_unigram_prism"),
+         cpair("tp_zipa_rebuild_phone_bigram_speaker_split", "tp_zipa_rebuild_phone_unigram_speaker_split")),
+    ], "Recall@1 gain from phone order, points (95% CI)", ("test speakers in training", "new speakers"), h=5.2)
     s = d._slide()
-    d.header(s, "Results  ·  RQ1 sequence model", "Phone order helps the BiGRU only for speakers seen in training")
-    d.stats(s, [(f"{o_rel['diff']:+.1f}", f"BiGRU − shuffled BiGRU, corrected\nrelease, shared speakers [{o_rel.lo:.1f}, {o_rel.hi:.1f}]"),
-                (f"{o_sp['diff']:+.1f}", f"the same, new speakers\n[{o_sp.lo:.1f}, {o_sp.hi:.1f}]"),
-                (f"{r_w.recall1_diff:+.1f} / {r_z.recall1_diff:+.1f}", "the same on our rebuild, new speakers\n(W2V2 / ZIPA)")],
-            best=0)
+    d.header(s, "Results  ·  RQ1 order", "Phone order helps mostly when test speakers were seen in training")
+    im = d.image(s, c3, LM, Inches(1.5), w=Inches(8.2))
+    tx = LM + im.width + Inches(0.4)
     d.bullets(s, [
-        "Shuffling the phones within each utterance keeps the inventory and removes order; both probes are scored on "
-        "the same test utterances.",
-        f"Order is worth {o_rel['diff']:.0f} points when test speakers are in training and nothing when they are not: "
-        "the BiGRU memorises speakers' sequences. Bigram over unigram bags show the same split on the release.",
-        "PRiSM's explanation of its result (order) holds only under its leaky split.",
-    ], y=Inches(3.7), h=Inches(3.2))
+        "Each row: a probe that sees phone order minus the same probe without it, paired on the same test utterances.",
+        f"PRiSM's BiGRU gains {o_rel['diff']:.0f} points from order on its own split and nothing on new speakers: it "
+        "memorises speakers' sequences.",
+        "Bigram bags keep a gain on the rebuild's new speakers, but they also identify words, and on shared pictures no "
+        "probe beats the majority.",
+    ], x=tx, y=Inches(1.7), w=W - tx - Inches(0.6), h=Inches(4.8), size=14.5)
+    d.caption(s, "Figure 3. Release: corrected rows, speaker-disjoint split from voice clusters (59 test speakers). Rebuild "
+                 "BiGRUs: 2 seeds so far.", LM, Inches(6.85), Inches(12.1))
 
     # 17. RQ2 recognizer doubling
     s = d._slide()
@@ -557,19 +688,40 @@ def build():
         "manual audit of 50 tokens by both authors is the next check.",
     ], y=Inches(3.7), h=Inches(3.2), size=15)
 
+    # 18b. RQ3 melody
+    pc = pd.read_csv(RES / "tables" / "prosody_checks.csv").set_index(["subset", "comparison"])
+    fk, fr = pc.loc[("all", "fusion - transcript, km")], pc.loc[("all", "fusion - transcript, Recall@1")]
+    fks = pc.loc[("strict", "fusion - transcript, km")]
+    gk, gks = pc.loc[("all", "best constant - prosody, km")], pc.loc[("strict", "best constant - prosody, km")]
+    pm = json.loads((RES / "runs" / "prosody_gru_speaker_split_s42" / "metrics.json").read_text())["metrics"]["test"]
+    s = d._slide()
+    d.header(s, "Results  ·  RQ3 melody", "Intonation adds a little regional information, in distance only")
+    d.stats(s, [(f"{pm['recall1']:.1f}", f"prosody BiGRU, Recall@1 on new\nspeakers (majority {bl('majority', 'speaker_split').recall1:.1f})"),
+                (f"+{gks['diff']:.0f} km", f"prosody alone vs best fixed location,\nno look-alike speakers [{gks.lo:.0f}, {gks.hi:.0f}]"),
+                (f"{sg(fk['diff'])} km", f"fused with the transcript BiGRU,\nmean error [{sg(fk.lo)}, {sg(fk.hi)}]"),
+                (sg(fr['diff']), f"fused, Recall@1\n[{sg(fr.lo)}, {sg(fr.hi)}]")], best=2)
+    d.bullets(s, [
+        "Pooled prosody statistics stay below the majority on both splits. A BiGRU over F0, voicing and intensity "
+        "contours (Nidhi, on Ada) brings no Recall@1 gain on new speakers.",
+        f"Its distance gain over a fixed location (+{gk['diff']:.0f} km) comes mostly from speakers with a look-alike code in "
+        "training: like the voice embedding, contours carry the voice.",
+        f"Late fusion (weight 0.85 on the transcript, chosen on validation) lowers mean error from 441 to 426 km, also "
+        f"without look-alike speakers ({sg(fks['diff'])} km). One seed so far.",
+    ], y=Inches(3.7), h=Inches(3.2))
+
     # 19. plan
     s = d._slide()
     d.header(s, "Plan", "What remains for the final evaluation")
     d.deflist(s, [
-        ("Benchmark", "A cleaned evaluation from the rebuild: 5-fold cross-validation over speaker groups (look-alike "
-                      "codes merged), every speaker tested once, a shared-picture track, corrected coordinates. Built "
-                      "and tested; all probes rerun on it in November."),
-        ("Ada (Nidhi)", "Representation probes (PRiSM's RP-Attn) on both splits, then the order sweep over layers "
-                        "(RQ1), the consonant-length probe by layer (RQ2), prosody contours (RQ3)."),
-        ("RQ2", "Blind manual audit of 50 tokens; whether the encoders' hidden states keep the lengthening."),
-        ("RQ3", "Prosody BiGRU on F0 and intensity contours; late fusion with the transcript probe."),
+        ("Representation", "PRiSM's RP-Attn and the order sweep over layers, RQ1's central test. The frame caches did not "
+                           "fit the Ada quota (50 GB disk, 11 GB GPU); the machine is still to be decided."),
+        ("Benchmark", "5-fold cross-validation over speaker groups (every speaker tested once), a shared-picture track, "
+                      "corrected coordinates. Built and tested; every probe is rerun on it in November."),
+        ("Seeds", "BiGRU seeds 3-5 (2 so far) and prosody BiGRU seeds 2-5."),
+        ("RQ2", "Blind manual audit of 50 tokens by both authors; whether the encoders' hidden states keep the "
+                "lengthening."),
         ("Write-up", "ACL-format report with every table generated from results/ by script."),
-    ], label_w=Inches(2.1), size=15, row=Inches(1.0))
+    ], label_w=Inches(2.3), size=15, row=Inches(0.98))
 
     # 20. takeaways
     s = d._slide(dark=True)
@@ -579,11 +731,87 @@ def build():
         f"reproduced probe ({gru[0]:.1f}), and every probe falls to the majority once speakers are separated.",
         f"The picture a speaker describes gives the location away ({pr.recall1:.1f} Recall@1 from the picture ID alone); "
         "without topic, transcript probes fall to the majority on new speakers.",
-        f"Phone order helps PRiSM's probe only for seen speakers ({o_rel['diff']:+.1f} vs {o_sp['diff']:+.1f}).",
-        "Haryana speakers hold voiceless stops 14% longer than New Delhi speakers, which the recognizers rarely write.",
-    ], y=Inches(1.8), h=Inches(4.6), size=17, color=LIGHT)
+        f"Phone order helps PRiSM's probe only for seen speakers ({sg(o_rel['diff'])} vs {sg(o_sp['diff'])} Recall@1).",
+        "Haryana speakers hold voiceless stops 14% longer than New Delhi speakers; the recognizers rarely write it.",
+        f"Intonation helps only in distance: fused with the transcript probe it saves {-fk['diff']:.0f} km.",
+    ], y=Inches(1.75), h=Inches(4.7), size=16.5, color=LIGHT, gap=10)
     d.text(s, "Code, data recipe and every number: github.com/unignoramus11/sal-project", LM, Inches(6.6),
            Inches(12), Inches(0.3), size=11, italic=True, color="9fb8aa")
+
+    # A1. main table (appendix)
+    rows, groups = [], []
+    for name, b in [("Majority baseline", "majority"), ("Speaker lookup (ID only)", "speaker_lookup")]:
+        rows.append([name, fmt(bl(b, "prism").recall1), f"{bl(b, 'prism').mean_km:.0f}",
+                     fmt(bl(b, "speaker_split").recall1), f"{bl(b, 'speaker_split').mean_km:.0f}"])
+    rows.append(["Picture lookup (ID only)", fmt(pr.recall1), "", fmt(ps.recall1), ""])
+    for name, key in [("ECAPA voice embedding", "dense_ecapa_rebuild"), ("Prosody statistics", "dense_prosody_rebuild")]:
+        a, b = cfg.loc[f"{key}_prism"], cfg.loc[f"{key}_speaker_split"]
+        rows.append([name, fmt(a.recall1_mean, a.recall1_sd), f"{a.ens_km:.0f}", fmt(b.recall1_mean, b.recall1_sd), f"{b.ens_km:.0f}"])
+    for rec, m in (("W2V2", "w2v2"), ("ZIPA", "zipa")):
+        groups.append(len(rows))
+        rows.append([f"Transcript probes, {rec}", "", "", "", ""])
+        for lab, k in [("phone unigram", "phone_unigram"), ("phone bigram", "phone_bigram"),
+                       ("char BiGRU (PRiSM)", "char_gru"), ("phone BiGRU", "phone_gru"), ("shuffled phone BiGRU", "phone_shuffle")]:
+            a, b = cfg.loc[f"tp_{m}_rebuild_{k}_prism"], cfg.loc[f"tp_{m}_rebuild_{k}_speaker_split"]
+            rows.append(["   " + lab, fmt(a.recall1_mean, a.recall1_sd), f"{a.ens_km:.0f}", fmt(b.recall1_mean, b.recall1_sd),
+                         f"{b.ens_km:.0f}"])
+    probe_rows = [(i, float(r[3].split(" ")[0])) for i, r in enumerate(rows) if r[3] and i > 2]
+    png = table_png("table_main", ["Probe", "R@1 random", "km", "R@1 new speakers", "km"], rows,
+                    bold_cells=[(max(probe_rows, key=lambda t: t[1])[0], 3)], group_rows=groups,
+                    widths=[2.5, 1.3, 0.75, 1.8, 0.75], fontsize=10.5)
+    s = d._slide()
+    d.header(s, "Appendix  ·  rebuilt Vaani-Hi", "Every probe drops on new speakers; phone bigrams keep the most")
+    im = d.image(s, png, LM, Inches(1.55), h=Inches(5.1))
+    tx = LM + im.width + Inches(0.45)
+    d.bullets(s, [
+        "Recall@1 is mean ± sd over seeds (BiGRUs: 2 seeds so far); km is the seed ensemble's mean error.",
+        "ECAPA loses 31 points between splits, the bag probes 3-13: transcripts carry location beyond the voice.",
+        "On new speakers, ZIPA phone bigrams beat W2V2 phone bigrams by "
+        f"{cd('tp_zipa_rebuild_phone_bigram_speaker_split', 'tp_w2v2_rebuild_phone_bigram_speaker_split')} Recall@1.",
+    ], x=tx, y=Inches(1.7), w=W - tx - Inches(0.6), h=Inches(4.8), size=14.5)
+    d.caption(s, "Table A1. Test Recall@1 (higher is better) and mean km (lower is better).", LM, Inches(6.8), im.width)
+
+    # A2. lift figure (appendix)
+    s = d._slide()
+    d.header(s, "Appendix  ·  common reference", "On new speakers, only bigrams beat the majority baseline")
+    d.image(s, RES / "figures" / "fig_probes.png", LM, Inches(1.45), h=Inches(5.2))
+    tx = LM + Inches(8.6)
+    d.bullets(s, [
+        "Left: Recall@1 minus the majority on the same utterances. Right: km saved over the best fixed location.",
+        f"New speakers: ZIPA phone bigram {sg(cfg.loc['tp_zipa_rebuild_phone_bigram_speaker_split', 'lift_recall1'])}, "
+        f"W2V2 phone bigram {sg(cfg.loc['tp_w2v2_rebuild_phone_bigram_speaker_split', 'lift_recall1'])}, ECAPA "
+        f"{sg(cfg.loc['dense_ecapa_rebuild_speaker_split', 'lift_recall1'])} points.",
+        "Nearly every probe still saves 130-200 km on new speakers: coarse regional information survives.",
+    ], x=tx, y=Inches(1.7), w=W - tx - Inches(0.6), h=Inches(4.8), size=14.5)
+    d.caption(s, "Figure A1. Seed ensemble, 95% speaker-bootstrap CI. Open markers: trained and tested on shared pictures.",
+              LM, Inches(6.8), Inches(8.3))
+
+    # A3. corrected release table (appendix)
+    orows = [["Majority", fmt(odup.loc["majority", "all_recall1"]), fmt(oc("prism", "majority")), fmt(oc("speaker_split", "majority"))],
+             ["1-NN transcript match", fmt(odup.loc[NN, "all_recall1"]), fmt(oc("prism", NN)), fmt(oc("speaker_split", NN))]]
+    for lab, key in [("ECAPA voice embedding", "dense_ecapa_official"), ("W2V2 phone bigram", "tp_w2v2_official_phone_bigram"),
+                     ("ZIPA phone bigram", "tp_zipa_official_phone_bigram"), ("W2V2 char BiGRU (PRiSM)", "tp_w2v2_official_char_gru"),
+                     ("W2V2 phone BiGRU", "tp_w2v2_official_phone_gru"), ("W2V2 shuffled phone BiGRU", "tp_w2v2_official_phone_shuffle")]:
+        cells = []
+        for c in (f"{key}_prism", f"{key}_prism_clean", f"{key}_speaker_split_clean"):
+            m_, sd_, n_ = seedmean(c)
+            cells.append(fmt(m_, sd_) if n_ else "–")
+        orows.append([lab] + cells)
+    png = table_png("table_official", ["Probe", "Released", "Corrected", "Corrected, new speakers"],
+                    orows, widths=[2.7, 1.4, 1.9, 2.5], fontsize=12)
+    s = d._slide()
+    d.header(s, "Appendix  ·  corrected release", "Once speakers are separated, every probe falls to the majority")
+    im = d.image(s, png, LM, Inches(1.65), w=Inches(7.9))
+    tx = LM + im.width + Inches(0.45)
+    d.bullets(s, [
+        "Corrected: one row per recording, conflicting labels removed, Shimla moved to its offices (19,731 rows).",
+        "No speaker IDs, so speakers are clustered from voice embeddings; checked on our rebuild, this split leaks "
+        "2.1% of test speakers.",
+        f"Removing duplicates changes little; removing shared speakers removes almost everything ({ntest} test "
+        "pseudo-speakers, so CIs are wide).",
+    ], x=tx, y=Inches(1.7), w=W - tx - Inches(0.6), h=Inches(4.8), size=14.5)
+    d.caption(s, "Table A2. Test Recall@1, mean ± sd over seeds. Released: data and split as published. Corrected: released "
+                 "split on the corrected rows, or a pseudo-speaker-disjoint split.", LM, Inches(6.8), Inches(12))
 
     # 21. appendix
     s = d._slide()
