@@ -441,7 +441,7 @@ def build():
         ("Description", "PRiSM (ACL 2026) probes phone recognizers on GEO-v: place a Hindi-belt utterance on the map "
                         "(Vaani-Hi, about 30 pincodes over ~1,500 km). A transcript probe over the predicted phones "
                         "scores 146 km mean error, a representation probe over hidden states 253 km."),
-        ("Motivation", "Only the representation probe hears voice, duration and intonation, yet it loses. PRiSM credits "
+        ("Motivation", "Only the representation probe hears the voice, intonation and exact durations, yet it loses. PRiSM credits "
                        "phone order without testing it, and if the benchmark rewards speakers or topics, the comparison "
                        "says little about dialect."),
     ], y=I(1.75), label_w=I(2.1), size=15.5, row=I(1.05))
@@ -485,8 +485,8 @@ def build():
     d.bullets(s, [
         "References that learn nothing about dialect: majority location, speaker-ID lookup, picture-ID lookup, and a "
         "nearest-neighbour transcript match.",
-        "Every probe under two splits: PRiSM's random split (test speakers also in training) and a speaker-disjoint "
-        "split (new speakers). Recall@1 and mean km, 95% CIs by bootstrap over speakers.",
+        "Two splits: PRiSM's random split (test speakers also in training) and a speaker-disjoint split (new "
+        "speakers). Recall@1 and mean km, 95% CIs by bootstrap over speakers.",
     ], y=I(5.5), h=I(1.5), size=15, gap=6)
 
     # 4. Experiments description: database ---------------------------------------------------------------------------
@@ -513,7 +513,7 @@ def build():
                 ("26,385", "rows in PRiSM's release,\n30 pincodes, no speaker IDs"),
                 (f"{specific:.0f}%", "of utterances describe a picture\nof the speaker's own district")])
     d.bullets(s, [
-        "Rebuild: PRiSM's selection code rerun on the public Vaani corpus; identical on two machines.",
+        "Rebuild: PRiSM's selection code rerun on the public Vaani corpus; reproduced bit for bit on a second machine.",
         "Release: PRiSM's GEO-v copy, to reproduce its number and audit it.",
         f"RQ2: Vaani audio from 3 Haryana districts and New Delhi ({n_tx.get('districts', 0):,} utterances); "
         "Vaani-Hi has only 12 Haryana speakers.",
@@ -527,11 +527,11 @@ def build():
                        "utterances, with CIs over speakers.")
     d.header(s, "Experiments description  ·  experiments", "Five experiments, each with its metric")
     d.deflist(s, [
-        ("1  Speakers, topic", "Every probe under PRiSM's split and a speaker-disjoint split; lookups by speaker and "
+        ("1  Speakers, topic", "Transcript and voice probes under PRiSM's split and a speaker-disjoint split; lookups by speaker and "
                                "picture ID; transcript matcher; voice probe; control task.  [Recall@1, mean km, lift "
                                "over the majority]"),
         ("2  PRiSM's release", "Reproduce PRiSM's transcript probe; audit duplicates, leakage and coordinates; rerun "
-                               "every probe on a corrected, speaker-disjoint version.  [Recall@1, mean km]"),
+                               "the probes on a corrected, speaker-disjoint version.  [Recall@1, mean km]"),
         ("3  Order", "Unigram vs bigram bags; BiGRU vs the same BiGRU on shuffled phones; characters vs phones; two "
                      "recognizers.  [paired Recall@1 difference, km, MDL codelength]"),
         ("4  Duration", "Doubled-phone rate in recognizer output; voiceless-stop and closure duration measured in "
@@ -543,7 +543,7 @@ def build():
     # 6. Work done ------------------------------------------------------------------------------------------------------
     s = d._slide(notes="Mohit, 2:10-2:25 (15 s). The four headline numbers, then what is left: representation probes (Ada storage), "
                        "the manual audit, more seeds.")
-    d.header(s, "Work done", "Most of the study is done; representation probes are not")
+    d.header(s, "Work done", "Most experiments are done; representation probes are not")
     d.stats(s, [(f"{sum(n_tx.values()):,}", "utterances transcribed by\n2 phone recognizers"),
                 (f"{n_runs}", "trained probe runs\n(transcript, voice, prosody)"),
                 (f"{voi[3]:,}", "voiceless stops located by forced\nalignment and measured in Praat"),
@@ -655,10 +655,10 @@ def build():
     tx = LM + im.width + I(0.4)
     d.bullets(s, [
         "Each row: a probe that sees phone order minus the same probe without it, paired on the same test utterances.",
-        f"On PRiSM's release, its BiGRU gains {o_rel['diff']:.0f} points from order when speakers are shared and nothing "
-        "on new speakers: it memorises speakers' sequences.",
-        "Bigram bags keep a gain on the rebuild's new speakers, but they also identify words, and on shared pictures no "
-        "probe beats the majority.",
+        f"PRiSM's BiGRU over phones gains {o_rel['diff']:.0f} points from order on the release when speakers are shared, "
+        "and nothing on new speakers: it memorises speakers' sequences.",
+        "Bigram bags keep a gain on the rebuild's new speakers, but bigrams also identify words, and on shared pictures "
+        "no transcript probe beats the majority.",
     ], x=tx, y=I(1.7), w=W - tx - I(0.6), h=I(4.8), size=14.5)
     d.caption(s, "Figure 3. Release: corrected rows, speaker-disjoint split from voice clusters (59 test speakers). Rebuild "
                  "BiGRUs: 2 seeds so far.", LM, I(6.85), I(12.1))
@@ -713,17 +713,18 @@ def build():
                        "is why the representation probes matter.")
     d.header(s, "Analysis", "GEO-v as released measures speakers and topics, not dialect")
     d.deflist(s, [
-        ("Speakers", f"Under PRiSM's split {leak:.0f}% of test speakers are also in training (our rebuild; at least as many "
-                     f"in the release), and {100 * oleak.loc['test', 'exact_audio_in_train']:.0f}% of the release's test clips "
-                     "are there verbatim; a voice-only probe and a matcher that learns nothing both beat PRiSM's probe."),
+        ("Speakers", f"Under PRiSM's split {leak:.0f}% of test speakers are also in training (at least as many in the "
+                     f"release), and {100 * oleak.loc['test', 'exact_audio_in_train']:.0f}% of the release's test clips are there "
+                     "verbatim; the voice alone and a matcher that learns nothing both beat PRiSM's probe."),
         ("Topic", f"The picture ID alone gives {pr.recall1:.1f} Recall@1; on shared pictures, which carry no location, the "
                   "transcript probes fall to the majority on new speakers."),
         ("Order", f"The BiGRU's gain from order ({sg(o_rel['diff'])}) appears only for speakers seen in training, so "
                   "PRiSM's explanation holds only under its leaky split."),
         ("Own split", f"Look-alike speaker codes leak the voice (ECAPA {sg(e.lookalike_lift)} vs {sg(e.strict_lift)}) but "
                       f"not the transcripts; PRiSM's coordinate recipe misplaces Dhar by {dhar.km_from_cluster:.0f} km."),
-        ("Duration", "Real in the audio but rarely written by the recognizers: only a representation probe could use it."),
-    ], y=I(1.75), label_w=I(1.9), size=15, row=I(0.98))
+        ("Duration, melody", "Lengthening is real in the audio but rarely written by the recognizers, so only a "
+                             "representation probe could use it; intonation adds a little, in distance only."),
+    ], y=I(1.75), label_w=I(2.25), size=15, row=I(0.98))
 
     # 13. Timelines for completion ----------------------------------------------------------------------------------------
     s = d._slide(notes="Nidhi, 6:05-6:25 (20 s). Representation probes first, because PRiSM's central comparison needs them; then "
@@ -751,7 +752,8 @@ def build():
         f"reproduced probe ({gru[0]:.1f}), and every probe falls to the majority once speakers are separated.",
         f"The picture a speaker describes gives the location away ({pr.recall1:.1f} Recall@1 from the picture ID alone); "
         "without topic, transcript probes fall to the majority on new speakers.",
-        f"Phone order helps PRiSM's probe only for seen speakers ({sg(o_rel['diff'])} vs {sg(o_sp['diff'])} Recall@1).",
+        f"Phone order helps PRiSM's probe only for seen speakers ({sg(o_rel['diff'])} vs {sg(o_sp['diff'])} Recall@1 on "
+        "the release).",
         "Haryana speakers hold voiceless stops 14% longer than New Delhi speakers; the recognizers rarely write it.",
         f"Intonation helps only in distance: fused with the transcript probe it saves {-fk['diff']:.0f} km.",
     ], y=I(1.75), h=I(4.7), size=16.5, color=LIGHT, gap=10)
@@ -768,10 +770,11 @@ def build():
                  f"ECAPA on new speakers\n({cfg.loc['dense_ecapa_rebuild_prism', 'recall1_mean']:.1f} on PRiSM's split)"),
                 (f"{lk.control_recall1:.1f}", f"ECAPA on control labels\n(control majority {lk.control_majority:.1f})")], best=1)
     d.bullets(s, [
-        f"Majority baseline {bl('majority', 'prism').recall1:.1f} (random) and {bl('majority', 'speaker_split').recall1:.1f} "
-        "(speaker-disjoint). On control labels (each speaker gets another speaker's location) ECAPA still scores far above "
-        "the control majority: most of its random-split score is speaker recognition.",
-        f"A nearest-neighbour transcript matcher reaches {knn.loc[('w2v2', 'prism', 1), 'recall1']:.1f} on the random split "
+        f"Majority baseline {bl('majority', 'prism').recall1:.1f} (PRiSM's split) and "
+        f"{bl('majority', 'speaker_split').recall1:.1f} (new speakers). On control labels (each speaker gets another "
+        "speaker's location) ECAPA still scores far above the control majority: most of its score on PRiSM's split is "
+        "speaker recognition.",
+        f"A nearest-neighbour transcript matcher reaches {knn.loc[('w2v2', 'prism', 1), 'recall1']:.1f} on PRiSM's split "
         f"and {knn.loc[('w2v2', 'speaker_split', 1), 'recall1']:.1f} on new speakers; for 25% of test utterances the closest "
         "training transcript is the same speaker's (chance 0.3%).",
     ], y=I(3.7), h=I(3.2))
@@ -815,7 +818,7 @@ def build():
                 (cd("tp_w2v2_rebuild_phone_bigram_speaker_split", "tp_w2v2_rebuild_char_bigram_speaker_split").split(" ")[0],
                  "phones vs characters, W2V2 bigrams,\nnew speakers"),
                 (f"{k_('mdl_zipa_rebuild_phone_bigram_speaker_split'):.1f} kbits",
-                 f"MDL saving, ZIPA phone bigrams, new\nspeakers ({k_('mdl_zipa_rebuild_phone_bigram_prism'):.1f} on the random split)")])
+                 f"MDL saving, ZIPA phone bigrams, new\nspeakers ({k_('mdl_zipa_rebuild_phone_bigram_prism'):.1f} on PRiSM's split)")])
     d.bullets(s, [
         f"Bigram over unigram {cd('tp_w2v2_rebuild_phone_bigram_speaker_split', 'tp_w2v2_rebuild_phone_unigram_speaker_split')} "
         "Recall@1 and 33 km less error; MDL agrees on every speaker ordering.",
@@ -851,8 +854,8 @@ def build():
             a, b = cfg.loc[f"tp_{m}_rebuild_{k}_prism"], cfg.loc[f"tp_{m}_rebuild_{k}_speaker_split"]
             rows.append(["   " + lab, fmt(a.recall1_mean, a.recall1_sd), f"{a.ens_km:.0f}", fmt(b.recall1_mean, b.recall1_sd),
                          f"{b.ens_km:.0f}"])
-    png = table_png("table_main", ["Probe", "R@1 random", "km", "R@1 new speakers", "km"], rows, group_rows=groups,
-                    widths=[2.5, 1.3, 0.75, 1.8, 0.75], fontsize=10.5)
+    png = table_png("table_main", ["Probe", "R@1 PRiSM's split", "km", "R@1 new speakers", "km"], rows, group_rows=groups,
+                    widths=[2.5, 1.6, 0.75, 1.8, 0.75], fontsize=10.5)
     s = d._slide(notes="Backup: all probes on the rebuild.")
     d.header(s, "Backup  ·  rebuilt Vaani-Hi", "Every probe drops on new speakers; phone bigrams keep the most")
     d.image(s, png, LM, I(1.55), h=I(5.1))
@@ -880,8 +883,8 @@ def build():
     s = d._slide(notes="Backup: metrics and limitations.")
     d.header(s, "Backup  ·  reference", "Metrics and limitations")
     d.deflist(s, [
-        ("Metrics", "Recall@1: share of test utterances whose prediction is closest to their own location among the "
-                    "distinct test locations (PRiSM's definition); mean great-circle km; lift over the majority and km gain "
+        ("Metrics", "Recall@1: share of test utterances for which, of all distinct test locations, the one nearest to "
+                    "the prediction is the true one (PRiSM's definition); mean great-circle km; lift over the majority and km gain "
                     "over the best constant location, on the same utterances."),
         ("Statistics", "5 seeds (BiGRUs 2–3 so far); 95% CIs and paired tests by bootstrap over speakers, because "
                        "utterances of one speaker are not independent."),
