@@ -412,7 +412,9 @@ def build():
     names = {"MadhyaPradesh": "Madhya Pradesh", "HimachalPradesh": "Himachal Pradesh"}
 
     # 1. Project title ---------------------------------------------------------------------------------------------
-    s = d._slide(dark=True, notes="Mohit (10 s). Title, team, base paper.")
+    s = d._slide(dark=True, notes="Nidhi, 0:00-0:10 (10 s).\n"
+                       "Good afternoon. We are Nidhi and Mohit. Our project asks what phone recognizers use to geolocate "
+                       "Hindi-belt speech, building on PRiSM (ACL 2026).")
     d.text(s, "MID EVALUATION  ·  SPEECH ANALYSIS AND LINGUISTICS", LM, I(1.55), I(12), I(0.3), size=9,
            color="8fb5a0", bold=True, spacing=200)
     d.text(s, "Order, Duration, or Melody?", LM, I(2.0), I(12), I(0.9), size=42, font=SERIF, bold=True, color="ffffff")
@@ -426,12 +428,14 @@ def build():
     d.text(s, "3 November 2026", LM, I(5.6), I(12), I(0.3), size=12, color="9fb8aa")
 
     # 2. Problem definition ------------------------------------------------------------------------------------------
-    s = d._slide(notes="Mohit (40 s).\n"
-                       "- GEO-v: place an utterance on the map; PRiSM probes the same recognizer two ways.\n"
-                       "- The puzzle: the probe that cannot hear voice, duration or intonation wins, and the explanation "
-                       "(phone order) was never tested.\n"
-                       "- Four objectives, one per property of speech; RQ0 first asks whether the benchmark measures "
-                       "dialect at all.")
+    s = d._slide(notes="Nidhi, 0:10-0:55 (45 s).\n"
+                       "- PRiSM's GEO-v task: place an utterance on the map. A probe over the predicted phones beats a probe "
+                       "over hidden states: 146 vs 253 km.\n"
+                       "- Odd, because only the hidden-state probe hears voice, duration and intonation; PRiSM credits phone "
+                       "order without testing it.\n"
+                       "- Four objectives: speakers and topic, order, duration, melody.\n"
+                       "HANDOVER: 'To answer these, we looked at each utterance four ways and tested every probe on seen and "
+                       "unseen speakers. Mohit will take you through the method, the data, and what we found.'")
     d.header(s, "Problem definition", "PRiSM's transcript probe beats its representation probe on GEO-v")
     d.deflist(s, [
         ("Description", "PRiSM (ACL 2026) probes phone recognizers on GEO-v: place a Hindi-belt utterance on the map "
@@ -452,10 +456,12 @@ def build():
         d.text(s, b, LM + I(4.75), yy, TW - I(4.75), I(0.5), size=15)
 
     # 3. Overall methodology -----------------------------------------------------------------------------------------
-    s = d._slide(notes="Mohit (30 s).\n"
-                       "- Four views of each utterance, each feeding a probe that predicts latitude and longitude.\n"
-                       "- The representation-probe path is dashed: not run yet.\n"
-                       "- References that learn nothing, and every probe under two splits: that is what exposes leakage.")
+    s = d._slide(notes="Mohit, 0:55-1:25 (30 s).\n"
+                       "- Four views of each utterance: phone string and hidden states from the recognizer, a voice embedding, "
+                       "prosody contours; each feeds a probe that predicts latitude and longitude.\n"
+                       "- The hidden-state probe is dashed: not run yet.\n"
+                       "- Key design: lookups that know nothing about dialect, and every probe on PRiSM's split and on new "
+                       "speakers.")
     d.header(s, "Overall methodology", "Four views of each utterance, each probed for location")
     ys, rh = [1.7, 2.62, 3.54, 4.46], 0.7
     mid = [I(y + rh / 2) for y in ys]
@@ -496,11 +502,11 @@ def build():
                    ["", "", "ZIPA", r.processed_transcript_z[:28] + "…"]]
     t_samples = table_png("db_samples", ["District, state", "Picture", "Model", "Recognized phones (start)"], rows_s,
                           col_align=["left"] * 4, widths=[2.1, 1.2, 0.75, 3.1], fontsize=12, family="Carlito")
-    s = d._slide(notes="Nidhi (30 s).\n"
-                       "- Vaani: crowd-sourced speech, people describe pictures. We rebuilt PRiSM's subset with PRiSM's code; "
-                       "the speaker code in each file name makes a speaker-disjoint split possible.\n"
-                       "- Two thirds of the pictures belong to the speaker's own district, so topic can give the place away.\n"
-                       "- Samples: the two recognizers write the same speech differently.")
+    s = d._slide(notes=f"Mohit, 1:25-1:50 (25 s).\n"
+                       f"- We rebuilt PRiSM's Vaani-Hi with PRiSM's own code: {len(meta):,} utterances, {meta.speaker.nunique():,} "
+                       "speakers. Speaker codes in the file names let us hold speakers out.\n"
+                       "- We also use PRiSM's own release, and Haryana and New Delhi audio for RQ2.\n"
+                       f"- {specific:.0f}% describe a picture of the speaker's own district, so topic can give the place away.")
     d.header(s, "Experiments description  ·  database", "Two versions of Vaani-Hi: our rebuild and PRiSM's release")
     d.stats(s, [(f"{len(meta):,}", f"utterances in our rebuild\n({meta.audio_seconds.sum() / 3600:.1f} h, 26 pincodes, 9 states)"),
                 (f"{len(per_spk):,}", f"speakers (codes from file names;\nmedian {per_spk.median():.0f}, max {per_spk.max()} utterances each)"),
@@ -517,8 +523,8 @@ def build():
               I(6.3), im.top + im.height + I(0.12), I(6.4))
 
     # 5. Experiments description: experiments ------------------------------------------------------------------------
-    s = d._slide(notes="Nidhi (25 s). One line per experiment; metrics on the right. Comparisons are paired on the same "
-                       "test utterances; CIs resample speakers, because one speaker's utterances are not independent.")
+    s = d._slide(notes="Mohit, 1:50-2:10 (20 s). Five experiments, metric in brackets. Every comparison is paired on the same test "
+                       "utterances, with CIs over speakers.")
     d.header(s, "Experiments description  ·  experiments", "Five experiments, each with its metric")
     d.deflist(s, [
         ("1  Speakers, topic", "Every probe under PRiSM's split and a speaker-disjoint split; lookups by speaker and "
@@ -535,8 +541,8 @@ def build():
     ], y=I(1.8), label_w=I(2.4), size=15, row=I(0.98))
 
     # 6. Work done ------------------------------------------------------------------------------------------------------
-    s = d._slide(notes="Nidhi (20 s). The numbers behind the work, and what is not done yet: the representation probes "
-                       "(frame caches did not fit the Ada quota), the manual audit, and the last seeds.")
+    s = d._slide(notes="Mohit, 2:10-2:25 (15 s). The four headline numbers, then what is left: representation probes (Ada storage), "
+                       "the manual audit, more seeds.")
     d.header(s, "Work done", "Most of the study is done; representation probes are not")
     d.stats(s, [(f"{sum(n_tx.values()):,}", "utterances transcribed by\n2 phone recognizers"),
                 (f"{n_runs}", "trained probe runs\n(transcript, voice, prosody)"),
@@ -564,8 +570,8 @@ def build():
          cfg.loc["tp_w2v2_rebuild_char_gru_speaker_split", "recall1_mean"]),
         ("Majority location", bl("majority", "prism").recall1, bl("majority", "speaker_split").recall1),
     ], "Test Recall@1 on rebuilt Vaani-Hi (%)", ("test speakers also in training (PRiSM's split)", "new speakers"))
-    s = d._slide(notes="Mohit (35 s). RQ0.\n"
-                       f"- Under PRiSM's split {leak:.0f}% of test speakers are in training; the speaker ID alone gives "
+    s = d._slide(notes=f"Mohit, 2:25-3:05 (40 s). RQ0.\n"
+                       f"- Under PRiSM's split {leak:.0f}% of test speakers are also in training; the speaker ID alone gives "
                        f"{bl('speaker_lookup', 'prism').recall1:.0f} Recall@1.\n"
                        f"- The picture ID alone gives {pr.recall1:.0f}, above PRiSM's 45.7; on new speakers still "
                        f"{ps.recall1:.0f}, above every probe.\n"
@@ -591,13 +597,13 @@ def build():
         ("Majority location", oc("prism", "majority"), oc("speaker_split", "majority")),
     ], "Test Recall@1 on the corrected release (%)", ("released split (speakers shared)", "speaker-disjoint split"),
         w=7.6, h=4.6, xmax=72)
-    s = d._slide(notes="Mohit (40 s). PRiSM's own data.\n"
-                       f"- Our pipeline reproduces PRiSM's number: {gru[0]:.1f} against 45.7.\n"
-                       f"- A voice embedding that hears no words scores {ec[0]:.1f}; a matcher that learns nothing "
-                       f"{odup.loc[NN, 'all_recall1']:.1f}: both beat the reported probe.\n"
-                       f"- The release repeats recordings ({100 * oleak.loc['test', 'exact_audio_in_train']:.0f}% of test clips "
-                       "are in training verbatim) and puts Shimla in Afghanistan.\n"
-                       "- Corrected and split by speaker (right): everything falls to the majority.")
+    s = d._slide(notes=f"Mohit, 3:05-3:45 (40 s). PRiSM's own data.\n"
+                       f"- We reproduce PRiSM's number on its data: {gru[0]:.1f} vs 45.7.\n"
+                       f"- A voice embedding with no words scores {ec[0]:.1f}; a matcher that learns nothing "
+                       f"{odup.loc[NN, 'all_recall1']:.1f}. Both beat the reported probe.\n"
+                       f"- {100 * oleak.loc['test', 'exact_audio_in_train']:.0f}% of test clips are in training verbatim; "
+                       "Shimla sits in Afghanistan.\n"
+                       "- Corrected and split by speaker (chart): everything falls to the majority.")
     d.header(s, "Results  ·  PRiSM's release", "On PRiSM's own data the voice alone beats PRiSM's probe")
     d.text(s, "RELEASED DATA AND SPLIT, RECALL@1", LM, I(1.55), I(3.8), I(0.25), size=8.5, color=KICK, bold=True,
            spacing=150)
@@ -637,11 +643,13 @@ def build():
         ("Bigram vs unigram\nrebuild, ZIPA", cpair("tp_zipa_rebuild_phone_bigram_prism", "tp_zipa_rebuild_phone_unigram_prism"),
          cpair("tp_zipa_rebuild_phone_bigram_speaker_split", "tp_zipa_rebuild_phone_unigram_speaker_split")),
     ], "Recall@1 gain from phone order, points (95% CI)", ("test speakers in training", "new speakers"), h=5.2)
-    s = d._slide(notes="Mohit (30 s). RQ1.\n"
+    s = d._slide(notes=f"Mohit, 3:45-4:15 (30 s). RQ1.\n"
                        "- Each row: a probe that sees phone order minus the same probe without it, same test utterances.\n"
-                       f"- PRiSM's BiGRU gains {o_rel['diff']:.0f} points from order when speakers are shared and nothing "
-                       "on new speakers: it memorises speakers' sequences.\n"
-                       "- Bigram bags keep a gain on new speakers in the rebuild, but bigrams also identify words.")
+                       f"- PRiSM's BiGRU gains {o_rel['diff']:.0f} points from order when speakers are shared and nothing on "
+                       "new speakers.\n"
+                       "- Bigram bags keep some gain, but bigrams also identify words.\n"
+                       "HANDOVER: 'So phone order mostly helps when the same speakers repeat. Nidhi will now look at what a "
+                       "phone string can't show: consonant duration and intonation.'")
     d.header(s, "Results  ·  RQ1 order", "Phone order helps mostly when test speakers were seen in training")
     im = d.image(s, c3, LM, I(1.5), w=I(8.2))
     tx = LM + im.width + I(0.4)
@@ -656,12 +664,14 @@ def build():
                  "BiGRUs: 2 seeds so far.", LM, I(6.85), I(12.1))
 
     # 10. Results: duration ---------------------------------------------------------------------------------------------
-    s = d._slide(notes="Nidhi (30 s). RQ2.\n"
-                       f"- {voi[3]:,} single voiceless stops between vowels, found by forced alignment of the standard "
-                       "spelling and measured with Praat landmarks.\n"
+    s = d._slide(notes=f"Nidhi, 4:15-4:55 (40 s). RQ2.\n"
+                       f"- {voi[3]:,} single voiceless stops, Haryana vs New Delhi, located by forced alignment and measured "
+                       "in Praat.\n"
                        f"- Haryana speakers hold them {100 * (voi[0] - 1):.0f}% longer (closure {100 * (clo[0] - 1):.0f}%), in "
                        "every district and most words.\n"
-                       "- The recognizers write only 1–2% of them doubled, so a transcript probe cannot see it.")
+                       "- The recognizers write only 1–2% of them doubled: lengthening, not doubling, and invisible to a "
+                       "transcript probe.\n"
+                       "- If asked: the blind manual audit is still to come.")
     d.header(s, "Results  ·  RQ2 duration", "In the audio, Haryana speakers hold voiceless stops 14% longer")
     d.stats(s, [(f"×{voi[0]:.2f}", f"voiceless interval, Haryana vs\nNew Delhi (95% CI {voi[1]:.2f}–{voi[2]:.2f})"),
                 (f"×{clo[0]:.2f}", f"closure alone\n(95% CI {clo[1]:.2f}–{clo[2]:.2f})"),
@@ -677,10 +687,12 @@ def build():
     ], y=I(3.7), h=I(3.2), size=15)
 
     # 11. Results: melody -----------------------------------------------------------------------------------------------
-    s = d._slide(notes="Nidhi (25 s). RQ3.\n"
-                       "- Pooled prosody statistics carry nothing; the contour BiGRU gives no Recall@1 gain on new speakers.\n"
-                       f"- Fused with the transcript probe it lowers mean error by {-fk['diff']:.0f} km, also without "
-                       "look-alike speakers. One seed so far.")
+    s = d._slide(notes=f"Nidhi, 4:55-5:35 (40 s). RQ3.\n"
+                       "- Pooled prosody statistics carry nothing; the contour BiGRU alone gives no Recall@1 gain on new "
+                       "speakers.\n"
+                       f"- Fused with the transcript probe, mean error drops from 441 to 426 km ({sg(fk['diff'])} km, CI "
+                       "excludes zero), also without look-alike speakers.\n"
+                       "- Recall@1 does not improve. One seed so far, so preliminary.")
     d.header(s, "Results  ·  RQ3 melody", "Intonation adds a little regional information, in distance only")
     d.stats(s, [(f"{pm['recall1']:.1f}", f"prosody BiGRU, Recall@1 on new\nspeakers (majority {bl('majority', 'speaker_split').recall1:.1f})"),
                 (f"+{gks['diff']:.0f} km", "prosody alone vs best fixed location,\nno look-alike speakers ["
@@ -697,8 +709,8 @@ def build():
     ], y=I(3.7), h=I(3.2), size=15)
 
     # 12. Analysis --------------------------------------------------------------------------------------------------------
-    s = d._slide(notes="Nidhi (30 s). What the results mean, one line per objective; the last line is why the "
-                       "representation probes matter for the final.")
+    s = d._slide(notes="Nidhi, 5:35-6:05 (30 s). One line per finding: speakers, topic, order, our own split, duration. The last line "
+                       "is why the representation probes matter.")
     d.header(s, "Analysis", "GEO-v as released measures speakers and topics, not dialect")
     d.deflist(s, [
         ("Speakers", f"Under PRiSM's split {leak:.0f}% of test speakers are also in training (our rebuild; at least as many "
@@ -714,8 +726,8 @@ def build():
     ], y=I(1.75), label_w=I(1.9), size=15, row=I(0.98))
 
     # 13. Timelines for completion ----------------------------------------------------------------------------------------
-    s = d._slide(notes="Nidhi (15 s). Four weeks to the final on 4 December; representation probes come first because "
-                       "PRiSM's central comparison needs them.")
+    s = d._slide(notes="Nidhi, 6:05-6:25 (20 s). Representation probes first, because PRiSM's central comparison needs them; then "
+                       "every probe on the speaker-disjoint benchmark; report by 4 December.")
     d.header(s, "Timelines for completion", "Four weeks to the final evaluation on 4 December")
     for k, (when, task, who) in enumerate([
             ("3–9 Nov", "Representation probes (PRiSM's RP-Attn, last layer, 3 recognizers); remaining seeds", "Nidhi, Mohit"),
@@ -730,7 +742,9 @@ def build():
     d.text(s, "OWNER", LM + I(10.35), I(1.5), I(1.75), I(0.25), size=8.5, color=CAP, bold=True, spacing=150)
 
     # 14. Summary -----------------------------------------------------------------------------------------------------------
-    s = d._slide(dark=True, notes="Nidhi (20 s). Four findings and what comes next. Then questions.")
+    s = d._slide(dark=True, notes="Nidhi, 6:25-6:50 (25 s). One breath per takeaway. Close: 'The benchmark mostly measures speakers and topics; "
+                       "Haryana's longer stops are real in the audio but missing from the transcripts; intonation helps a little "
+                       "in distance. Thank you, we are happy to take questions.'")
     d.header(s, "Summary", "Takeaways", dark=True)
     d.bullets(s, [
         f"GEO-v rewards recognising speakers: on PRiSM's release a voice-only embedding ({ec[0]:.1f}) beats PRiSM's "

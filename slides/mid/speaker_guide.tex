@@ -1,0 +1,84 @@
+% Speaker guide for the mid evaluation (3 Nov 2026): who presents which slide, when, and what to say.
+% Build: cd slides/mid && latexmk -xelatex -quiet speaker_guide.tex
+\documentclass[10pt]{article}
+\usepackage[a4paper,margin=14mm,top=11mm,bottom=10mm]{geometry}
+\usepackage{fontspec}
+\setmainfont{Carlito}
+\newfontfamily\serif{Caladea}
+\usepackage{xcolor}
+\definecolor{ink}{HTML}{12352A}
+\definecolor{kick}{HTML}{5C8F72}
+\definecolor{sage}{HTML}{E2F0D9}
+\definecolor{cap}{HTML}{6E7B74}
+\usepackage{tabularx,booktabs,array,colortbl}
+\usepackage{enumitem}
+\setlist{nosep,leftmargin=1.1em,label=--}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\renewcommand{\arraystretch}{1.13}
+\newcommand{\who}[1]{\textbf{\color{ink}#1}}
+\newcommand{\sect}[1]{\par\vspace{5pt}{\serif\bfseries\large\color{ink}#1}\par\vspace{3pt}}
+\newcommand{\handover}[2]{\par\vspace{3pt}\colorbox{sage}{\parbox{\dimexpr\linewidth-2\fboxsep}{\small\textbf{\color{ink}#1}\quad\emph{#2}}}\par\vspace{3pt}}
+
+\begin{document}
+{\color{kick}\footnotesize\textbf{MID EVALUATION · 3 NOVEMBER 2026 · SM24}}\par
+{\serif\bfseries\LARGE\color{ink}Order, Duration, or Melody? Speaker guide}\par\vspace{4pt}
+7 minutes of talk, then 3 minutes of questions. Main deck: slides 1--14; backup slides 15--22 for questions only.\par
+\who{Nidhi} 3:30 (slides 1--2, then 10--14)\quad·\quad \who{Mohit} 3:20 (slides 3--9)\quad·\quad 10 s spare for handovers.
+
+\sect{Run sheet}
+\small
+\begin{tabularx}{\linewidth}{@{}>{\raggedright}p{2.75cm} p{1.1cm} p{1.35cm} X@{}}
+\toprule
+\textbf{Slide} & \textbf{Who} & \textbf{Time} & \textbf{Say} \\
+\midrule
+1 Title & Nidhi & 0:00--0:10 & We are Nidhi and Mohit; what phone recognizers use to geolocate Hindi-belt speech, building on PRiSM (ACL 2026). \\
+2 Problem definition & Nidhi & 0:10--0:55 & PRiSM's phone-string probe beats its hidden-state probe (146 vs 253 km), though only the latter hears voice, duration and intonation; PRiSM credits phone order without testing it. Four objectives: speakers and topic, order, duration, melody. \\
+\rowcolor{sage} \multicolumn{4}{@{}l}{\textbf{Handover to Mohit}} \\
+3 Methodology & Mohit & 0:55--1:25 & Four views of each utterance, each probed for location. Hidden-state probe (dashed) not run yet. Lookups that know nothing about dialect; every probe on PRiSM's split and on new speakers. \\
+4 Database & Mohit & 1:25--1:50 & Rebuilt Vaani-Hi with PRiSM's code: 22,551 utterances, 1,570 speakers; speaker codes let us hold speakers out. 68\% describe a picture of their own district. \\
+5 Experiments & Mohit & 1:50--2:10 & Five experiments, metric in brackets; paired on the same test utterances, CIs over speakers. \\
+6 Work done & Mohit & 2:10--2:25 & The four headline numbers; left: representation probes, manual audit, seeds. \\
+7 RQ0 & Mohit & 2:25--3:05 & 98\% of test speakers are in training; speaker ID alone gives 98, picture ID 62 (above PRiSM's 45.7), and 27.5 on new speakers, above every probe. \\
+8 PRiSM's release & Mohit & 3:05--3:45 & We reproduce 45.5 (paper 45.7). Voice alone 55.1, a matcher that learns nothing 58.9. 28\% of test clips are in training verbatim; Shimla is in Afghanistan. Corrected and split by speaker: all at the majority. \\
+9 RQ1 & Mohit & 3:45--4:15 & Order is worth +19 with shared speakers, nothing on new ones; bigram bags keep some gain, but bigrams also identify words. \\
+\rowcolor{sage} \multicolumn{4}{@{}l}{\textbf{Handover to Nidhi}} \\
+10 RQ2 & Nidhi & 4:15--4:55 & 26,033 voiceless stops: Haryana holds them 14\% longer (closure 26\%), in every district and most words. Recognizers write only 1--2\% doubled: lengthening, not doubling. \\
+11 RQ3 & Nidhi & 4:55--5:35 & Prosody alone adds no Recall@1 on new speakers. Fused with the transcript probe: 441 $\rightarrow$ 426 km (CI excludes zero), Recall@1 unchanged. One seed, preliminary. \\
+12 Analysis & Nidhi & 5:35--6:05 & One line per finding; the last is why the representation probes matter. \\
+13 Timelines & Nidhi & 6:05--6:25 & Representation probes first, then every probe on the speaker-disjoint benchmark, report by 4 Dec. \\
+14 Summary & Nidhi & 6:25--6:50 & One breath per takeaway, then close (below). \\
+\bottomrule
+\end{tabularx}
+
+\sect{Exact lines}
+\handover{Nidhi $\rightarrow$ Mohit (end of slide 2)}{``To answer these, we looked at each utterance four ways and tested every probe on seen and unseen speakers. Mohit will take you through the method, the data, and what we found.''}
+\handover{Mohit $\rightarrow$ Nidhi (end of slide 9)}{``So phone order mostly helps when the same speakers repeat. Nidhi will now look at what a phone string can't show: consonant duration and intonation.''}
+\handover{Close (Nidhi, slide 14)}{``The benchmark mostly measures speakers and topics; Haryana's longer stops are real in the audio but missing from the transcripts; intonation helps a little in distance. Thank you, we are happy to take questions.''}
+
+\sect{Questions: where to go and who answers}
+\begin{tabularx}{\linewidth}{@{}X p{2.2cm} p{1.2cm}@{}}
+\toprule
+\textbf{If asked} & \textbf{Show} & \textbf{Who} \\
+\midrule
+How do you know speakers leak? Control task? & Slide 15 & Mohit \\
+Isn't topic part of dialect? Shared pictures? & Slide 16 & Mohit \\
+Are your own speaker codes reliable? Coordinates? & Slide 17 & Mohit \\
+Does order help at all on new speakers? MDL? & Slide 18 & Mohit \\
+Do recognizers write gemination? & Slide 19 & Nidhi \\
+Full numbers, every probe & Slides 20--21 & Mohit \\
+What exactly is Recall@1? Limitations? & Slide 22 & Nidhi \\
+Why no representation probe? & (no slide) & Nidhi \\
+\bottomrule
+\end{tabularx}
+\par\vspace{2pt}\footnotesize\textit{Why no representation probe:} its frame caches need about 15 GB per layer per model and did not fit the 50 GB Ada quota with an 11 GB GPU; it is the first task for November.
+
+\sect{Be careful to say}
+\small
+\begin{itemize}
+\item The 50-token manual audit has \textbf{not} been done; say ``it is the next check''. Do not present the drafted TextGrids as hand annotation.
+\item RQ3 is \textbf{one seed}: distance improves, Recall@1 does not.
+\item On PRiSM's release, speakers are \textbf{estimated} from voice clusters (no speaker IDs); the 98\% overlap is measured on our rebuild.
+\item The order gain of +19 is on PRiSM's release; on our rebuild it is about +4 with shared speakers, and zero or negative on new speakers.
+\end{itemize}
+\end{document}
