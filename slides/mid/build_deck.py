@@ -297,6 +297,35 @@ def forest(name, rows, xlabel, labels, w=8.2, h=4.7):
     return _save(fig, name)
 
 
+def dpr_chart(name, w=11.6, h=3.9):
+    """Doubled-phone rate by state, one panel per recognizer, 95% speaker-bootstrap CI; Haryana in the dark shade."""
+    pretty = {"MadhyaPradesh": "Madhya Pradesh", "HimachalPradesh": "Himachal Pradesh"}
+    fig, axes = plt.subplots(1, 2, figsize=(w, h))
+    fig.patch.set_alpha(0)
+    plt.rcParams.update({"font.family": "Carlito", "font.size": 13})
+    for ax, model in zip(axes, ("w2v2", "zipa")):
+        t = pd.read_csv(RES / "dpr" / f"{model}_by_state.csv").sort_values("dpr")
+        y = np.arange(len(t))
+        for yi, r in zip(y, t.itertuples()):
+            c = SHARED if r.state == "Haryana" else NEW
+            ax.plot([100 * r.lo, 100 * r.hi], [yi, yi], color=c, lw=2.2, solid_capstyle="round", zorder=2)
+            ax.scatter([100 * r.dpr], [yi], s=80, color=c, zorder=3, edgecolor="#" + SAGE, linewidth=1.5)
+        ax.set_yticks(y, [f"{pretty.get(st, st)} ({n})" for st, n in zip(t.state, t.speakers)])
+        for tick, st in zip(ax.get_yticklabels(), t.state):
+            tick.set_fontweight("bold" if st == "Haryana" else "normal")
+            tick.set_color("#" + INK if st == "Haryana" else "#" + BODY)
+        ax.set_facecolor("none")
+        for side in ("top", "right", "left"):
+            ax.spines[side].set_visible(False)
+        ax.spines["bottom"].set_color("#9aa79f")
+        ax.tick_params(colors="#" + BODY, length=0, labelsize=13)
+        ax.xaxis.grid(True, color="#c9d9c1", lw=0.8)
+        ax.set_axisbelow(True)
+        ax.set_xlabel(f"Doubled-phone rate, % of consonants ({model.upper()})", fontsize=13.5, color="#" + CAP)
+    fig.tight_layout(w_pad=3)
+    return _save(fig, name)
+
+
 def _arrow(s, x1, y1, x2, y2):
     c = s.shapes.add_connector(1, x1, y1, x2, y2)
     c.line.color.rgb = rgb(KICK)
@@ -784,13 +813,13 @@ def build():
     hv_z = pd.read_csv(RES / "dpr" / "zipa_haryana_vs_rest.csv").iloc[0]
     s = d._slide(notes="Backup: doubled phones in recognizer output by state.")
     d.header(s, "Backup  ·  RQ2 duration", "Doubled phones in recognizer output depend on the recognizer")
-    d.image(s, RES / "figures" / "fig_dpr_w2v2.png", LM, I(1.5), h=I(3.6))
-    d.image(s, RES / "figures" / "fig_dpr_zipa.png", LM + I(6.3), I(1.5), h=I(3.6))
+    d.image(s, dpr_chart("chart_dpr"), LM, I(1.45), w=I(12.1))
     d.bullets(s, [
         f"W2V2 doubles {100 * hv_w.haryana:.2f}% of consonants in Haryana vs {100 * hv_w.rest:.2f}% elsewhere "
         f"(p = {hv_w.p:.3f}); ZIPA {100 * hv_z.haryana:.2f}% vs {100 * hv_z.rest:.2f}% (p = {hv_z.p:.2f}). Neither shows "
         "Haryanvi doubling, and Vaani-Hi has only 12 Haryana speakers.",
-    ], y=I(5.35), h=I(1.5), size=15)
+    ], y=I(5.6), h=I(1.3), size=15)
+    d.caption(s, "Speakers per state in brackets; 95% speaker-bootstrap CI.", LM, I(6.85), I(12.1))
 
     rows, groups = [], []
     for name, b in [("Majority baseline", "majority"), ("Speaker lookup (ID only)", "speaker_lookup")]:
@@ -830,9 +859,9 @@ def build():
                     widths=[2.7, 1.4, 1.9, 2.5], fontsize=12)
     s = d._slide(notes="Backup: all probes on PRiSM's release.")
     d.header(s, "Backup  ·  PRiSM's release", "Once speakers are separated, every probe falls to the majority")
-    d.image(s, png, LM, I(1.65), w=I(10.5))
+    im = d.image(s, png, LM, I(1.65), w=I(8.6))
     d.caption(s, "Table A2. Test Recall@1, mean ± sd over seeds. Released: data and split as published. Corrected: released "
-                 "split on the corrected rows, or a pseudo-speaker-disjoint split.", LM, I(6.85), I(12.1))
+                 "split on the corrected rows, or a pseudo-speaker-disjoint split.", LM, im.top + im.height + I(0.25), I(12.1))
 
     s = d._slide(notes="Backup: metrics and limitations.")
     d.header(s, "Backup  ·  reference", "Metrics and limitations")
