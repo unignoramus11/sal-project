@@ -484,8 +484,8 @@ def build():
         "Vaani-Hi has only 12 Haryana speakers.",
     ], x=LM, y=I(3.65), w=I(5.3), h=I(3.0), size=14.5, gap=8)
     im = d.image(s, t_samples, I(6.3), I(3.7), w=I(6.4))
-    d.caption(s, "Three test utterances and the start of each recognizer's phone string.",
-              I(6.3), I(6.85), I(6.4))
+    d.caption(s, "Three utterances from the rebuild and the start of each recognizer's phone string.",
+              I(6.3), im.top + im.height + I(0.12), I(6.4))
 
     # 5. Experiments description: experiments ------------------------------------------------------------------------
     s = d._slide(notes="Nidhi (25 s). One line per experiment; metrics on the right. Comparisons are paired on the same "
@@ -518,7 +518,7 @@ def build():
                  "task and MDL; prosody contours, prosody BiGRU and fusion (Ada); a cross-validated benchmark for the "
                  "final, built and tested."),
         ("Not yet", "Representation probes (frame caches did not fit the Ada quota); blind manual audit of 50 stops by "
-                    "both of us; BiGRU seeds 3-5 and prosody seeds 2-5."),
+                    "both of us; three more BiGRU seeds and four more prosody BiGRU seeds."),
     ], y=I(3.75), label_w=I(1.6), size=15, row=I(1.2))
 
     # 7. Results: speakers and topic ------------------------------------------------------------------------------------
@@ -570,13 +570,15 @@ def build():
                        "are in training verbatim) and puts Shimla in Afghanistan.\n"
                        "- Corrected and split by speaker (right): everything falls to the majority.")
     d.header(s, "Results  ·  PRiSM's release", "On PRiSM's own data the voice alone beats PRiSM's probe")
+    d.text(s, "RELEASED DATA AND SPLIT, RECALL@1", LM, I(1.55), I(3.8), I(0.25), size=8.5, color=KICK, bold=True,
+           spacing=150)
     for k, (num, lab, best) in enumerate([
-            (f"{gru[0]:.1f}", f"PRiSM's transcript probe, our code ({gru[2]} seeds; paper 45.7)", False),
+            (f"{gru[0]:.1f}", f"PRiSM's probe with our code ({gru[2]} seeds;\npaper 45.7)", False),
             (f"{ec[0]:.1f}", "voice embedding, no words", True),
             (f"{odup.loc[NN, 'all_recall1']:.1f}", "transcript match, nothing learned", False),
             (f"{100 * oleak.loc['test', 'exact_audio_in_train']:.0f}%", f"test clips also in training; {dups:.0f}% of repeats "
                                                                         "carry another pincode", False)]):
-        yy = I(1.7 + 1.25 * k)
+        yy = I(1.88 + 1.2 * k)
         d.text(s, num, LM, yy, I(3.6), I(0.6), size=30, font=SERIF, bold=True, color=KICK if best else INK)
         d.text(s, lab, LM, yy + I(0.6), I(3.6), I(0.6), size=11.5, color=CAP)
     d.image(s, c2, I(4.6), I(1.6), w=I(8.1))
@@ -616,8 +618,8 @@ def build():
     tx = LM + im.width + I(0.4)
     d.bullets(s, [
         "Each row: a probe that sees phone order minus the same probe without it, paired on the same test utterances.",
-        f"PRiSM's BiGRU gains {o_rel['diff']:.0f} points from order on its own split and nothing on new speakers: it "
-        "memorises speakers' sequences.",
+        f"On PRiSM's release, its BiGRU gains {o_rel['diff']:.0f} points from order when speakers are shared and nothing "
+        "on new speakers: it memorises speakers' sequences.",
         "Bigram bags keep a gain on the rebuild's new speakers, but they also identify words, and on shared pictures no "
         "probe beats the majority.",
     ], x=tx, y=I(1.7), w=W - tx - I(0.6), h=I(4.8), size=14.5)
@@ -630,16 +632,16 @@ def build():
                        "spelling and measured with Praat landmarks.\n"
                        f"- Haryana speakers hold them {100 * (voi[0] - 1):.0f}% longer (closure {100 * (clo[0] - 1):.0f}%), in "
                        "every district and most words.\n"
-                       "- The recognizers write only 1-2% of them doubled, so a transcript probe cannot see it.")
+                       "- The recognizers write only 1–2% of them doubled, so a transcript probe cannot see it.")
     d.header(s, "Results  ·  RQ2 duration", "In the audio, Haryana speakers hold voiceless stops 14% longer")
-    d.stats(s, [(f"×{voi[0]:.2f}", f"voiceless interval, Haryana vs\nNew Delhi (95% CI {voi[1]:.2f}-{voi[2]:.2f})"),
-                (f"×{clo[0]:.2f}", f"closure alone\n(95% CI {clo[1]:.2f}-{clo[2]:.2f})"),
-                (f"×{val[0]:.2f}", f"lexical geminates vs single stops\n(validity, 95% CI {val[1]:.2f}-{val[2]:.2f})"),
-                ("1-2%", "of these stops written doubled\nby either recognizer")], best=0)
+    d.stats(s, [(f"×{voi[0]:.2f}", f"voiceless interval, Haryana vs\nNew Delhi (95% CI {voi[1]:.2f}–{voi[2]:.2f})"),
+                (f"×{clo[0]:.2f}", f"closure alone\n(95% CI {clo[1]:.2f}–{clo[2]:.2f})"),
+                (f"×{val[0]:.2f}", f"lexical geminates vs single stops\n(validity, 95% CI {val[1]:.2f}–{val[2]:.2f})"),
+                ("1–2%", "of these stops written doubled\nby either recognizer")], best=0)
     d.bullets(s, [
         f"{voi[3]:,} single voiceless stops between vowels in Rohtak, Jhajjar, Charkhi Dadri and New Delhi Vaani audio, "
         "found by forced alignment of the standard spelling and measured with Praat voicing and burst landmarks.",
-        "Holds in each Haryana district (×1.13-1.15), in 45 of 57 words, and on speaker means without a model (×1.14); "
+        "Holds in each Haryana district (×1.13–1.15), in 45 of 57 words, and on speaker means without a model (×1.14); "
         "mixed model with word effects, speaking-rate control and a speaker intercept.",
         "Haryana single stops move about a quarter of the way to geminate length: lengthening, not doubling, and the "
         "recognizers rarely write it.",
@@ -652,7 +654,8 @@ def build():
                        "look-alike speakers. One seed so far.")
     d.header(s, "Results  ·  RQ3 melody", "Intonation adds a little regional information, in distance only")
     d.stats(s, [(f"{pm['recall1']:.1f}", f"prosody BiGRU, Recall@1 on new\nspeakers (majority {bl('majority', 'speaker_split').recall1:.1f})"),
-                (f"+{gks['diff']:.0f} km", f"prosody alone vs best fixed location,\nno look-alike speakers [{gks.lo:.0f}, {gks.hi:.0f}]"),
+                (f"+{gks['diff']:.0f} km", "prosody alone vs best fixed location,\nno look-alike speakers ["
+                 + f"{gks.lo:.0f}".replace("-", "−") + f", {gks.hi:.0f}]"),
                 (f"{sg(fk['diff'])} km", f"fused with the transcript BiGRU,\nmean error [{sg(fk.lo)}, {sg(fk.hi)}]"),
                 (sg(fr['diff']), f"fused, Recall@1\n[{sg(fr.lo)}, {sg(fr.hi)}]")], best=2)
     d.bullets(s, [
@@ -669,11 +672,11 @@ def build():
                        "representation probes matter for the final.")
     d.header(s, "Analysis", "GEO-v as released measures speakers and topics, not dialect")
     d.deflist(s, [
-        ("Speakers", f"{leak:.0f}% of PRiSM's test speakers are in training and "
-                     f"{100 * oleak.loc['test', 'exact_audio_in_train']:.0f}% of its test clips are there verbatim; a "
-                     "voice-only probe and a matcher that learns nothing both beat PRiSM's probe."),
+        ("Speakers", f"Under PRiSM's split {leak:.0f}% of test speakers are also in training (our rebuild; at least as many "
+                     f"in the release), and {100 * oleak.loc['test', 'exact_audio_in_train']:.0f}% of the release's test clips "
+                     "are there verbatim; a voice-only probe and a matcher that learns nothing both beat PRiSM's probe."),
         ("Topic", f"The picture ID alone gives {pr.recall1:.1f} Recall@1; on shared pictures, which carry no location, the "
-                  "transcript probes fall to the majority."),
+                  "transcript probes fall to the majority on new speakers."),
         ("Order", f"The BiGRU's gain from order ({sg(o_rel['diff'])}) appears only for speakers seen in training, so "
                   "PRiSM's explanation holds only under its leaky split."),
         ("Own split", f"Look-alike speaker codes leak the voice (ECAPA {sg(e.lookalike_lift)} vs {sg(e.strict_lift)}) but "
@@ -685,13 +688,17 @@ def build():
     s = d._slide(notes="Nidhi (15 s). Four weeks to the final on 4 December; representation probes come first because "
                        "PRiSM's central comparison needs them.")
     d.header(s, "Timelines for completion", "Four weeks to the final evaluation on 4 December")
-    d.deflist(s, [
-        ("3-9 Nov", "Representation probes (PRiSM's RP-Attn, last layer, 3 recognizers); remaining seeds.  Nidhi, Mohit"),
-        ("10-16 Nov", "Every probe on the cross-validated, speaker-disjoint benchmark; blind manual audit.  Mohit; both"),
-        ("17-23 Nov", "Order-aware representation probes across layers (RQ1); length in hidden states (RQ2).  Nidhi, Mohit"),
-        ("24-30 Nov", "Prosody seeds and fusion on the benchmark (RQ3); statistics and figures.  Nidhi, Mohit"),
-        ("1-4 Dec", "Report in ACL format and final presentation.  Both"),
-    ], y=I(1.8), label_w=I(1.7), size=15.5, row=I(0.95))
+    for k, (when, task, who) in enumerate([
+            ("3–9 Nov", "Representation probes (PRiSM's RP-Attn, last layer, 3 recognizers); remaining seeds", "Nidhi, Mohit"),
+            ("10–16 Nov", "Every probe on the cross-validated, speaker-disjoint benchmark; blind manual audit", "Mohit; both"),
+            ("17–23 Nov", "Order-aware representation probes across layers (RQ1); length in hidden states (RQ2)", "Nidhi, Mohit"),
+            ("24–30 Nov", "Prosody seeds and fusion on the benchmark (RQ3); statistics and figures", "Nidhi, Mohit"),
+            ("1–4 Dec", "Report in ACL format and final presentation", "Both")]):
+        yy = I(1.85 + 0.95 * k)
+        d.text(s, when, LM, yy, I(1.7), I(0.5), size=15.5, font=SERIF, bold=True, color=INK)
+        d.text(s, task, LM + I(1.9), yy, I(8.3), I(0.8), size=15.5)
+        d.text(s, who, LM + I(10.35), yy, I(1.75), I(0.5), size=14, color=KICK, bold=True)
+    d.text(s, "OWNER", LM + I(10.35), I(1.5), I(1.75), I(0.25), size=8.5, color=CAP, bold=True, spacing=150)
 
     # 14. Summary -----------------------------------------------------------------------------------------------------------
     s = d._slide(dark=True, notes="Nidhi (20 s). Four findings and what comes next. Then questions.")
@@ -715,7 +722,7 @@ def build():
     d.stats(s, [(f"{leak:.1f}%", "test utterances whose speaker\nis also in training"),
                 (f"{bl('speaker_lookup', 'prism').recall1:.1f}", "Recall@1 of a lookup that only\nknows the speaker ID"),
                 (f"{cfg.loc['dense_ecapa_rebuild_speaker_split', 'recall1_mean']:.1f}",
-                 f"voice embedding (ECAPA) on new speakers\n({cfg.loc['dense_ecapa_rebuild_prism', 'recall1_mean']:.1f} on PRiSM's split)"),
+                 f"ECAPA on new speakers\n({cfg.loc['dense_ecapa_rebuild_prism', 'recall1_mean']:.1f} on PRiSM's split)"),
                 (f"{lk.control_recall1:.1f}", f"ECAPA on control labels\n(control majority {lk.control_majority:.1f})")], best=1)
     d.bullets(s, [
         f"Majority baseline {bl('majority', 'prism').recall1:.1f} (random) and {bl('majority', 'speaker_split').recall1:.1f} "
@@ -731,15 +738,15 @@ def build():
     s = d._slide(notes="Backup: topic control with shared pictures.")
     d.header(s, "Backup  ·  topic", "Without topic, the transcript probes fall to the majority")
     d.stats(s, [(f"{st.all_state_acc:.0f}%", f"correct state, ZIPA phone bigrams,\nnew speakers (majority {st.all_majority:.0f}%)"),
-                (sg(g.lift_recall1), "Recall@1 lift when trained and\ntested on shared pictures only"),
-                (f"+{g.km_gain:.0f} km", f"km gain on shared pictures\n(95% CI {g.km_gain_lo:.0f} to {g.km_gain_hi:.0f})"),
+                (sg(g.lift_recall1), "W2V2 phone bigrams, Recall@1 lift,\ntrained and tested on shared pictures"),
+                (f"+{g.km_gain:.0f} km", f"W2V2 phone bigrams, km gain on\nshared pictures (95% CI {g.km_gain_lo:.0f}–{g.km_gain_hi:.0f})"),
                 (f"{pic.loc[('shared', 'speaker_split', 'picture lookup')].recall1:.1f}",
                  f"picture lookup on shared pictures,\nnew speakers (majority {pic.loc[('shared', 'speaker_split', 'majority')].recall1:.1f})")])
     d.bullets(s, [
         "Shared pictures carry no location (the picture lookup is below the majority on them), but their share differs by "
-        "state (12-58%), so they get their own baselines: majority 21.3 Recall@1, best constant 537 km.",
+        "state (12–58%), so they get their own baselines: majority 21.3 Recall@1, best constant 537 km.",
         "Trained and tested on shared pictures, no transcript probe beats the majority on Recall@1 or state; km gains are "
-        "48-94 km, and only the two W2V2 ones have CIs above zero (119 test speakers).",
+        "48–94 km, and only the two W2V2 ones have CIs above zero (119 test speakers).",
     ], y=I(3.7), h=I(3.2))
 
     s = d._slide(notes="Backup: checks of our own split.")
@@ -753,7 +760,8 @@ def build():
         "Speaker codes come from file names. Codes of one district whose voices are as close as two halves of one "
         "speaker's recordings are grouped (1,570 codes → 1,327 groups); gender agrees in 98% of close pairs.",
         "PRiSM's recipe averages a pincode's post offices, and some directory rows are hundreds of km off; Dhar lands 88 km "
-        "from Bhopal instead of 45 km from the other Dhar pincode. Recall@1 hardly moves; km does.",
+        "from Bhopal instead of 45 km from the other Dhar pincode. Recall@1 picks the nearest candidate location, so it changes little; km "
+        "errors carry the offset.",
     ], y=I(3.7), h=I(3.2))
 
     k_ = lambda c: mdl.loc[c, "gain_over_prior"]  # noqa: E731
@@ -822,22 +830,23 @@ def build():
                     widths=[2.7, 1.4, 1.9, 2.5], fontsize=12)
     s = d._slide(notes="Backup: all probes on PRiSM's release.")
     d.header(s, "Backup  ·  PRiSM's release", "Once speakers are separated, every probe falls to the majority")
-    d.image(s, png, LM, I(1.65), w=I(8.5))
+    d.image(s, png, LM, I(1.65), w=I(10.5))
     d.caption(s, "Table A2. Test Recall@1, mean ± sd over seeds. Released: data and split as published. Corrected: released "
                  "split on the corrected rows, or a pseudo-speaker-disjoint split.", LM, I(6.85), I(12.1))
 
     s = d._slide(notes="Backup: metrics and limitations.")
     d.header(s, "Backup  ·  reference", "Metrics and limitations")
     d.deflist(s, [
-        ("Metrics", "Recall@1: is the nearest distinct test location the true one (PRiSM's definition); mean great-circle "
-                    "km; lift over the majority and km gain over the best constant on the same utterances."),
-        ("Statistics", "5 seeds (BiGRUs 2-3 so far); 95% CIs and paired tests by bootstrap over speakers, because "
+        ("Metrics", "Recall@1: share of test utterances whose prediction is closest to their own location among the "
+                    "distinct test locations (PRiSM's definition); mean great-circle km; lift over the majority and km gain "
+                    "over the best constant location, on the same utterances."),
+        ("Statistics", "5 seeds (BiGRUs 2–3 so far); 95% CIs and paired tests by bootstrap over speakers, because "
                        "utterances of one speaker are not independent."),
         ("Limitations", "12 Haryana speakers in Vaani-Hi; New Delhi stands for standard Hindi only approximately; speakers "
                         "on the release are estimated; recognizer output is not a phonetic gold standard."),
     ], label_w=I(2.0), size=15, row=I(1.25))
     d.text(s, "Bharadwaj et al. (2026). PRiSM: Benchmarking Phone Realization in Speech Models. ACL 2026, pages "
-              "18093-18112.", LM, I(6.7), I(12), I(0.3), size=10, italic=True, color=CAP)
+              "18093–18112.", LM, I(6.7), I(12), I(0.3), size=10, italic=True, color=CAP)
     return d
 
 
