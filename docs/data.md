@@ -66,7 +66,7 @@ voiceless stop between vowels in the spoken Devanagari form.
 | Model | Checkpoint | Notes |
 |---|---|---|
 | W2V2P-LV60 | `facebook/wav2vec2-lv-60-espeak-cv-ft` | Apache-2.0; 24 layers, 1024-d, stride 320 (50 Hz); vocab 392 with kː lː tː ... tokens |
-| ZIPA-CTC-NS | `anyspeech/zipa-large-crctc-ns-800k` | MIT; ~300M; ships .pth and ONNX; tokens.txt has 127 tokens incl. standalone ː (id 111) |
+| ZIPA-CTC-NS | `anyspeech/zipa-large-crctc-ns-800k` | CC BY-NC-SA 4.0 (code MIT); ~300M; ships .pth and ONNX; tokens.txt has 127 tokens incl. standalone ː (id 111) |
 | Whisper-small | `openai/whisper-small` | Apache-2.0; 244M; 13 hidden-state outputs, 768-d |
 | POWSM (fallback) | `espnet/powsm` | supported by the PRiSM toolkit |
 
