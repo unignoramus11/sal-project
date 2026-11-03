@@ -12,6 +12,7 @@
 \usepackage{enumitem}
 \setlist{nosep, leftmargin=*}
 \newcommand{\geov}{\textsc{Geo-v}}
+\makeatletter\setlength{\@dblfptop}{0pt}\makeatother
 
 \title{Order, Duration, or Melody? Probing What Phone Recognizers Use\\to Geolocate Haryanvi and Hindi-Belt Speech}
 
@@ -87,6 +88,7 @@ averages the coordinates of the pincode's post offices and three of them have la
 \paragraph{Splits.} PRiSM splits utterances at random within each pincode. Under this split, 97.9\% of test
 utterances in our rebuild come from a speaker who is also in training. We add a speaker-disjoint split,
 stratified by pincode, in which no test speaker appears in training. We call its test speakers new speakers.
+Appendix~\ref{app:versions} lists every version of the data and every split we used.
 
 \paragraph{Pictures.} Vaani speakers describe pictures, and 68\% of our utterances describe a picture of the
 speaker's own district. The topic of an utterance can point to its location without any dialect
@@ -310,4 +312,24 @@ Vaani is released under CC-BY 4.0 with speaker consent. We report only aggregate
 identify speakers.
 
 \bibliography{custom}
+
+\appendix
+\section{Data versions and splits}
+\label{app:versions}
+Table~\ref{tab:versions} lists every version of the data and every split we used. Each row removes one more way
+to score without dialect. The probe is W2V2 phone bigrams throughout, and the majority baseline is computed on the
+same test utterances and labels, so the gap between the two columns is what the probe adds. The duration study
+(RQ2) uses separate Vaani audio and is not part of this table.
+
+The probe is far above the majority only when test speakers are also in training. On new speakers the gap shrinks
+on every version of the data, and it disappears once the topic is removed (shared pictures) or the labels carry no
+dialect (control labels).
+
+\begin{table*}[t]
+\centering\footnotesize
+\input{tables/tab_versions.tex}
+\caption{Every data version and split, from PRiSM's release to the planned benchmark. Recall@1 on the test set;
+probe values are mean $\pm$ sd over seeds. With control labels, both columns score the reassigned locations.}
+\label{tab:versions}
+\end{table*}
 \end{document}

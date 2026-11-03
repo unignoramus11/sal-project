@@ -9,6 +9,7 @@
   tab_data.tex        the two datasets side by side: size, speakers, leakage under each split, duplicates
   tab_main.tex        compact rebuild results: references, voice and prosody, transcript probes, both splits
   tab_release.tex     compact results on PRiSM's release, as released and corrected
+  tab_versions.tex    appendix: every data version and split, what each removes, W2V2 phone bigrams vs majority
 Output: paper/tables/*.tex
 Run:    uv run python scripts/make_tables.py
 """
@@ -262,7 +263,57 @@ def tab_release():
     write("tab_release.tex", "\n".join(lines) + "\n")
 
 
+def tab_versions():
+    """Every data version and split, what each removes, and one probe (W2V2 phone bigrams) against the majority
+    on the same test utterances and labels."""
+    off = pd.read_csv(RESULTS / "official" / "scores_by_duplication.csv").set_index("probe")
+    cl = pd.read_csv(RESULTS / "official" / "scores_clean.csv")
+    ctrl = pd.read_csv(RESULTS / "tables" / "control.csv").set_index("probe")
+
+    def maj_clean(proto):
+        return cl[(cl.protocol == proto) & (cl.probe == "majority")].recall1.iloc[0]
+
+    def seeds(c):
+        m_, s_, n_ = seedstats(c)
+        return f"${pm(m_, s_)}$" if n_ else "--"
+
+    def rb(c):
+        return f"${pm(cfg.loc[c, 'recall1_mean'], cfg.loc[c, 'recall1_sd'])}$"
+
+    def ct(c):
+        return f"${pm(ctrl.loc[c, 'control_recall1'], ctrl.loc[c, 'control_sd'])}$", f"{ctrl.loc[c, 'control_majority']:.1f}"
+
+    bg = "tp_w2v2_rebuild_phone_bigram"
+    ob = "tp_w2v2_official_phone_bigram"
+    rows = [
+        ("PRiSM's release", "Nothing: the data as published",
+         seeds(f"{ob}_prism"), f"{off.loc['majority', 'all_recall1']:.1f}", "--", "--"),
+        ("Corrected release", "Duplicate audio, conflicting labels, Shimla's coordinates. New speakers are "
+         "estimated by clustering voice embeddings",
+         seeds(f"{ob}_prism_clean"), f"{maj_clean('prism'):.1f}",
+         seeds(f"{ob}_speaker_split_clean"), f"{maj_clean('speaker_split'):.1f}"),
+        ("Our rebuild", "The shard bug; speakers are known from Vaani's speaker codes",
+         rb(f"{bg}_prism"), f"{b('majority', 'prism', 'recall1'):.1f}",
+         rb(f"{bg}_speaker_split"), f"{b('majority', 'speaker_split', 'recall1'):.1f}"),
+        ("Rebuild, shared pictures only", "Topic: the picture no longer names the district",
+         rb(f"{bg}_prism_generic"), f"{cfg.loc[f'{bg}_prism_generic', 'maj_recall1']:.1f}",
+         rb(f"{bg}_speaker_split_generic"), f"{cfg.loc[f'{bg}_speaker_split_generic', 'maj_recall1']:.1f}"),
+        ("Rebuild, control labels", "Dialect: each speaker gets another speaker's location",
+         *ct(f"{bg}_prism"), *ct(f"{bg}_speaker_split")),
+        ("Benchmark (November)", "Look-alike speaker codes (merged into one speaker), reliance on one test split "
+         "(5-fold cross-validation), misplaced pincodes", r"\multicolumn{4}{c}{not run yet}"),
+    ]
+    lines = [r"\begin{tabularx}{\linewidth}{@{}p{3.6cm}>{\raggedright\arraybackslash}Xrrrr@{}}", r"\toprule",
+             r" & & \multicolumn{2}{c}{PRiSM's split} & \multicolumn{2}{c}{New speakers} \\",
+             r"\cmidrule(lr){3-4}\cmidrule(l){5-6}",
+             r"Data & What it removes & Probe & Majority & Probe & Majority \\", r"\midrule"]
+    lines += [" & ".join(r) + r" \\" for r in rows]
+    lines += [r"\bottomrule", r"\end{tabularx}"]
+    write("tab_versions.tex", "\n".join(lines) + "\n")
+
+
 if __name__ == "__main__":
+    tab_versions()
     tab_data()
     tab_main()
     tab_release()
