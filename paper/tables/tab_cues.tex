@@ -1,0 +1,23 @@
+\begin{tabular}{@{}llrrrrrc@{}}
+\toprule
+ & & & \multicolumn{2}{c}{Same speaker} & \multicolumn{2}{c}{Picture lookup} & Labels \\
+\cmidrule(lr){4-5}\cmidrule(lr){6-7}
+Data & Split & Same audio & Code & Code or look-alike & R@1 & Lift & real \\
+\midrule
+PRiSM's release & PRiSM's & 28.0 & 100 (est.) & -- & \multicolumn{2}{c}{no picture IDs} & yes \\
+PRiSM's release & New speakers & \multicolumn{6}{c}{not built (no speaker labels)} \\
+\midrule
+Corrected release & PRiSM's & 0.0 & 100 (est.) & -- & \multicolumn{2}{c}{no picture IDs} & yes \\
+Corrected release & New speakers & 0.0 & 2.1 (est.) & -- & \multicolumn{2}{c}{no picture IDs} & yes \\
+\midrule
+Rebuild & PRiSM's & 0.0 & 97.9 & 98.1 & 61.8 & +51.3 & yes \\
+Rebuild & New speakers & 0.0 & 0.0 & 34.8 & 27.5 & +17.5 & yes \\
+Rebuild, shared pictures & PRiSM's & 0.0 & 94.5 & 95.8 & 32.2 & +12.7 & yes \\
+Rebuild, shared pictures & New speakers & 0.0 & 0.0 & 44.1 & 10.1 & $-$11.1 & yes \\
+Rebuild, control labels & PRiSM's & 0.0 & 97.9 & 98.1 & 43.5 & +29.5 & no \\
+Rebuild, control labels & New speakers & 0.0 & 0.0 & 34.8 & 12.7 & $-$3.4 & no \\
+\midrule
+Benchmark & 5 folds & 0.0 & 0.0 & 0.0 & 29.0 & +18.4 & yes \\
+Benchmark, shared pictures & 5 folds & 0.0 & 0.0 & 0.0 & 10.1 & $-$10.2 & yes \\
+\bottomrule
+\end{tabular}

@@ -35,6 +35,7 @@ pc = pd.read_csv(R + "tables/prosody_checks.csv").set_index(["subset", "comparis
 mdl = pd.read_csv(R + "mdl/summary.csv").set_index("config")
 dbl = pd.read_csv(R + "gemination/model_doubling.csv").set_index(["model", "region"])
 ctrl = pd.read_csv(R + "tables/control.csv").set_index("probe")
+cues = pd.read_csv(R + "tables/shared_cues.csv").set_index(["data", "split"])
 mm = open(R + "gemination/mixed_model.txt").read()
 rb = open(R + "gemination/robustness.txt").read()
 audit = open(R + "official/audit.txt").read()
@@ -106,6 +107,8 @@ claims = {
  "and 27.5 [20.7, 36.5] on new speakers": "and " + ci(*pic.loc[("all","speaker_split","picture lookup"),["recall1","lo","hi"]]) + " on new speakers",
  "lookup scores 10.1, below that subset's majority of 21.3": f"lookup scores {f1(pic.loc[('shared','speaker_split','picture lookup'),'recall1'])}, below that subset's majority of {f1(pic.loc[('shared','speaker_split','majority'),'recall1'])}",
  "by 13.7 [8.2, 19.1] points for W2V2 and 12.5 [7.6, 17.5] for ZIPA": "by {} points for W2V2 and {} for ZIPA".format(*[ci(*cfg.loc[f"tp_{m}_rebuild_phone_bigram_prism_generic", ["lift_recall1", "lift_recall1_lo", "lift_recall1_hi"]]) for m in ("w2v2", "zipa")]),
+ "In 34.8\\% of its test utterances": "In {:.1f}\\% of its test utterances".format(cues.loc[("Rebuild", "speaker_split"), "same_group"]),
+ "control labels (43.5 against a majority of 14.0)": "control labels ({:.1f} against a majority of {:.1f})".format(*cues.loc[("Rebuild, control labels", "prism"), ["lookup", "majority"]]),
  "at 21.3 Recall@1, 10.6 [6.2, 15.9] points": f"at {f1(cfg.loc['tp_zipa_rebuild_phone_bigram_speaker_split','recall1_mean'])} Recall@1, " + ci(*cfg.loc['tp_zipa_rebuild_phone_bigram_speaker_split',['lift_recall1','lift_recall1_lo','lift_recall1_hi']]) + " points",
  # release
  "45.5\\,$\\pm$\\,1.1": "{:.1f}\\,$\\pm$\\,{:.1f}".format(*seed("tp_w2v2_official_char_gru_prism")),

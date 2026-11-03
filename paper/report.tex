@@ -12,7 +12,7 @@
 \usepackage{enumitem}
 \setlist{nosep, leftmargin=*}
 \newcommand{\geov}{\textsc{Geo-v}}
-\makeatletter\setlength{\@dblfptop}{0pt}\makeatother
+\makeatletter\setlength{\@dblfptop}{0pt}\setlength{\@dblfpsep}{24pt}\makeatother
 
 \title{Order, Duration, or Melody? Probing What Phone Recognizers Use\\to Geolocate Haryanvi and Hindi-Belt Speech}
 
@@ -88,7 +88,8 @@ averages the coordinates of the pincode's post offices and three of them have la
 \paragraph{Splits.} PRiSM splits utterances at random within each pincode. Under this split, 97.9\% of test
 utterances in our rebuild come from a speaker who is also in training. We add a speaker-disjoint split,
 stratified by pincode, in which no test speaker appears in training. We call its test speakers new speakers.
-Appendix~\ref{app:versions} lists every version of the data and every split we used.
+Appendix~\ref{app:versions} lists every version of the data and every split we used, and
+Appendix~\ref{app:cues} measures what each shares between training and test.
 
 \paragraph{Pictures.} Vaani speakers describe pictures, and 68\% of our utterances describe a picture of the
 speaker's own district. The topic of an utterance can point to its location without any dialect
@@ -331,5 +332,31 @@ dialect (control labels).
 \caption{Every data version and split, from PRiSM's release to the planned benchmark. Recall@1 on the test set;
 probe values are mean $\pm$ sd over seeds. With control labels, both columns score the reassigned locations.}
 \label{tab:versions}
+\end{table*}
+
+\section{What training and test share}
+\label{app:cues}
+Table~\ref{tab:cues} measures, for the same data versions and splits, how often a test utterance shares its
+recording, its speaker or its picture with training. The picture lookup predicts the location where
+the test picture was most often described in training; its lift is its Recall@1 minus the majority baseline's on
+the same test utterances and labels.
+
+The speaker-disjoint split separates speaker codes but not always people. In 34.8\% of its test utterances the
+speaker has a look-alike code in training. The benchmark merges these codes and removes both.
+
+Under PRiSM's split the picture lookup also scores on control labels (43.5 against a majority of 14.0), although
+those labels carry no location. Each picture is described by few speakers, so under this split the lookup partly
+recognises speakers. Only with new speakers does the lift measure the topic alone. There the picture still gives
+away the location on all pictures and gives nothing on shared pictures, in the rebuild and in the benchmark.
+
+\begin{table*}[t]
+\centering\footnotesize
+\input{tables/tab_cues.tex}
+\caption{What each data version and split shares between training and test, as a percentage of test utterances
+(the picture columns are Recall@1). On the release the speakers are estimated from calibrated voice embeddings.
+A look-alike code is another code of the same district whose voice matches as closely as two halves of one
+speaker's recordings. ``Labels real'' is no when every speaker is given another speaker's location. The benchmark
+pools its five folds, so every utterance is tested once.}
+\label{tab:cues}
 \end{table*}
 \end{document}

@@ -10,6 +10,7 @@
   tab_main.tex        compact rebuild results: references, voice and prosody, transcript probes, both splits
   tab_release.tex     compact results on PRiSM's release, as released and corrected
   tab_versions.tex    appendix: every data version and split, what each removes, W2V2 phone bigrams vs majority
+  tab_cues.tex        appendix: what each data version and split shares between training and test
 Output: paper/tables/*.tex
 Run:    uv run python scripts/make_tables.py
 """
@@ -286,7 +287,7 @@ def tab_versions():
     bg = "tp_w2v2_rebuild_phone_bigram"
     ob = "tp_w2v2_official_phone_bigram"
     rows = [
-        ("PRiSM's release", "Nothing: the data as published",
+        ("PRiSM's release", "Nothing (the data as published)",
          seeds(f"{ob}_prism"), f"{off.loc['majority', 'all_recall1']:.1f}", "--", "--"),
         ("Corrected release", "Duplicate audio, conflicting labels, Shimla's coordinates. New speakers are "
          "estimated by clustering voice embeddings",
@@ -295,10 +296,10 @@ def tab_versions():
         ("Our rebuild", "The shard bug; speakers are known from Vaani's speaker codes",
          rb(f"{bg}_prism"), f"{b('majority', 'prism', 'recall1'):.1f}",
          rb(f"{bg}_speaker_split"), f"{b('majority', 'speaker_split', 'recall1'):.1f}"),
-        ("Rebuild, shared pictures only", "Topic: the picture no longer names the district",
+        ("Rebuild, shared pictures only", "Topic (shared pictures are not tied to one district)",
          rb(f"{bg}_prism_generic"), f"{cfg.loc[f'{bg}_prism_generic', 'maj_recall1']:.1f}",
          rb(f"{bg}_speaker_split_generic"), f"{cfg.loc[f'{bg}_speaker_split_generic', 'maj_recall1']:.1f}"),
-        ("Rebuild, control labels", "Dialect: each speaker gets another speaker's location",
+        ("Rebuild, control labels", "Dialect (each speaker gets another speaker's location)",
          *ct(f"{bg}_prism"), *ct(f"{bg}_speaker_split")),
         ("Benchmark (November)", "Look-alike speaker codes (merged into one speaker), reliance on one test split "
          "(5-fold cross-validation), misplaced pincodes", r"\multicolumn{4}{c}{not run yet}"),
@@ -312,7 +313,39 @@ def tab_versions():
     write("tab_versions.tex", "\n".join(lines) + "\n")
 
 
+def tab_cues():
+    """Appendix: for every data version and split, how much non-dialect information training and test share."""
+    t = pd.read_csv(RESULTS / "tables" / "shared_cues.csv")
+    split = {"prism": "PRiSM's", "speaker_split": "New speakers", "folds": "5 folds"}
+
+    def pc(x):
+        return "--" if pd.isna(x) else f"{x:.1f}"
+
+    lines = [r"\begin{tabular}{@{}llrrrrrc@{}}", r"\toprule",
+             r" & & & \multicolumn{2}{c}{Same speaker} & \multicolumn{2}{c}{Picture lookup} & Labels \\",
+             r"\cmidrule(lr){4-5}\cmidrule(lr){6-7}",
+             r"Data & Split & Same audio & Code & Code or look-alike & R@1 & Lift & real \\", r"\midrule"]
+    prev = None
+    for r in t.itertuples():
+        if prev is not None and r.data.split(",")[0] != prev:
+            lines.append(r"\midrule")
+        prev = r.data.split(",")[0]
+        if not r.built:
+            lines.append(f"{r.data} & {split[r.split]} & \\multicolumn{{6}}{{c}}{{not built (no speaker labels)}} \\\\")
+            continue
+        if r.data.endswith("release"):
+            code = f"{r.est_speaker:.0f} (est.)" if r.est_speaker >= 10 else f"{r.est_speaker:.1f} (est.)"
+            cells = [pc(r.same_audio), code, "--", r"\multicolumn{2}{c}{no picture IDs}"]
+        else:
+            lift = f"{r.topic_lift:+.1f}".replace("-", "$-$")
+            cells = [pc(r.same_audio), pc(r.same_code), pc(r.same_group), f"{r.lookup:.1f}", lift]
+        lines.append(" & ".join([r.data, split[r.split], *cells, r.dialect]) + r" \\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    write("tab_cues.tex", "\n".join(lines) + "\n")
+
+
 if __name__ == "__main__":
+    tab_cues()
     tab_versions()
     tab_data()
     tab_main()
