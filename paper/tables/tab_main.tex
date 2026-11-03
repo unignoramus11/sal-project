@@ -1,0 +1,31 @@
+\begin{tabular}{lrrrr}
+\toprule
+ & \multicolumn{2}{c}{PRiSM's split} & \multicolumn{2}{c}{New speakers} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+Probe & R@1 & km & R@1 & km \\
+\midrule
+\multicolumn{5}{l}{\textit{References that learn nothing about dialect}} \\
+\quad Majority location & 10.5 & 660 & 10.0 & 675 \\
+\quad Speaker-ID lookup & 98.0 & 12 & 10.0 & 675 \\
+\quad Picture-ID lookup & 61.8 & -- & 27.5 & -- \\
+\quad Transcript match (W2V2) & 39.6 & 452 & 18.2 & 590 \\
+\midrule
+\multicolumn{5}{l}{\textit{Voice and prosody}} \\
+\quad ECAPA voice embedding & $41.6 \pm 1.6$ & 169 & $10.1 \pm 0.6$ & 435 \\
+\quad Pooled prosody statistics & $5.5 \pm 0.7$ & 571 & $4.8 \pm 0.4$ & 595 \\
+\midrule
+\multicolumn{5}{l}{\textit{Transcript probes, W2V2}} \\
+\quad phone unigram & $15.5 \pm 1.1$ & 440 & $12.6 \pm 0.7$ & 469 \\
+\quad phone bigram & $27.9 \pm 0.8$ & 360 & $17.8 \pm 1.7$ & 436 \\
+\quad character BiGRU (PRiSM's) & $20.7 \pm 1.2$ & 374 & $14.2 \pm 0.5$ & 434 \\
+\quad phone BiGRU & $21.4 \pm 1.3$ & 384 & $11.8 \pm 1.3$ & 445 \\
+\quad shuffled phone BiGRU & $18.3 \pm 0.0$ & 437 & $15.7 \pm 0.5$ & 468 \\
+\midrule
+\multicolumn{5}{l}{\textit{Transcript probes, ZIPA}} \\
+\quad phone unigram & $15.2 \pm 0.5$ & 443 & $12.7 \pm 1.0$ & 472 \\
+\quad phone bigram & $28.6 \pm 0.8$ & 344 & $21.3 \pm 1.0$ & 403 \\
+\quad character BiGRU (PRiSM's) & $21.2 \pm 0.2$ & 362 & $13.9 \pm 1.4$ & 423 \\
+\quad phone BiGRU & $21.9 \pm 0.5$ & 366 & $16.0 \pm 2.1$ & 425 \\
+\quad shuffled phone BiGRU & $18.6 \pm 0.3$ & 441 & $15.6 \pm 2.5$ & 468 \\
+\bottomrule
+\end{tabular}

@@ -13,13 +13,17 @@
                     the official release; and how much of each probe's mean error the misplaced pincodes carry
 
 Needs results/benchmark/{speaker_groups,coordinates}.csv (scripts/make_benchmark.py).
-Output: results/rebuild_checks/{lookalike.csv, picture_lookup.csv, coordinates.csv, report.txt}
+  duplicates        byte-identical audio in the rebuild: how many recordings repeat, and how many test rows of each
+                    split have their exact audio in training
+Output: results/rebuild_checks/{lookalike.csv, picture_lookup.csv, coordinates.csv, duplicates.csv, report.txt}
 Run:    uv run python scripts/rebuild_checks.py
 """
+import hashlib
 import re
 
 import numpy as np
 import pandas as pd
+import pyarrow.parquet as pq
 import torch
 
 from sal.data.rebuild import robust_pincode_coordinates
@@ -154,5 +158,17 @@ for p in bad:
     lines.append(f"  {p} ({rc.loc[p, 'district']}): nearest other pincode in the rebuild {near_r} "
                  f"({rc.loc[near_r, 'district']}, {km(p, near_r, ['lat', 'lon']):.0f} km); at its office cluster "
                  f"{near_c} ({rc.loc[near_c, 'district']}, {km(p, near_c, ['cluster_lat', 'cluster_lon']):.0f} km)")
+# ---- 4. duplicates
+au = pq.read_table(src / "vaani_hi_rebuild.parquet", columns=["metadata_idx", "audio"]).to_pandas()
+au["h"] = [hashlib.blake2b(x["bytes"] if isinstance(x, dict) else x, digest_size=12).hexdigest() for x in au.pop("audio")]
+au = au.merge(d[["metadata_idx", "speaker", "prism", "speaker_split"]], on="metadata_idx")
+rep = au[au["h"].duplicated(keep=False)]
+drow = {"recordings_repeated": int(rep["h"].nunique()), "rows_involved": len(rep),
+        "repeats_across_speaker_codes": int((rep.groupby("h")["speaker"].nunique() > 1).sum())}
+for proto in ("prism", "speaker_split"):
+    tr_h = set(au.loc[au[proto] == "train", "h"])
+    drow[f"test_rows_exact_audio_in_train_{proto}"] = int(au.loc[au[proto] == "test", "h"].isin(tr_h).sum())
+pd.DataFrame([drow]).to_csv(OUT / "duplicates.csv", index=False)
+lines.append("duplicates: " + ", ".join(f"{k} {v}" for k, v in drow.items()))
 (OUT / "report.txt").write_text("\n".join(lines) + "\n")
 print("\n".join(lines))

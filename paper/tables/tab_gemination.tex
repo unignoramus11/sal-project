@@ -1,13 +1,13 @@
-\begin{tabular}{lrrr}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}Xrrr@{}}
 \toprule
 Model & Haryana / New Delhi & 95\% CI & tokens \\
 \midrule
-voiceless interval (primary) & $\times$1.142 & [1.106, 1.178] & 26,033 \\
-voiceless interval, no rate control & $\times$1.133 & [1.098, 1.169] & 26,033 \\
-voiceless interval, all contexts (sensitivity: includes stops after a deleted schwa) & $\times$1.141 & [1.108, 1.175] & 33,333 \\
-closure, tokens with a burst & $\times$1.256 & [1.208, 1.307] & 26,033 \\
-closure, clear bursts only (rise >= 6 dB, drop >= 10 dB) & $\times$1.269 & [1.215, 1.324] & 9,340 \\
+Voiceless interval (main model) & $\times$1.142 & [1.106, 1.178] & 26,033 \\
+Voiceless interval, no speaking-rate control & $\times$1.133 & [1.098, 1.169] & 26,033 \\
+Voiceless interval, also stops after a dropped schwa & $\times$1.141 & [1.108, 1.175] & 33,333 \\
+Closure, stops with a burst & $\times$1.256 & [1.208, 1.307] & 26,033 \\
+Closure, clear bursts only & $\times$1.269 & [1.215, 1.324] & 9,340 \\
 \midrule
-lexical geminate / single (New Delhi) & $\times$1.59 & [1.51, 1.67] & \\
+Lexical geminate vs single stop, New Delhi & $\times$1.59 & [1.51, 1.67] & \\
 \bottomrule
-\end{tabular}
+\end{tabularx}

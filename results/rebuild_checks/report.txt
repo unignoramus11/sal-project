@@ -31,3 +31,4 @@ coordinates, official: 30 pincodes; median shift to the office cluster 2 km; abo
 rebuild speaker-split test utterances at misplaced pincodes [454552, 834008]: 197 of 3581
   454552 (Dhar): nearest other pincode in the rebuild 462001 (Bhopal, 88 km); at its office cluster 454001 (Dhar, 45 km)
   834008 (Ranchi): nearest other pincode in the rebuild 834001 (Ranchi, 63 km); at its office cluster 834001 (Ranchi, 3 km)
+duplicates: recordings_repeated 3, rows_involved 6, repeats_across_speaker_codes 0, test_rows_exact_audio_in_train_prism 0, test_rows_exact_audio_in_train_speaker_split 0
