@@ -170,12 +170,13 @@ test utterances its nearest training transcript comes from the same speaker; by 
 
 A lookup by picture ID scores 61.8 [58.9, 64.7] under PRiSM's split, above
 PRiSM's reported 45.7, and 27.5 [20.7, 36.5] on new speakers, above every transcript probe. Each
-district-specific picture is described only by speakers of that district, so naming the picture names the place. On shared pictures the same
-lookup scores 10.1, below that subset's majority of 21.3, so shared pictures carry no location. When transcript
-probes are trained and tested on shared pictures only, none beats the majority on Recall@1.
+district-specific picture is described only by speakers of that district, so naming the picture names the place. For new speakers on shared pictures, the same
+lookup scores 10.1, below that subset's majority of 21.3, so these pictures give no location. When transcript
+probes are trained and tested on shared pictures only, none beats the majority on Recall@1 for new speakers.
+With shared speakers, phone bigrams still beat it by 13.7 [8.2, 19.1] points for W2V2 and 12.5 [7.6, 17.5] for ZIPA.
 
 On new speakers the best transcript probe is ZIPA phone bigrams, at 21.3 Recall@1, 10.6 [6.2, 15.9] points above
-the majority baseline. Since no transcript probe beats the majority on shared pictures, most of this margin comes
+the majority baseline. Since no transcript probe beats the majority on shared pictures from new speakers, most of this margin comes
 from what speakers describe.
 
 \begin{table*}[t]
@@ -276,7 +277,7 @@ training. A probe that memorises each speaker's phone sequences would produce th
 
 On new speakers, transcripts keep a small advantage over the majority, and most of it is the picture being
 described. Bigram bags keep some gain on new speakers in our rebuild, but bigrams also identify words, and on
-shared pictures no transcript probe beats the majority. We cannot yet say how much of the bigram gain is dialect.
+shared pictures from new speakers no transcript probe beats the majority. We cannot yet say how much of the bigram gain is dialect.
 
 Haryana speakers lengthen voiceless stops,
 the recognizers rarely write the lengthening, and so a transcript probe cannot use it. Whether the recognizers'

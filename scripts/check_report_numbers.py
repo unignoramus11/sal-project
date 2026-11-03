@@ -105,6 +105,7 @@ claims = {
  "picture ID scores 61.8 [58.9, 64.7]": "picture ID scores " + ci(*pic.loc[("all","prism","picture lookup"),["recall1","lo","hi"]]),
  "and 27.5 [20.7, 36.5] on new speakers": "and " + ci(*pic.loc[("all","speaker_split","picture lookup"),["recall1","lo","hi"]]) + " on new speakers",
  "lookup scores 10.1, below that subset's majority of 21.3": f"lookup scores {f1(pic.loc[('shared','speaker_split','picture lookup'),'recall1'])}, below that subset's majority of {f1(pic.loc[('shared','speaker_split','majority'),'recall1'])}",
+ "by 13.7 [8.2, 19.1] points for W2V2 and 12.5 [7.6, 17.5] for ZIPA": "by {} points for W2V2 and {} for ZIPA".format(*[ci(*cfg.loc[f"tp_{m}_rebuild_phone_bigram_prism_generic", ["lift_recall1", "lift_recall1_lo", "lift_recall1_hi"]]) for m in ("w2v2", "zipa")]),
  "at 21.3 Recall@1, 10.6 [6.2, 15.9] points": f"at {f1(cfg.loc['tp_zipa_rebuild_phone_bigram_speaker_split','recall1_mean'])} Recall@1, " + ci(*cfg.loc['tp_zipa_rebuild_phone_bigram_speaker_split',['lift_recall1','lift_recall1_lo','lift_recall1_hi']]) + " points",
  # release
  "45.5\\,$\\pm$\\,1.1": "{:.1f}\\,$\\pm$\\,{:.1f}".format(*seed("tp_w2v2_official_char_gru_prism")),
