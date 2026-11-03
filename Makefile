@@ -9,6 +9,7 @@ plot:
 report:
 	uv run python scripts/make_tables.py
 	cd paper && latexmk -pdf -interaction=nonstopmode report.tex
+	uv run python scripts/check_report_numbers.py
 
 clean:
 	cd proposal && latexmk -c
