@@ -5,42 +5,50 @@ order, with what each produces, how to check it, and roughly what it costs. Ever
 step; the scripts submit the SLURM jobs themselves. You are welcome to do more than this list (ideas at the
 end), but everything below is needed for the study.
 
-Why Ada: the representation probes (RPs) need cached hidden-state frames (~15 GB per layer per model) and
-~150-300 GPU-hours in total, which Mohit's laptop GPU (6 GB, power-capped) cannot do in time. The PC runs the
-transcript probes; the Mac runs the analyses. Results from all three meet in this repo under `results/`.
+Why Ada: the representation probes (RPs) need hidden-state frames (~15 GB per layer per model) and ~150-300
+GPU-hours in total, which Mohit's laptop GPU (6 GB, power-capped) cannot do in time. From November every probe
+runs on Ada, the transcript probes and the benchmark included, so all final numbers come from one cluster and one
+environment; the Mac only runs the analyses (tables, figures, report). Results meet in this repo under `results/`.
+
+**Storage.** `/home2` has a 50 GB quota and `/share1` is not mounted on compute nodes, so frames are never kept
+between jobs. Every RP job extracts the layers it needs into the node's local scratch (`/ssd_scratch`, else
+`/scratch`; ~2 TB per node, wiped after about 7 days), trains, writes its small results to `/home2` and deletes its
+scratch folder (`slurm/frames.sh`). This adds 1-2 h of extraction to each RP job and needs no storage planning. The
+job log prints `df -h` of both scratch folders and stops early if less than ~20 GB per layer is free.
 
 ## At a glance
 
-**Now, before the mid evaluation (3 Nov): steps 0, 1, 2, 3, 5 and 6 only.** Everything marked "final" waits until
-after 3 Nov (November); please do not start those yet, so the queue and the GPU-hours go to the mid-evaluation jobs.
+**Now (final evaluation, 4 Dec).** The mid-evaluation steps (2, 3, 5, 6) were not run on Ada before 3 Nov; they
+are folded into the order below. Step 6 is replaced by step 13.
 
-| Step | What | Jobs | Time (wall) | When |
+| Step | What | Jobs | Time (wall) | Priority |
 |---|---|---|---|---|
-| 0 | Accounts, storage | – | 15 min | **now** |
-| 1 | Code and environment | login node | 15-30 min | **now** |
-| 2 | Rebuild the dataset, checksum check | 1 CPU | 1-2 h | **now** |
-| 3 | Extract features (W2V2, Whisper, ZIPA) | 3 GPU | 1-2 h each | **now** |
-| 5 | RP baselines (last layer, PRiSM's probe) | 6 GPU | 3-5 h each | **now: mid evaluation (3 Nov)** |
-| 6 | Light jobs: transcription check, TP-GRU seeds 44-46, topic check, prosody | 2 GPU + 1 CPU, then 26 GPU | 1-6 h each | **now: mid evaluation** |
-| 9 | Send results back | – | minutes | after every step |
-| 4 | Layer sweep | 3 GPU | < 1 h each | final (November) |
-| 7 | RP sweep (order x layers), per model | 1 extract + 19 GPU per model | 3-5 h each | final (RQ1, the core result) |
-| 8 | RP topic check and control task | 12 GPU | 2-5 h each | final (RQ0) |
-| 10 | Geminate probe by layer, all three models (token table is pushed) | 3 GPU | 2-6 h each | final (RQ2) |
-| 11 | Official Vaani-Hi: download, features, RP-Attn on the release and its corrected version | 3 + 9 GPU | 1-5 h each | final (RQ0, reproduction) |
-| 12 | RP-Attn on the cross-validated benchmark | 30 GPU | 2-3 h each | final (all RQs) |
+| 0, 1 | Accounts and environment | login node | 30 min | first |
+| 2 | Rebuild the dataset, checksum check | 1 CPU | 1-2 h | first |
+| 13 | Transcript, prosody and benchmark runs (moved from the Mac and the PC) | 18 CPU/GPU benchmark + 32 GPU | 1-10 h each | 1 (needs step 2 only) |
+| 3 | Time-averaged features (W2V2, Whisper, ZIPA) | 3 GPU | 1-2 h each | 1 |
+| 5 | RP baselines (last layer, PRiSM's probe) | 6 GPU | 5-7 h each | 2 (needs step 2) |
+| 12 | RP-Attn on the cross-validated benchmark | 12 GPU | 4-10 h each | 2 |
+| 4 | Layer sweep | 3 GPU | < 1 h each | 3 (needs step 3) |
+| 7 | RP sweep (order x layers), W2V2 first | 19 GPU per model | 5-7 h each | 3 (RQ1, the core result) |
+| 8 | RP topic check and control task | 12 GPU | 4-7 h each | 4 (RQ0) |
+| 11 | PRiSM's release: download, RP-Attn as released and corrected | 6 GPU | 5-8 h each | 4 |
+| 10 | Geminate probe by layer, all three models | 3 GPU | 2-6 h each | 5 (RQ2) |
+| 9 | Send results back | – | minutes | after every batch |
 
-Order now: 2 → 3 → 5 and 6 (steps 3 and 6 can run at the same time; 5 needs 3). In November: 4 → 7 → 12 → 8 →
-10 → 11 (speaker-disjoint jobs first; the scripts already submit those first).
+Order: 0 → 1 → 2, then submit 13, 3 and 5 together; then 12 and 4; then 7 (W2V2, then ZIPA, then Whisper), 8, 11,
+10. Every script submits the speaker-disjoint jobs first, and every job skips runs that already have results, so
+resubmitting after a failure is always safe. If time runs short, step 7 for Whisper and step 10 are the ones to
+drop.
 
 ## 0. Before starting
 
 - Hugging Face: log in, open https://huggingface.co/datasets/ARTPARK-IISc/Vaani and accept the terms
   (approved automatically). Create a read token at https://huggingface.co/settings/tokens. For step 11 only
   (November), also request https://huggingface.co/datasets/changelinglab/vaani-hi-geo (manual approval).
-- Storage: about **200 GB** in a directory that persists between jobs (not node-local `/scratch`): 12 GB raw
-  Vaani shards, 4.6 GB dataset, ~15 GB per cached frame layer per model (last layer + 3 top layers for 3
-  models), and a few GB of transcripts and prosody features.
+- Storage: everything persistent fits in the 50 GB of `/home2`: the environment, the 4.6 GB dataset (delete the
+  12 GB of raw shards in `data/vaani_hi_rebuild/raw/` once step 2's checksums match), the model checkpoints,
+  time-averaged features (at most 2.3 GB per model), transcripts and results. Frames live only in scratch.
 - `uv` must be on your PATH (`curl -LsSf https://astral.sh/uv/install.sh | sh` if `uv --version` fails).
 - GitHub: you need push access to `unignoramus11/sal-project` (ask Mohit to add you as a collaborator). If
   that is not possible, send results as described in step 9.
@@ -48,11 +56,11 @@ Order now: 2 → 3 → 5 and 6 (steps 3 and 6 can run at the same time; 5 needs 
 ## 1. Code and environment (once)
 
 ```bash
-cd <your 200 GB directory>
+cd ~                                 # /home2
 git clone https://github.com/unignoramus11/sal-project.git && cd sal-project
 bash tools/setup_env.sh              # needs internet; run on the login node or an interactive job
 envs/prism/bin/hf auth login         # paste the Hugging Face token
-cp slurm/ada.env.example slurm/ada.env && nano slurm/ada.env   # account, partition, GPU type, WORK dir
+cp slurm/ada.env.example slurm/ada.env && nano slurm/ada.env   # account, partition, GPU type
 ```
 
 - `setup_env.sh` builds `envs/prism` (Python 3.10, torch 2.6, k2, PRiSM's code at a pinned commit) and ends
@@ -88,8 +96,8 @@ differ, stop and send the whole log. If compute nodes have no internet, run the 
 for M in w2v2 whisper zipa; do bash slurm/submit.sh slurm/extract.sbatch $M; done
 ```
 
-Each writes `outputs/features/<model>_rebuild/`: `pooled.npy` (every layer, time-averaged), `frames_L<l>.npy`
-(the last layer's frames), `index.parquet`, `meta.json`. The log ends with a JSON summary; `n_utterances` must
+Each writes `outputs/features/<model>_rebuild/`: `pooled.npy` (every layer, time-averaged; at most 2.3 GB),
+`index.parquet`, `meta.json`. No frames are written here: the RP jobs extract their own into scratch. The log ends with a JSON summary; `n_utterances` must
 be 22551. Models: W2V2 phone recognizer (wav2vec2-lv-60-espeak-cv-ft, 25 layers, 1024-d), Whisper-small
 encoder (13 layers, 768-d), ZIPA-CR-CTC-NS large.
 
@@ -103,7 +111,7 @@ A small MLP per layer on the time-averaged vectors, scored on **validation only*
 layers). Writes `results/layer_sweep/<model>_rebuild_{speaker_split,prism}.csv` and prints the ranking. Push
 these (step 9). Step 7 reads them to pick the top 3 layers per model.
 
-## 5. RP baselines for the mid evaluation (6 GPU jobs, 3-5 h each)
+## 5. RP baselines (6 GPU jobs, 5-7 h each)
 
 ```bash
 bash slurm/rp_baselines.sh
@@ -112,9 +120,10 @@ bash slurm/rp_baselines.sh
 PRiSM's representation probe (RP-Attn: learned-query attention over L2-normalised frames, then an MLP) on the
 last layer: 3 models x 2 split protocols x 5 seeds. Each run writes
 `results/runs/rp_<model>_rebuild_L<l>_attn_<protocol>_s<seed>/` with `metrics.json`, `history.csv`,
-`predictions.parquet`. This is the RP number the mid-evaluation slides compare with the transcript probe.
+`predictions.parquet`. This is the RP number compared with the transcript probe. Each job first extracts the last
+layer's frames into scratch (1-2 h), then trains its 5 seeds.
 
-## 6. Light jobs (any time after step 2; 3 jobs, then 26 that wait for them)
+## 6. Light jobs (replaced by step 13; only the transcription check is still useful)
 
 ```bash
 bash slurm/light_jobs.sh
@@ -145,8 +154,7 @@ bash slurm/rp_sweep.sh whisper
 The core experiment for RQ1: does the RP improve when it can see order, at the same parameter count, with the
 layer choice held fixed? Per model the script
 1. reads the top 3 layers by validation km (speaker-disjoint split) from the step-4 CSV,
-2. submits one extract job that caches those layers' frames (skipped if cached),
-3. submits 19 probe jobs that wait for the cache: probes `attn` (PRiSM), `attn_pe` (with positions), `gru`,
+2. submits 19 probe jobs, each of which extracts its layers' frames into scratch first: probes `attn` (PRiSM), `attn_pe` (with positions), `gru`,
    `transformer` (order-aware, sized within ±10% of RP-Attn's parameters), `chunkshuffle` (frames permuted in
    200 ms chunks: local order only) x layers {last, learned weighted sum of the top 3} x 2 splits, 5 seeds per
    job. Last-layer `attn` is skipped because step 5 already ran it. 3-layer jobs request 100 GB RAM
@@ -210,10 +218,10 @@ placed in Afghanistan. We run PRiSM's probes on the release as published and on 
 envs/prism/bin/hf download changelinglab/vaani-hi-geo --repo-type dataset \
   --revision 264fb053bd1e8f060cd09b9677950d5be96fe77a --local-dir data/vaani_hi_official
 python scripts/official_merge.py                     # -> data/vaani_hi_official/vaani_hi_official.parquet
-# 2. features (3 GPU jobs, ~1 h each; the release is ~33 h of audio)
-for M in w2v2 whisper zipa; do bash slurm/submit.sh slurm/extract_official.sbatch $M; done
-# 3. RP-Attn, last layer, 5 seeds: the release as published, and the corrected version (deduplicated, consistent
-#    labels, fixed coordinates) under the released split and a pseudo-speaker-disjoint split (9 GPU jobs)
+rm -rf data/vaani_hi_official/data                    # the raw download, once the merged parquet exists
+# 2. RP-Attn, last layer, 5 seeds: the release as published, and the corrected version (deduplicated, consistent
+#    labels, fixed coordinates) under the released split and a pseudo-speaker-disjoint split (6 GPU jobs; each
+#    extracts the release's frames into scratch first)
 git pull                                              # brings results/official/{meta,splits}_{released,clean}.parquet
 bash slurm/rp_official.sh
 ```
@@ -224,30 +232,60 @@ The split tables are in the repo. Results land in `results/runs/rp_<model>_offic
 
 The benchmark (`docs/benchmark.md`, tables in `results/benchmark/`) tests every speaker exactly once: 5 folds over
 speaker groups (look-alike speaker codes merged), a track with all utterances and one with shared pictures only,
-and corrected pincode coordinates. The transcript probes run on the Mac and the PC; this step runs PRiSM's
+and corrected pincode coordinates. The transcript probes run in step 13; this step runs PRiSM's
 representation probe on the same folds so the two are compared on identical test speakers.
 
 ```bash
 git pull                                              # brings results/benchmark/{meta,splits}.parquet
-bash slurm/rp_benchmark.sh                            # 3 models x {all, shared} x 5 folds, seeds 42-44
+bash slurm/rp_benchmark.sh                            # 3 models x {all, shared} x 5 folds, seeds 42-44; 12 jobs
 ```
 
-Uses the step-3 features. Results land in `results/runs/rp_<model>_rebuild_L-1_attn_<track>_f<fold>_bench_s<seed>/`;
+Each job extracts the last layer's frames into scratch once and runs two or three folds. Results land in `results/runs/rp_<model>_rebuild_L-1_attn_<track>_f<fold>_bench_s<seed>/`;
 `scripts/benchmark_eval.py` (Mac) pools the folds.
+
+## 13. Transcript, prosody and benchmark runs (moved from the Mac and the PC)
+
+Everything that used to wait for the Mac and the PC, so that all final probes run in one place. Needs step 2 (the
+dataset, for coordinates) and four files from Mohit's bundle, copied into the repo:
+`outputs/transcripts/{w2v2,zipa}_rebuild.parquet` (you have these), `outputs/transcripts/{w2v2,zipa}_official.parquet`,
+`outputs/features/ecapa_rebuild/` and `outputs/features/prosody_rebuild/` (you have this one).
+
+```bash
+git pull
+bash slurm/november.sh
+```
+
+Submits 50 jobs:
+- **Benchmark, CPU** (10 jobs, `slurm/bench_light.sbatch`): per track and fold, the 8 bag probes, the ECAPA voice
+  embedding and pooled prosody statistics, seeds 42-44, run in parallel on 16 CPUs (`BENCH_CPUS=...` to change).
+- **Benchmark, GPU** (8 jobs, `slurm/bench_gru.sbatch`): PRiSM's character BiGRU, the phone BiGRU and the shuffled
+  phone BiGRU for W2V2 and ZIPA, seeds 42-44.
+- **Seeds** (24 jobs, `slurm/tp.sbatch`): the rebuild's BiGRUs up to 5 seeds under both splits, and the same probes
+  on shared pictures only (the topic check, which so far exists only for the bag probes).
+- **Prosody** (2 jobs): the prosody BiGRU up to 5 seeds under both splits.
+- **PRiSM's release** (2 jobs, `slurm/tp_official.sbatch`): the three BiGRUs for W2V2 and ZIPA on the release as
+  published and corrected, up to 5 seeds (ZIPA's BiGRUs on the release have never been run).
+- **Description length** (4 jobs, `slurm/mdl.sbatch`): the ZIPA phone BiGRU and shuffled BiGRU, both splits.
+
+Every job skips runs that already have results (the repo has 1,177 run files), so only what is missing runs.
+Results land in `results/runs/` and `results/mdl/`; push them (step 9). Mohit pools them on the Mac
+(`scripts/benchmark_eval.py`, `scripts/summarise.py`, `scripts/official_eval.py`, `scripts/fuse.py`).
 
 ## Troubleshooting
 
 - `CUDA error: no kernel image is available`: the GPU is too old for the torch build; report the GPU model.
 - `Access denied` / 401 / 403 from Hugging Face: the Vaani terms were not accepted for the logged-in account,
   or `hf auth login` was not run in this environment.
-- Out of GPU memory in an RP job (11 GB cards, long utterances): add `--batch-size 24` to the `python` line in
-  `slurm/rp.sbatch` (or `slurm/rp_check.sbatch`) and resubmit that job. Mention it when you push, because it
-  changes a setting.
-- Out of RAM (`oom-kill` in the log): resubmit with more memory, e.g. `MEM=120G bash slurm/submit.sh ...`,
-  or remove `--in-memory` from the `python` line (slower, reads frames from disk).
+- Out of GPU memory in an RP job (11 GB cards, long utterances): resubmit that job with
+  `RP_ARGS="--batch-size 24" bash slurm/submit.sh ...` (all RP jobs read `RP_ARGS`). Mention it when you push,
+  because it changes a setting.
+- Out of RAM (`oom-kill` in the log): resubmit with more memory, e.g. `MEM=120G bash slurm/submit.sh ...`.
+- `no writable scratch` or `only N GB free`: the node's scratch is full or missing; resubmit (another node), or set
+  `SCRATCH_ROOTS="/scratch"` to skip `/ssd_scratch`.
 - A job hit the time limit: resubmit it with fewer seeds (`"45 46"` instead of `"42 43 44 45 46"`); finished
   seeds are already saved in `results/runs/`.
-- Re-running is safe: a finished run is just overwritten with the same configuration.
+- Re-running is safe: transcript, prosody, MDL and benchmark jobs skip finished runs; an RP job that is resubmitted
+  reruns its seeds with the same configuration.
 
 ## If you want to do more
 
