@@ -16,7 +16,8 @@ effect survives it:
      third: if geminates still measure much longer than single stops in clean audio, the method sees length there.
 A lengthening that comes from the measurement would shrink with the covariates and change across the SNR bands.
 
-Output: results/gemination/channel_check.txt, results/gemination/channel_by_region.csv
+Output: results/gemination/channel_check.txt, channel_by_region.csv, channel_bands.csv (one row per SNR band or
+        model: Haryana effect with CI and tokens per region; geminate/single ratios per region for the thirds)
         (cache: data/vaani_districts/channel.parquet)
 Run:    uv run python scripts/gemination_channel.py
 """
@@ -60,9 +61,17 @@ def channel_table() -> pd.DataFrame:
     return t
 
 
-def fit(formula, data, term="haryana"):
+BANDS = []          # rows of channel_bands.csv
+
+
+def fit(formula, data, term="haryana", band=None):
     f = smf.mixedlm(formula, data, groups=data["speaker"]).fit(method="lbfgs")
     b, (lo, hi), p = f.params[term], f.conf_int().loc[term], f.pvalues[term]
+    if band is not None:
+        n = data["region"].value_counts()
+        BANDS.append({**band, "effect": np.exp(b), "lo": np.exp(lo), "hi": np.exp(hi), "p": p, "tokens": len(data),
+                      "tokens_haryana": int(n.get("Haryana", 0)), "tokens_delhi": int(n.get("Delhi", 0)),
+                      "speakers": data["speaker"].nunique(), "snr_min": data["snr_db"].min(), "snr_max": data["snr_db"].max()})
     return f"x{np.exp(b):.3f} (95% CI x{np.exp(lo):.3f} to x{np.exp(hi):.3f}), p = {p:.3g}; tokens {len(data)}, " \
            f"speakers {data['speaker'].nunique()}"
 
@@ -95,18 +104,20 @@ def main():
     lines.append(f"  utterances: Haryana {int((utt.region == 'Haryana').sum())}, Delhi {int((utt.region == 'Delhi').sum())}")
     base = "log_voi ~ haryana + log_vowel + C(word)"
     lines.append("\nHaryana effect on the voiceless interval")
-    lines.append("  primary model (must reproduce mixed_model.txt): " + fit(base, ok))
-    lines.append("  + SNR and noise floor: " + fit(base + " + snr_db_z + noise_floor_db_z", ok))
+    lines.append("  primary model (must reproduce mixed_model.txt): " + fit(base, ok, band={"kind": "model", "band": "primary"}))
+    lines.append("  + SNR and noise floor: " + fit(base + " + snr_db_z + noise_floor_db_z", ok,
+                                                   band={"kind": "model", "band": "snr covariates"}))
     ok["snr_third"] = pd.qcut(ok["snr_db"], 3, labels=["low", "middle", "high"])
     for t in ("low", "middle", "high"):
         s = ok[ok["snr_third"] == t]
-        lines.append(f"  SNR {t} third ({s['snr_db'].min():.0f} to {s['snr_db'].max():.0f} dB): " + fit(base, s))
+        lines.append(f"  SNR {t} third ({s['snr_db'].min():.0f} to {s['snr_db'].max():.0f} dB): "
+                     + fit(base, s, band={"kind": "third", "band": t}))
     ok["snr_fifth"] = pd.qcut(ok["snr_db"], 5, labels=False)
     for q in range(5):
         s = ok[ok["snr_fifth"] == q]
         n = s["region"].value_counts()
         lines.append(f"  SNR fifth {q + 1} ({s['snr_db'].min():.0f} to {s['snr_db'].max():.0f} dB; tokens Haryana "
-                     f"{n.get('Haryana', 0)}, Delhi {n.get('Delhi', 0)}): " + fit(base, s))
+                     f"{n.get('Haryana', 0)}, Delhi {n.get('Delhi', 0)}): " + fit(base, s, band={"kind": "fifth", "band": q + 1}))
     f = smf.mixedlm(base + " + snr_db_z + haryana:snr_db_z", ok, groups=ok["speaker"]).fit(method="lbfgs")
     lines.append(f"  interaction model: Haryana x{np.exp(f.params['haryana']):.3f} at the mean SNR; Haryana x SNR "
                  f"{f.params['haryana:snr_db_z']:+.3f} per SD (p = {f.pvalues['haryana:snr_db_z']:.3g}); SNR "
@@ -114,8 +125,8 @@ def main():
 
     lines.append("\nvoiceless interval against SNR within each region (log scale, per SD of SNR)")
     for r in ("Haryana", "Delhi"):
-        lines.append(f"  {r}: " + fit("log_voi ~ snr_db_z + log_vowel + C(word)", ok[ok["region"] == r], term="snr_db_z")
-                     .replace("x", "slope x", 1))
+        lines.append(f"  {r}: " + fit("log_voi ~ snr_db_z + log_vowel + C(word)", ok[ok["region"] == r], term="snr_db_z",
+                                      band={"kind": "slope", "band": r}).replace("x", "slope x", 1))
 
     gm = pd.read_parquet(DATA / "vaani_districts" / "closures_geminate.parquet")
     gm = gm[gm["reject"] == ""].merge(ch, on="audio_path", how="inner")
@@ -130,11 +141,15 @@ def main():
     for t in ("low", "middle", "high"):
         s = both[both["snr_third"] == t]
         g = smf.mixedlm("log_voi ~ lexical_geminate * haryana", s, groups=s["speaker"]).fit(method="lbfgs")
+        BANDS.append({"kind": "geminate", "band": t, "effect": np.exp(g.params["lexical_geminate"]),
+                      "effect_haryana": np.exp(g.params["lexical_geminate"] + g.params["lexical_geminate:haryana"]),
+                      "tokens": int(s["lexical_geminate"].sum())})
         lines.append(f"  SNR {t}: geminate x{np.exp(g.params['lexical_geminate']):.2f} of single in Delhi, "
                      f"x{np.exp(g.params['lexical_geminate'] + g.params['lexical_geminate:haryana']):.2f} in Haryana; "
                      f"geminate tokens {int(s['lexical_geminate'].sum())}")
     text = "\n".join(lines)
     (OUT / "channel_check.txt").write_text(text + "\n")
+    pd.DataFrame(BANDS).to_csv(OUT / "channel_bands.csv", index=False)
     print(text)
 
 

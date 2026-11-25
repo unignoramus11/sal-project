@@ -1,0 +1,25 @@
+\begin{tabular}{lrrrrrrr}
+\toprule
+ & \multicolumn{5}{c}{Group Recall@1} & \multicolumn{2}{c}{Group km} \\
+\cmidrule(lr){2-6}\cmidrule(lr){7-8}
+Probe & probe & shuffled & $p$ & channel-matched & $p$ & probe & shuffled \\
+\midrule
+\multicolumn{8}{l}{\textit{Shared pictures (trained and tested on them)}} \\
+\quad Recording channel & 11.4 & 8.0 & <0.001 & -- & -- & 489 & 561 \\
+\quad ECAPA voice & 11.8 & 8.3 & <0.001 & 9.6 & 0.010 & 483 & 545 \\
+\quad Prosody statistics & 11.7 & 8.9 & 0.003 & 10.3 & 0.051 & 485 & 530 \\
+\quad W2V2 phone unigram & 11.1 & 9.1 & 0.008 & 9.8 & 0.058 & 484 & 531 \\
+\quad W2V2 phone bigram & 12.5 & 8.3 & <0.001 & 9.4 & <0.001 & 478 & 552 \\
+\quad ZIPA phone unigram & 12.8 & 9.0 & <0.001 & 9.8 & <0.001 & 478 & 525 \\
+\quad ZIPA phone bigram & 13.5 & 8.0 & <0.001 & 9.3 & <0.001 & 468 & 553 \\
+\midrule
+\multicolumn{8}{l}{\textit{Transfer (trained on all pictures, tested on shared pictures)}} \\
+\quad Recording channel & 6.9 & 5.6 & 0.062 & -- & -- & 567 & 613 \\
+\quad ECAPA voice & 9.0 & 6.1 & <0.001 & 6.5 & 0.001 & 545 & 592 \\
+\quad Prosody statistics & 6.0 & 6.1 & 0.577 & 6.4 & 0.758 & 558 & 583 \\
+\quad W2V2 phone unigram & 9.4 & 6.6 & 0.003 & 7.5 & 0.018 & 524 & 584 \\
+\quad W2V2 phone bigram & 9.5 & 6.6 & 0.001 & 7.4 & 0.013 & 514 & 589 \\
+\quad ZIPA phone unigram & 9.4 & 6.4 & 0.002 & 7.3 & 0.009 & 523 & 587 \\
+\quad ZIPA phone bigram & 10.9 & 6.7 & <0.001 & 7.5 & <0.001 & 483 & 588 \\
+\bottomrule
+\end{tabular}

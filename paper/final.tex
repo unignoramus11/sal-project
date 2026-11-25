@@ -102,7 +102,9 @@ are assigned to five folds within each pincode. Each fold is tested by a model t
 out-of-fold predictions scores each of the 22,548 utterances once, by a model that never saw its speaker group. Every pincode sits at the densest cluster of its post offices. A second track keeps only the shared
 pictures (7,157 utterances from 650 speaker groups in 24 pincodes), where the picture says nothing about the
 location. The folds differ in size (3,801 to 6,022 test utterances) because a few speaker groups
-are large; pooling still tests each utterance exactly once.
+are large; pooling still tests each utterance exactly once. Merging is not perfect. In each fold, 1.1 to 7.4\% of
+test utterances still have a speaker code in training whose voice is that close, against 35.3\% on the
+speaker-disjoint split by the same measure.
 
 \paragraph{Audio for duration.} Vaani-Hi has only 12 Haryana speakers. For RQ2 we use separate Vaani audio from
 three Haryana districts (Rohtak, Jhajjar, Charkhi Dadri) and New Delhi, 23,963 utterances in all.
@@ -135,7 +137,10 @@ and removes their order, so the BiGRU against the shuffled BiGRU measures what o
 over ECAPA-TDNN embeddings \citep{desplanques2020ecapa}, which are trained to tell speakers apart and so capture the
 voice and the recording channel. A prosody probe is a BiGRU over F0, voicing and intensity contours from Praat
 \citep{jadoul2018parselmouth,boersma2024praat}, also fused with the transcript BiGRU by averaging their predictions
-with a weight chosen on validation data.
+with a weight chosen on validation data. A channel probe is the same MLP over features of the recording alone. They
+are the mean spectrum of the quietest tenth of each utterance's frames (background noise and the codec's band limit),
+the noise floor, the speech level, their difference and the share of clipped samples. It measures how much
+location the recording conditions carry.
 
 \paragraph{Representation probes.} A representation probe reads the frames of one recognizer layer, or a learned
 weighted sum of three layers. PRiSM's probe pools the frames with learned attention and feeds the result to an
@@ -155,8 +160,13 @@ distinct test locations, the one nearest to the prediction is the true one. We a
 Probes on the rebuild's two splits have five seeds, and probes on each benchmark fold three; predictions are
 averaged over seeds. Comparisons are paired on the same test utterances, with 95\% confidence intervals from a
 bootstrap over speakers (over speaker groups on the benchmark), because utterances of one speaker are not
-independent. A probe's lift is its Recall@1 minus the majority baseline's on the same utterances. We also measure
-how many bits a probe saves when coding the pincode (minimum description length, \citealp{voita2020mdl}).
+independent. A probe's lift is its Recall@1 minus the majority baseline's on the same utterances. Where one location is
+common, a probe can carry location and still lose to the majority. On the benchmark we also compare each probe
+with its own predictions shuffled among speaker groups. Each group's predictions are averaged into one, every group
+counts once, and the shuffle stays within a fold. This keeps the probe's distribution of guesses and removes any
+link to the input (2,000 shuffles). A second version shuffles only among groups that the channel probe places at
+the same pincode; a probe that beats it carries location that the recording conditions do not explain. We also
+measure how many bits a probe saves when coding the pincode (minimum description length, \citealp{voita2020mdl}).
 
 \paragraph{Duration.} Forced alignment of the standard spelling \citep{pratap2024mms} locates single voiceless
 stops between vowels. Praat's voicing and burst landmarks give each stop's voiceless interval and closure. A
@@ -208,6 +218,16 @@ split came from look-alike speakers. With all pictures, the picture-ID lookup is
 the majority, more than any trained probe; the best transcript probe so far, ZIPA phone bigrams, is 6.0 [3.8, 8.1] points
 above it. On shared pictures every lookup and every probe run so far is at or below the majority, and no
 transcript probe saves distance against the best constant location (every interval includes zero).
+
+Losing to the majority does not mean the probes learned nothing (Table~\ref{tab:checks}). On shared pictures one
+location covers a fifth of the utterances, and a probe that spreads its guesses loses to always naming it. Against
+its own shuffled predictions, every probe run so far does better; its output depends on the input. ZIPA phone
+bigrams reach 13.5 group Recall@1 against 8.0 shuffled. The recording channel alone also beats its shuffle (11.4
+against 8.0). Places differ in how they were recorded. When the shuffle stays among groups that the channel probe
+places at the same pincode, ZIPA phone bigrams still reach 13.5 against 9.3 ($p < 0.001$). Some location
+information without the topic therefore remains, and most of it is not the recording channel, but it is too weak to
+beat the most common location. Models trained on all pictures and tested on shared ones do worse than the majority,
+by 2.9 to 16.7 points, because they learned to rely on the picture.
 \pending{BiGRUs and representation probes on the benchmark}
 
 \begin{figure}[t]
@@ -282,13 +302,18 @@ speakers were seen in training.}
 \end{figure}
 
 \subsection{RQ2: consonant duration}
-\pending{RQ2 must be rewritten: the Haryana effect depends on recording quality (results/gemination/channel\_check.txt). It is $\times$1.29 in the noisiest third of utterances and $\times$1.00 in the cleanest, where lexical geminates still measure $\times$1.65 the length of single stops. The lengthening below is not robust to the channel.}
-We measured 26,033 single voiceless stops between vowels, from 3,003 speakers. In Haryana their voiceless
-interval is $\times$1.14 [1.11, 1.18] as long as in New Delhi, and their closure $\times$1.26 [1.21, 1.31]
-(Table~\ref{tab:gem}). The effect appears in each Haryana district on its own ($\times$1.13 to $\times$1.15),
-in 45 of 57 words, and in speaker means without any model ($\times$1.14). Lexical geminates are $\times$1.59
-[1.51, 1.67] as long as single stops, so the measure tracks length, and Haryana's single stops move about a quarter of
-the way to geminate length.
+We measured 26,033 single voiceless stops between vowels, from 3,003 speakers. Pooled over all recordings, their
+voiceless interval in Haryana is $\times$1.14 [1.11, 1.18] as long as in New Delhi (Table~\ref{tab:gem}). The effect
+does not survive a check of recording quality. Haryana's recordings are noisier (median SNR 26.8\,dB against
+31.8\,dB). Split into fifths by SNR (Table~\ref{tab:gemsnr}), the Haryana effect falls from $\times$1.23 [1.13, 1.35]
+in the noisiest fifth to $\times$0.99 [0.94, 1.04] in the cleanest. The measure does track length in clean audio.
+There, lexical geminates (e.g., \textit{acch\=a}) are $\times$1.65 as long as single stops in both regions, against
+$\times$1.44 in New Delhi's noisiest third. Noise compresses the length contrast. Within New Delhi alone, cleaner
+recordings give longer voiceless intervals ($\times$1.07 per standard deviation of SNR); noise shortens the measured
+New Delhi stops more than the Haryana ones, and that alone can produce the pooled effect. A linear SNR covariate
+leaves the pooled effect at $\times$1.14, because the dependence is not linear. Speakers recorded in noisy places may
+also differ from those in quiet ones, but where the measure works best it finds no difference. We find no
+lengthening of voiceless stops in Haryana that holds in clean recordings.
 
 W2V2 writes a doubled consonant for only 1.0\% of the Haryana stops and
 ZIPA for 1.9\%. W2V2's doubled stops are the longer ones (AUC 0.73 for predicting doubling from the voiceless
@@ -296,7 +321,16 @@ interval); ZIPA's are not (0.46). Across all consonants, W2V2 doubles fewer in H
 (1.00\% against 1.17\%, $p = 0.012$), and ZIPA shows no difference (1.63\% against 1.82\%, $p = 0.30$). A heuristic
 syllabification of the recognizer strings, a syllable-level view of doubling, gives Haryana a share of closed
 syllables inside the range of the other states (17.1\% against 16.4--20.0\% for W2V2, 20.0\% against
-18.2--22.4\% for ZIPA). \pending{Nidhi: whether the hidden states encode the lengthening (geminate probe by layer), if run}
+18.2--22.4\% for ZIPA).
+
+\begin{table}[t]
+\centering\footnotesize
+\input{tables/tab_gem_snr.tex}
+\caption{The Haryana effect on the voiceless interval within fifths of the utterance's SNR (tokens per region, and
+the multiplicative effect from the primary mixed model with a 95\% confidence interval), and the length of lexical
+geminates relative to single stops within thirds of SNR.}
+\label{tab:gemsnr}
+\end{table}
 
 \begin{table*}[t]
 \centering\small
@@ -313,25 +347,32 @@ the contours, with one seed so far, scores 11.3 on new speakers against a majori
 $-$8.1]) and leaves Recall@1 unchanged within its interval ($-$1.2 [$-$3.4, 0.8]). Without look-alike speakers the
 prosody BiGRU's distance gain shrinks from 132 to 48\,km [$-$14, 123], and the fusion gain stays at $-$12.9\,km
 [$-$20.0, $-$5.1]. On the benchmark the pooled statistics are 6.5 [4.0, 9.3] points below the majority.
-\pending{Nidhi: prosody BiGRU and fusion with five seeds}
+\pending{prosody BiGRU and fusion with five seeds (PC queue)}
 
 \section{Discussion}
 \label{sec:discussion}
-\pending{rewrite from the final results; the mid-evaluation discussion follows as a starting point}
-On PRiSM's own data a voice embedding beats the transcript probe that PRiSM reports, and once speakers are new,
-every probe falls close to the majority. PRiSM's comparison of the two probes rests on a split that rewards
-recognising speakers. The gain from phone order that PRiSM points to appears only when test speakers were seen in
-training. A probe that memorises each speaker's phone sequences would produce this pattern.
+PRiSM's geolocation task mostly rewards recognising speakers and topics. On PRiSM's own data a voice embedding beats
+PRiSM's transcript probe, and once speakers are new, every probe falls close to the majority. The gain from phone
+order that PRiSM points to appears only when test speakers were seen in training, the pattern a probe would show if
+it memorised each speaker's phone sequences. \pending{order on the benchmark, transcript and representation probes}
 
-Haryana speakers lengthen voiceless stops, the recognizers rarely write the lengthening, and so a transcript probe
-cannot use it.
+With speakers and the picture removed, transcripts still carry some location. It is weak. It loses to always naming
+the most common location, but it beats the probes' own shuffled predictions, and most of it is not explained by the
+recording channel. The recording channel carries location of its own. That matters for any probe that hears audio,
+the representation probes included. \pending{representation probes against the shuffled and channel-matched nulls}
+
+The one dialect feature we measured in the audio, longer voiceless stops in Haryana, does not hold in clean
+recordings, and the recognizers rarely write doubled stops. We find no evidence that the phone strings encode
+consonant length differences between these dialects.
 
 \section*{Limitations}
 Vaani-Hi has only 12 Haryana speakers, and New Delhi stands for standard Hindi only approximately. On PRiSM's
 release the speakers are estimated from voice embeddings, not known. Speaker groups on the benchmark are also
 estimated from voices. Two people with similar voices can be merged, and one person recorded on two devices can
-stay apart. The acoustic landmarks are automatic and were not checked by hand; the geminate check above is our only
-evidence that the measure tracks length. Recognizer output is not a phonetic gold standard.
+stay apart. The acoustic landmarks are automatic and were not checked by hand, and they are less reliable in noisy audio,
+where they compress the contrast between geminates and single stops. The channel probe sees the recording
+conditions only through its features, and the channel-matched test cannot rule out channel effects it misses.
+Recognizer output is not a phonetic gold standard.
 \pending{representation-probe coverage (recognizers, layers, seeds)}
 
 \section*{Ethics}
@@ -384,5 +425,14 @@ A look-alike code is another code of the same district whose voice matches as cl
 speaker's recordings. ``Labels real'' is no when every speaker is given another speaker's location. The benchmark
 pools its five folds, so every utterance is tested once.}
 \label{tab:cues}
+\end{table*}
+
+\begin{table*}[t]
+\centering\footnotesize
+\input{tables/tab_checks.tex}
+\caption{Benchmark probes against their own predictions shuffled among speaker groups of the same fold, and
+against the shuffle restricted to groups that the channel probe places at the same pincode. Group Recall@1 and km
+average each speaker group's pooled prediction, so every group counts once; $p$ is one-sided from 2,000 shuffles.}
+\label{tab:checks}
 \end{table*}
 \end{document}

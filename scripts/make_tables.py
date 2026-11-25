@@ -11,6 +11,8 @@
   tab_release.tex     compact results on PRiSM's release, as released and corrected
   tab_versions.tex    appendix: every data version and split, what each removes, W2V2 phone bigrams vs majority
   tab_cues.tex        appendix: what each data version and split shares between training and test
+  tab_gem_snr.tex     RQ2 by recording quality: Haryana effect per SNR fifth, geminate check per SNR third
+  tab_checks.tex      appendix: benchmark probes against shuffled and channel-matched nulls (group level)
   tab_rp.tex          representation probes on the rebuild, both splits, and their paired order comparisons
   tab_benchmark.tex   the cross-validated benchmark, both tracks: R@1, lift over the majority (95% CI), km gain
 Output: paper/tables/*.tex
@@ -442,7 +444,66 @@ def tab_rp(cfgs=None, comps=None):
     write("tab_rp.tex", "\n".join(lines) + "\n")
 
 
+def tab_gem_snr():
+    """RQ2 against recording quality (results/gemination/channel_bands.csv, scripts/gemination_channel.py)."""
+    f = RESULTS / "gemination" / "channel_bands.csv"
+    if not f.exists():
+        return
+    b = pd.read_csv(f)
+    lines = [r"\begin{tabular}{@{}lrrr@{}}", r"\toprule", r"SNR (dB) & Haryana & Delhi & Haryana effect \\", r"\midrule"]
+    for r in b[b.kind == "fifth"].itertuples():
+        lines.append(f"{r.snr_min:.0f}--{r.snr_max:.0f} & {int(r.tokens_haryana):,} & {int(r.tokens_delhi):,} & "
+                     f"$\\times${r.effect:.2f} [{r.lo:.2f}, {r.hi:.2f}] \\\\")
+    lines += [r"\midrule", r"\multicolumn{4}{l}{\textit{Lexical geminates against single stops (validity)}} \\",
+              r"SNR third & \multicolumn{2}{r}{geminate tokens} & Delhi / Haryana \\"]
+    edges = b[b.kind == "third"].set_index("band")
+    for r in b[b.kind == "geminate"].itertuples():
+        e = edges.loc[r.band]
+        lines.append(f"{r.band} ({e.snr_min:.0f}--{e.snr_max:.0f}) & \\multicolumn{{2}}{{r}}{{{int(r.tokens):,}}} & "
+                     f"$\\times${r.effect:.2f} / $\\times${r.effect_haryana:.2f} \\\\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    write("tab_gem_snr.tex", "\n".join(lines) + "\n")
+
+
+def tab_checks():
+    """Benchmark checks (results/benchmark/checks_permutation.csv, checks_conditional.csv): per probe on shared
+    pictures and on the transfer set, group-level Recall@1 and km against the probe's own shuffled predictions and
+    against the shuffle restricted to groups with the same channel-probe guess."""
+    fp, fc = RESULTS / "benchmark" / "checks_permutation.csv", RESULTS / "benchmark" / "checks_conditional.csv"
+    if not (fp.exists() and fc.exists()):
+        return
+    pm_, cd_ = pd.read_csv(fp).set_index(["set", "probe"]), pd.read_csv(fc).set_index(["set", "probe"])
+    names = {"dense_channel_rebuild": "Recording channel", "dense_ecapa_rebuild": "ECAPA voice",
+             "dense_prosody_rebuild": "Prosody statistics"}
+    for m in ("w2v2", "zipa"):
+        for k, lab in (("phone_unigram", "phone unigram"), ("phone_bigram", "phone bigram"), ("char_gru", "char BiGRU"),
+                       ("phone_gru", "phone BiGRU"), ("phone_shuffle", "shuffled BiGRU")):
+            names[f"tp_{m}_rebuild_{k}"] = f"{m.upper()} {lab}"
+
+    def pv(x):
+        return "<0.001" if x < 0.001 else f"{x:.3f}"
+    lines = [r"\begin{tabular}{lrrrrrrr}", r"\toprule",
+             r" & \multicolumn{5}{c}{Group Recall@1} & \multicolumn{2}{c}{Group km} \\",
+             r"\cmidrule(lr){2-6}\cmidrule(lr){7-8}",
+             r"Probe & probe & shuffled & $p$ & channel-matched & $p$ & probe & shuffled \\"]
+    for setname, title in (("shared", "Shared pictures (trained and tested on them)"),
+                           ("transfer", "Transfer (trained on all pictures, tested on shared pictures)")):
+        lines += [r"\midrule", f"\\multicolumn{{8}}{{l}}{{\\textit{{{title}}}}} \\\\"]
+        for probe, lab in names.items():
+            if (setname, probe) not in pm_.index:
+                continue
+            r = pm_.loc[(setname, probe)]
+            c = cd_.loc[(setname, probe)] if (setname, probe) in cd_.index else None
+            cond = ("--", "--") if c is None else (f"{c.null_group_recall1:.1f}", pv(c.p_recall1))
+            lines.append(f"\\quad {lab} & {r.group_recall1:.1f} & {r.null_group_recall1:.1f} & {pv(r.p_recall1)} & "
+                         f"{cond[0]} & {cond[1]} & {r.group_km:.0f} & {r.null_group_km:.0f} \\\\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    write("tab_checks.tex", "\n".join(lines) + "\n")
+
+
 if __name__ == "__main__":
+    tab_gem_snr()
+    tab_checks()
     tab_rp()
     tab_benchmark()
     tab_cues()

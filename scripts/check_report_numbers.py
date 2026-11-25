@@ -195,6 +195,21 @@ if FINAL:
 
     shared_rows = [p for t, p in bench.index if t == "shared" and p not in ("majority", "best constant")]
     tp_shared = [p for p in shared_rows if p.startswith("tp_")]
+    perm = pd.read_csv(R + "benchmark/checks_permutation.csv").set_index(["set", "probe"])
+    cond = pd.read_csv(R + "benchmark/checks_conditional.csv").set_index(["set", "probe"])
+    tra = pd.read_csv(R + "benchmark/checks_transfer.csv").set_index("probe")
+    lka = pd.read_csv(R + "benchmark/checks_lookalike.csv").set_index("split")
+    bands = pd.read_csv(R + "gemination/channel_bands.csv").set_index(["kind", "band"])
+    chk = open(R + "gemination/channel_check.txt").read()
+    folds_lk = lka.loc[[i for i in lka.index if i.startswith("benchmark")], "share_above_0.757"]
+    zb = "tp_zipa_rebuild_phone_bigram"
+    tr_lifts = tra.loc[tra["kind"] == "probe", "recall1_vs_shared_majority"]
+    snr_med = re.search(r"snr_db: Haryana ([\d.]+) .*?, Delhi ([\d.]+) ", chk).groups()
+
+    def band(kind, b):
+        r = bands.loc[(kind, b)]
+        return f"$\\times${r.effect:.2f} [{r.lo:.2f}, {r.hi:.2f}]"
+    gem_hi = bands.loc[("geminate", "high")]
     FINAL_DROP = {
         # the progress report's status section
         "trained 392 probe runs", "transcribed 72,899 utterances", "measured 26,033 stops",
@@ -203,6 +218,9 @@ if FINAL:
         # superseded by the benchmark (look-alike speakers merged, shared-picture track)
         "by 13.7 [8.2, 19.1] points for W2V2 and 12.5 [7.6, 17.5] for ZIPA", "at 21.3 Recall@1, 10.6 [6.2, 15.9] points",
         "49 of 223 test speakers", "$+$9.1 on their utterances and $-$4.2 [$-$12.1, 2.2]", "phone bigrams $+$11.6 [5.2, 17.6]",
+        # RQ2 pooled robustness checks, replaced by the recording-quality analysis (scripts/gemination_channel.py)
+        "closure $\\times$1.26 [1.21, 1.31]", "($\\times$1.13 to $\\times$1.15)", "in 45 of 57", "model ($\\times$1.14)",
+        "$\\times$1.59 [1.51, 1.67]",
     }
     FINAL_EXTRA = {
      "each of the 22,548 utterances": "each of the {:,} utterances".format(int(re.search(r"all: (\d+) utterances", brep)[1])),
@@ -218,6 +236,28 @@ if FINAL:
      "by 0.2 [$-$1.3, 1.7] and 0.3 [$-$1.6, 2.5] on shared pictures": "by {} and {} on shared pictures".format(
          bp("shared", "tp_w2v2_rebuild_phone_bigram", "tp_w2v2_rebuild_phone_unigram"), bp("shared", "tp_zipa_rebuild_phone_bigram", "tp_zipa_rebuild_phone_unigram")),
      "pooled statistics are 6.5 [4.0, 9.3] points below": "pooled statistics are " + below("all", "dense_prosody_rebuild") + " points below",
+     "1.1 to 7.4\\% of test utterances": f"{folds_lk.min():.1f} to {folds_lk.max():.1f}\\% of test utterances",
+     "against 35.3\\% on the speaker-disjoint split by the same measure": "against {:.1f}\\% on the speaker-disjoint split by the same measure".format(lka.loc["rebuild speaker_split", "share_above_0.757"]),
+     "bigrams reach 13.5 group Recall@1 against 8.0 shuffled": "bigrams reach {:.1f} group Recall@1 against {:.1f} shuffled".format(*perm.loc[("shared", zb), ["group_recall1", "null_group_recall1"]]),
+     "(11.4 against 8.0)": "({:.1f} against {:.1f})".format(*perm.loc[("shared", "dense_channel_rebuild"), ["group_recall1", "null_group_recall1"]]),
+     "still reach 13.5 against 9.3 ($p < 0.001$)": "still reach {:.1f} against {:.1f} ($p {}$)".format(
+         *cond.loc[("shared", zb), ["group_recall1", "null_group_recall1"]], "< 0.001" if cond.loc[("shared", zb), "p_recall1"] < 0.001 else "= ?"),
+     "by 2.9 to 16.7 points": f"by {-tr_lifts.max():.1f} to {-tr_lifts.min():.1f} points" if (tr_lifts < 0).all() else "FALSE: a transfer lift is positive",
+     "every probe run so far does better":
+         "every probe run so far does better" if (perm.loc["shared", "p_recall1"] < 0.05).all() else "FALSE: some probe does not beat its shuffle",
+     "and most of it is not the recording channel":
+         "and most of it is not the recording channel" if ((cond.loc[("shared", zb), "group_recall1"] - cond.loc[("shared", zb), "null_group_recall1"])
+                                                         / (perm.loc[("shared", zb), "group_recall1"] - perm.loc[("shared", zb), "null_group_recall1"])) > 0.5 else "FALSE: channel explains most",
+     "(median SNR 26.8\\,dB against 31.8\\,dB)": f"(median SNR {snr_med[0]}\\,dB against {snr_med[1]}\\,dB)",
+     "from $\\times$1.23 [1.13, 1.35] in the noisiest fifth to $\\times$0.99 [0.94, 1.04] in the cleanest":
+         f"from {band('fifth', '1')} in the noisiest fifth to {band('fifth', '5')} in the cleanest",
+     "are $\\times$1.65 as long as single stops in both regions":
+         f"are $\\times${gem_hi.effect:.2f} as long as single stops in both regions" if f"{gem_hi.effect:.2f}" == f"{gem_hi.effect_haryana:.2f}" else "FALSE: regions differ",
+     "$\\times$1.44 in New Delhi's noisiest third": "$\\times${:.2f} in New Delhi's noisiest third".format(bands.loc[("geminate", "low"), "effect"]),
+     "($\\times$1.07 per standard deviation of SNR)": "($\\times${:.2f} per standard deviation of SNR)".format(bands.loc[("slope", "Delhi"), "effect"]),
+     "leaves the pooled effect at $\\times$1.14": "leaves the pooled effect at $\\times${:.2f}".format(bands.loc[("model", "snr covariates"), "effect"]),
+     "where the measure works best it finds no difference":
+         "where the measure works best it finds no difference" if bands.loc[("fifth", "5"), "lo"] < 1 < bands.loc[("fifth", "5"), "hi"] else "FALSE: cleanest fifth differs",
      # claims about every row, not one number
      "every lookup and every probe run so far is at or below the majority":
          "every lookup and every probe run so far is at or below the majority" if all(bl_("shared", p)[0] <= 0.05 for p in shared_rows) else "FALSE: some shared-picture lift is above zero",
