@@ -161,7 +161,7 @@ claims = {
  "New Delhi, 23,963 utterances": "New Delhi, {:,} utterances".format(pq.ParquetFile(OUTPUTS / "transcripts" / "w2v2_districts.parquet").metadata.num_rows),
  "three of them have latitude and longitude": "{} of them have latitude and longitude".format(
      {"3": "three"}.get(re.search(r"(\d+) of \d+ offices have invalid", audit)[1], "?")),
- "trained 392 probe runs": f"trained {len(glob.glob(R+'runs/*/metrics.json'))} probe runs",
+ "trained 392 probe runs": f"trained {sum('_bench' not in f for f in glob.glob(R+'runs/*/metrics.json'))} probe runs",
  "measured 26,033 stops": "measured {:,} stops".format(int(re.search(r"tokens (\d+)", mm)[1])),
  "(17.1\\% against 16.4--20.0\\% for W2V2, 20.0\\% against 18.2--22.4\\% for ZIPA)": "({}\\% against {}--{}\\% for W2V2, {}\\% against {}--{}\\% for ZIPA)".format(*[x for m in ('w2v2','zipa') for x in (lambda d: (f"{100*d.set_index('state').loc['Haryana','closed_share']:.1f}", f"{100*d[d.state!='Haryana'].closed_share.min():.1f}", f"{100*d[d.state!='Haryana'].closed_share.max():.1f}"))(pd.read_csv(R+f'nidhi/{m}_syllables_by_state.csv'))]),
 }
