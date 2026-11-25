@@ -29,6 +29,8 @@ mkdir -p outputs/logs
 exec > >(tee -a outputs/logs/pc_november.log) 2>&1
 . tools/prism_env.sh
 export PYTHONUNBUFFERED=1 PATH=/usr/lib/wsl/lib:$PATH
+# each run checkpoints after every epoch, so a run killed by a GPU fault resumes where it stopped (sal.probes.train)
+export SAL_CKPT_DIR=${SAL_CKPT_DIR:-$PWD/outputs/ckpt}
 STALL_MIN=${STALL_MIN:-20}
 STALL_SEC=${STALL_SEC:-$(( STALL_MIN * 60 ))}   # STALL_SEC and POLL_SEC exist for testing
 POLL_SEC=${POLL_SEC:-30}

@@ -7,17 +7,25 @@ not before `min_epochs`; the best-validation checkpoint is restored for the fina
 
 A `Batcher` turns a list of example indices into (inputs, lengths, targets) tensors, so the same loop
 serves transcript and representation probes.
+
+Resuming: with `checkpoint` set, the full training state (model, optimiser, scheduler, early-stopping state,
+history, and every random generator: Python's, NumPy's, torch's CPU and CUDA ones, the loop's shuffling generator
+and any generator the batcher holds as `rng` or `gen`) is saved after each epoch, and a run that finds its
+checkpoint continues from the next epoch, as if it had not stopped. The checkpoint is deleted once the run ends.
+`checkpoint_for(name)` gives the path under $SAL_CKPT_DIR, or None when that is unset (the default: no checkpoints).
 """
 from __future__ import annotations
 
 import copy
 import json
 import math
+import os
 import random
 import time
+from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Callable, Protocol
+from typing import Protocol
 
 import numpy as np
 import pandas as pd
@@ -56,6 +64,38 @@ def seed_everything(seed: int) -> None:
         torch.cuda.manual_seed_all(seed)
 
 
+def checkpoint_for(name: str) -> Path | None:
+    """Checkpoint path for run `name` under $SAL_CKPT_DIR, or None if checkpointing is off."""
+    d = os.environ.get("SAL_CKPT_DIR")
+    return Path(d) / f"{name}.pt" if d else None
+
+
+def _resume_key(cfg: TrainConfig) -> dict:
+    """The settings a checkpoint must share to be resumed. `extra` (e.g. a per-job scratch path to the features) and
+    `device` may differ; the run name, which names the checkpoint, already fixes the probe, data and split."""
+    return {k: v for k, v in asdict(cfg).items() if k not in ("extra", "device")}
+
+
+def _batcher_rng(batcher) -> dict:
+    out = {}
+    for a in ("rng", "gen"):
+        g = getattr(batcher, a, None)
+        if isinstance(g, np.random.Generator):
+            out[a] = g.bit_generator.state
+        elif isinstance(g, torch.Generator):
+            out[a] = g.get_state()
+    return out
+
+
+def _set_batcher_rng(batcher, states: dict) -> None:
+    for a, st in states.items():
+        g = getattr(batcher, a)
+        if isinstance(g, np.random.Generator):
+            g.bit_generator.state = st
+        else:
+            g.set_state(st)
+
+
 @torch.no_grad()
 def predict(model: torch.nn.Module, batcher: Batcher, idx: np.ndarray, cfg: TrainConfig) -> np.ndarray:
     model.eval()
@@ -77,6 +117,7 @@ def train_probe(
     splits: dict[str, np.ndarray],            # name -> example indices; needs "train" and "val"
     cfg: TrainConfig,
     log: Callable[[str], None] = print,
+    checkpoint: Path | None = None,
 ) -> dict:
     seed_everything(cfg.seed)          # before construction, so initial weights depend on the seed
     device = torch.device(cfg.device)
@@ -95,7 +136,27 @@ def train_probe(
     history, bad, n_checks, step = [], 0, 0, 0
     t0 = time.time()
     stop = False
-    for epoch in range(cfg.max_epochs):
+    start = 0
+    if checkpoint is not None and checkpoint.exists():
+        ck = torch.load(checkpoint, map_location=device, weights_only=False)
+        if ck["config"] != _resume_key(cfg):
+            raise ValueError(f"{checkpoint} was written with a different configuration; delete it to start over")
+        model.load_state_dict(ck["model"])
+        opt.load_state_dict(ck["opt"])
+        sched.load_state_dict(ck["sched"])
+        gen.bit_generator.state = ck["gen"]
+        random.setstate(ck["py"])
+        np.random.set_state(ck["np"])
+        torch.set_rng_state(ck["torch"])
+        if ck["cuda"] is not None and torch.cuda.is_available():
+            torch.cuda.set_rng_state_all(ck["cuda"])
+        _set_batcher_rng(batcher, ck["batcher"])
+        best, history, bad, n_checks, step = ck["best"], ck["history"], ck["bad"], ck["n_checks"], ck["step"]
+        t0 -= ck["seconds"]
+        start = ck["epoch"] + 1
+        log(f"resumed from {checkpoint.name} after epoch {start}")
+    epoch = start - 1
+    for epoch in range(start, cfg.max_epochs):
         order = tr[gen.permutation(len(tr))]
         model.train()
         run_loss, run_n = 0.0, 0
@@ -133,6 +194,16 @@ def train_probe(
             f"val km {history[-1]['val_km']:.1f}, best {best['km']:.1f} (check {best['check']})")
         if stop:
             break
+        if checkpoint is not None:
+            checkpoint.parent.mkdir(parents=True, exist_ok=True)
+            tmp = checkpoint.with_suffix(".tmp")
+            torch.save({"config": _resume_key(cfg), "epoch": epoch, "model": model.state_dict(), "opt": opt.state_dict(),
+                        "sched": sched.state_dict(), "gen": gen.bit_generator.state, "py": random.getstate(),
+                        "np": np.random.get_state(), "torch": torch.get_rng_state(),
+                        "cuda": torch.cuda.get_rng_state_all() if torch.cuda.is_available() else None,
+                        "batcher": _batcher_rng(batcher), "best": best, "history": history, "bad": bad,
+                        "n_checks": n_checks, "step": step, "seconds": time.time() - t0}, tmp)
+            os.replace(tmp, checkpoint)          # atomic: a kill mid-write leaves the previous checkpoint intact
 
     model.load_state_dict(best["state"])
     result = {"config": asdict(cfg), "best_epoch": best["epoch"], "best_check": best["check"],
@@ -143,6 +214,8 @@ def train_probe(
         p = predict(model, batcher, idx, cfg)
         result["metrics"][name] = evaluate(p, targets[idx])
         result["predictions"][name] = (idx, p)
+    if checkpoint is not None:
+        checkpoint.unlink(missing_ok=True)
     return result
 
 
@@ -155,7 +228,7 @@ def save_run(result: dict, out_dir: Path, meta: pd.DataFrame | None = None,
     for split, (idx, p) in result["predictions"].items():
         if split not in keep_splits:
             continue
-        for i, v in zip(idx, p):
+        for i, v in zip(idx, p, strict=True):
             rows.append({"split": split, "example": int(i), "x": float(v[0]), "y": float(v[1]), "z": float(v[2])})
     pred = pd.DataFrame(rows)
     if meta is not None:

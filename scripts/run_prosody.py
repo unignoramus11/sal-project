@@ -15,7 +15,7 @@ from sal.data.prompts import restrict
 from sal.paths import DATA, OUTPUTS, RESULTS
 from sal.probes.models import ProsodyGRU
 from sal.probes.rp_data import FeatureStore, FrameBatcher
-from sal.probes.train import TrainConfig, save_run, train_probe
+from sal.probes.train import TrainConfig, checkpoint_for, save_run, train_probe
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--features", type=Path, default=OUTPUTS / "features" / "prosody_rebuild")
@@ -37,8 +37,8 @@ splits = restrict(splits, meta["metadata_idx"].to_numpy(), args.prompts)
 for seed in args.seeds:
     cfg = TrainConfig(lr=1e-3, batch_size=64, min_epochs=10, max_epochs=200, patience=args.patience, val_per_epoch=4,
                       seed=seed, device=args.device, eval_batch_size=128, extra={"features": str(args.features)})
-    res = train_probe(lambda: ProsodyGRU(), FrameBatcher(store, meta["metadata_idx"].to_numpy(), targets, seed=seed),
-                      targets, splits, cfg)
     name = f"prosody_gru_{args.protocol}{'_generic' if args.prompts == 'generic' else ''}_s{seed}"
+    res = train_probe(lambda: ProsodyGRU(), FrameBatcher(store, meta["metadata_idx"].to_numpy(), targets, seed=seed),
+                      targets, splits, cfg, checkpoint=checkpoint_for(name))
     save_run(res, RESULTS / "runs" / name, meta=meta[["metadata_idx", "speaker", "pincode", "state", "district"]])
     print(name, json.dumps(res["metrics"]["test"]), flush=True)

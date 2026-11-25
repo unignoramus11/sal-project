@@ -27,7 +27,7 @@ from sal.data.prompts import restrict
 from sal.paths import DATA, RESULTS
 from sal.probes import models as M
 from sal.probes.rp_data import FeatureStore, FrameBatcher
-from sal.probes.train import TrainConfig, save_run, train_probe
+from sal.probes.train import TrainConfig, checkpoint_for, save_run, train_probe
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--features", type=Path, required=True)
@@ -82,6 +82,6 @@ for seed in args.seeds:
     if (args.out_root / name / "metrics.json").exists() and not args.overwrite:
         print(name, "already done, skipped", flush=True)
         continue
-    res = train_probe(make, batcher, targets, splits, cfg)
+    res = train_probe(make, batcher, targets, splits, cfg, checkpoint=checkpoint_for(name))
     save_run(res, args.out_root / name, meta=meta[["metadata_idx", "speaker", "pincode", "state", "district"]])
     print(name, json.dumps(res["metrics"]["test"]), flush=True)

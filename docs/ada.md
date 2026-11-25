@@ -305,8 +305,9 @@ Results land in `results/runs/` and `results/mdl/`; push them (step 9). Mohit po
   `SCRATCH_ROOTS="/scratch"` to skip `/ssd_scratch`.
 - A job hit the time limit: resubmit it with fewer seeds (`"45 46"` instead of `"42 43 44 45 46"`); finished
   seeds are already saved in `results/runs/`.
-- Re-running is safe: transcript, prosody, MDL and benchmark jobs skip finished runs; an RP job that is resubmitted
-  reruns its seeds with the same configuration.
+- Re-running is safe: every job skips runs that already have results, and every probe run saves a checkpoint after
+  each epoch (`outputs/ckpt/`, deleted when the run ends), so a job that hit its time limit or failed continues the
+  interrupted run from its last epoch when resubmitted. Delete `outputs/ckpt/<run>.pt` to start a run over.
 
 ## If you want to do more
 

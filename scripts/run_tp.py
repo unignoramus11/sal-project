@@ -20,10 +20,10 @@ import pandas as pd
 
 from sal.data.control import control_targets
 from sal.data.prompts import restrict
-from sal.paths import DATA, OUTPUTS, RESULTS
+from sal.paths import DATA, RESULTS
 from sal.probes import models as M
 from sal.probes import tp_data as T
-from sal.probes.train import TrainConfig, save_run, train_probe
+from sal.probes.train import TrainConfig, checkpoint_for, save_run, train_probe
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--transcripts", type=Path, required=True)
@@ -56,7 +56,7 @@ if args.control:
     args.tag += "_control"
 splits = {s: np.flatnonzero(df[args.protocol].to_numpy() == s) for s in ("train", "val", "test")}
 splits = restrict(splits, df["metadata_idx"].to_numpy(), args.prompts)
-unit_seqs = [T.units(t, list(k), args.tokens) for t, k in zip(df["processed_transcript"], df["tokens"])]
+unit_seqs = [T.units(t, list(k), args.tokens) for t, k in zip(df["processed_transcript"], df["tokens"], strict=True)]
 vocab = T.build_vocab([unit_seqs[i] for i in splits["train"]])
 seqs = [T.encode(s, vocab) for s in unit_seqs]
 model_tag = Path(args.transcripts).stem
@@ -77,7 +77,7 @@ for seed in args.seeds:
         batcher = T.DenseBatcher(x, targets)
         make = lambda: M.BagMLP(x.shape[1])  # noqa: E731
     name = f"tp_{model_tag}_{args.tokens}_{args.probe}_{args.protocol}{args.tag}{'_generic' if args.prompts == 'generic' else ''}_s{seed}"
-    res = train_probe(make, batcher, targets, splits, cfg)
+    res = train_probe(make, batcher, targets, splits, cfg, checkpoint=checkpoint_for(name))
     out = RESULTS / "runs" / name
     save_run(res, out, meta=df[["metadata_idx", "speaker", "pincode", "state", "district"]])
     print(name, json.dumps(res["metrics"]["test"]))

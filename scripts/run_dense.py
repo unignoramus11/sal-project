@@ -17,7 +17,7 @@ from sal.data.prompts import restrict
 from sal.paths import DATA, RESULTS
 from sal.probes.models import VectorMLP
 from sal.probes.tp_data import DenseBatcher
-from sal.probes.train import TrainConfig, save_run, train_probe
+from sal.probes.train import TrainConfig, checkpoint_for, save_run, train_probe
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--features", type=Path, required=True)
@@ -58,8 +58,9 @@ for seed in args.seeds:
     cfg = TrainConfig(lr=1e-3, batch_size=256, min_epochs=10, max_epochs=200, patience=20, val_per_epoch=4,
                       seed=seed, device=args.device, extra={"features": str(args.features), "dim": d})
     make = lambda: VectorMLP(d)  # noqa: E731
-    res = train_probe(make, DenseBatcher(x, targets), targets, splits, cfg, log=lambda s: None)
     name = (f"dense_{args.features.name}_{args.protocol}{args.tag}{'_control' if args.control else ''}"
             f"{'_generic' if args.prompts == 'generic' else ''}_s{seed}")
+    res = train_probe(make, DenseBatcher(x, targets), targets, splits, cfg, log=lambda s: None,
+                      checkpoint=checkpoint_for(name))
     save_run(res, RESULTS / "runs" / name, meta=meta[["metadata_idx", "speaker", "pincode", "state", "district"]])
     print(name, json.dumps({k: round(v, 2) for k, v in res["metrics"]["test"].items()}), flush=True)
