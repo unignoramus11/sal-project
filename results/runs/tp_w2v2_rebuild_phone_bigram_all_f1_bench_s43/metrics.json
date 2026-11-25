@@ -1,0 +1,55 @@
+{
+  "config": {
+    "lr": 0.001,
+    "batch_size": 64,
+    "min_epochs": 10,
+    "max_epochs": 200,
+    "patience": 100,
+    "val_per_epoch": 4,
+    "warmup_steps": 200,
+    "warmup_start_factor": 0.3333333333333333,
+    "grad_clip": 1.0,
+    "weight_decay": 0.0,
+    "seed": 43,
+    "device": "cpu",
+    "eval_batch_size": 256,
+    "extra": {
+      "vocab_size": 119,
+      "tokens": "phone",
+      "probe": "bigram",
+      "protocol": "all_f1",
+      "transcripts": "outputs/transcripts/w2v2_rebuild.parquet",
+      "mean_len": 58.34610608479688,
+      "unigrams": 119,
+      "bigrams": 2457
+    }
+  },
+  "best_epoch": 18,
+  "best_check": 74,
+  "epochs_run": 44,
+  "seconds": 105.14403200149536,
+  "n_params": 1584643,
+  "metrics": {
+    "train": {
+      "recall1": 60.70520877838135,
+      "recall5": 97.81659245491028,
+      "mean_km": 71.84866563480556,
+      "median_km": 49.397837373500735,
+      "n": 15343
+    },
+    "val": {
+      "recall1": 15.908141434192657,
+      "recall5": 43.2567834854126,
+      "mean_km": 462.93745067680703,
+      "median_km": 381.4436925031554,
+      "n": 2395
+    },
+    "test": {
+      "recall1": 15.862785279750824,
+      "recall5": 44.05405521392822,
+      "mean_km": 483.5952626797529,
+      "median_km": 406.4336815387635,
+      "n": 4810
+    }
+  }
+}

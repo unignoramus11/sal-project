@@ -1,0 +1,49 @@
+{
+  "config": {
+    "lr": 0.001,
+    "batch_size": 256,
+    "min_epochs": 10,
+    "max_epochs": 200,
+    "patience": 20,
+    "val_per_epoch": 4,
+    "warmup_steps": 200,
+    "warmup_start_factor": 0.3333333333333333,
+    "grad_clip": 1.0,
+    "weight_decay": 0.0,
+    "seed": 42,
+    "device": "cpu",
+    "eval_batch_size": 256,
+    "extra": {
+      "features": "outputs/features/prosody_rebuild",
+      "dim": 12
+    }
+  },
+  "best_epoch": 4,
+  "best_check": 18,
+  "epochs_run": 10,
+  "seconds": 1.6410059928894043,
+  "n_params": 4123,
+  "metrics": {
+    "train": {
+      "recall1": 3.943166136741638,
+      "recall5": 23.834973573684692,
+      "mean_km": 584.331961929641,
+      "median_km": 598.3435448053524,
+      "n": 15343
+    },
+    "val": {
+      "recall1": 3.632567822933197,
+      "recall5": 20.75156569480896,
+      "mean_km": 608.88744531718,
+      "median_km": 620.7754252972718,
+      "n": 2395
+    },
+    "test": {
+      "recall1": 4.261954128742218,
+      "recall5": 22.182951867580414,
+      "mean_km": 597.1104581333234,
+      "median_km": 612.1757401149496,
+      "n": 4810
+    }
+  }
+}
