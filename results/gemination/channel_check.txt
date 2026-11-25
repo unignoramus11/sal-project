@@ -1,0 +1,27 @@
+channel of the utterances that contribute tokens (median [quartiles])
+  snr_db: Haryana 26.8 [22.1, 32.8], Delhi 31.8 [26.5, 38.6]
+  noise_floor_db: Haryana -41.9 [-47.8, -37.2], Delhi -46.4 [-53.4, -41.3]
+  speech_db: Haryana -14.9 [-16.3, -13.7], Delhi -14.6 [-16.1, -13.3]
+  utterances: Haryana 15197, Delhi 2974
+
+Haryana effect on the voiceless interval
+  primary model (must reproduce mixed_model.txt): x1.142 (95% CI x1.106 to x1.178), p = 1.42e-16; tokens 26033, speakers 3003
+  + SNR and noise floor: x1.137 (95% CI x1.102 to x1.173), p = 1.45e-15; tokens 26033, speakers 3003
+  SNR low third (8 to 25 dB): x1.291 (95% CI x1.210 to x1.376), p = 7.16e-15; tokens 8678, speakers 1714
+  SNR middle third (25 to 31 dB): x1.164 (95% CI x1.116 to x1.216), p = 3.72e-12; tokens 8677, speakers 1808
+  SNR high third (31 to 97 dB): x1.000 (95% CI x0.960 to x1.042), p = 0.997; tokens 8678, speakers 1525
+  SNR fifth 1 (8 to 22 dB; tokens Haryana 4883, Delhi 325): x1.233 (95% CI x1.128 to x1.347), p = 3.63e-06; tokens 5208, speakers 1235
+  SNR fifth 2 (22 to 26 dB; tokens Haryana 4608, Delhi 598): x1.223 (95% CI x1.150 to x1.301), p = 1.71e-10; tokens 5206, speakers 1407
+  SNR fifth 3 (26 to 30 dB; tokens Haryana 4396, Delhi 810): x1.183 (95% CI x1.123 to x1.246), p = 1.9e-10; tokens 5206, speakers 1430
+  SNR fifth 4 (30 to 36 dB; tokens Haryana 4214, Delhi 992): x1.050 (95% CI x1.002 to x1.101), p = 0.0407; tokens 5206, speakers 1350
+  SNR fifth 5 (36 to 97 dB; tokens Haryana 3734, Delhi 1473): x0.992 (95% CI x0.944 to x1.042), p = 0.757; tokens 5207, speakers 1058
+  interaction model: Haryana x1.173 at the mean SNR; Haryana x SNR -0.087 per SD (p = 2.37e-15); SNR +0.069 per SD in Delhi (p = 1.75e-12)
+
+voiceless interval against SNR within each region (log scale, per SD of SNR)
+  Haryana: slope x0.983 (95% CI x0.973 to x0.992), p = 0.000467; tokens 21835, speakers 2287
+  Delhi: slope x1.074 (95% CI x1.055 to x1.093), p = 6.16e-15; tokens 4198, speakers 716
+
+validity check by SNR third (lexical geminates 2971 tokens with channel features)
+  SNR low: geminate x1.44 of single in Delhi, x1.37 in Haryana; geminate tokens 1057
+  SNR middle: geminate x1.57 of single in Delhi, x1.53 in Haryana; geminate tokens 1093
+  SNR high: geminate x1.65 of single in Delhi, x1.65 in Haryana; geminate tokens 821
