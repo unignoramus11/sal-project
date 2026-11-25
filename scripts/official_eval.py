@@ -119,7 +119,7 @@ for proto in ("prism", "speaker_split"):
             parts.append(p)
         e = pd.concat(parts).groupby("metadata_idx")[["x", "y", "z"]].mean()
         cscore(f"{cfg} ({len(parts)} seeds)", e.loc[te_c["metadata_idx"]].to_numpy())
-    for a, b in [("tp_w2v2_official_phone_gru", "tp_w2v2_official_phone_shuffle")] + [
+    for a, b in [(f"tp_{m}_official_phone_gru", f"tp_{m}_official_phone_shuffle") for m in ("w2v2", "zipa")] + [
             (f"tp_{m}_official_{tok}_bigram", f"tp_{m}_official_{tok}_unigram") for m in ("w2v2", "zipa") for tok in ("phone", "char")]:
         ka, kb = (proto, f"{a}_{proto}_clean"), (proto, f"{b}_{proto}_clean")
         if ka in hits and kb in hits:
