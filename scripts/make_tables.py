@@ -252,7 +252,10 @@ def tab_release():
                      ("ZIPA phone bigram", "tp_zipa_official_phone_bigram"),
                      ("PRiSM's char.\\ BiGRU", "tp_w2v2_official_char_gru"),
                      ("Phone BiGRU", "tp_w2v2_official_phone_gru"),
-                     ("Shuffled phone BiGRU", "tp_w2v2_official_phone_shuffle")]:
+                     ("Shuffled phone BiGRU", "tp_w2v2_official_phone_shuffle"),
+                     ("ZIPA char.\\ BiGRU", "tp_zipa_official_char_gru"),
+                     ("ZIPA phone BiGRU", "tp_zipa_official_phone_gru"),
+                     ("ZIPA shuffled phone BiGRU", "tp_zipa_official_phone_shuffle")]:
         cells = []
         for cfg_ in (f"{key}_prism", f"{key}_prism_clean", f"{key}_speaker_split_clean"):
             m_, s_, n_ = seedstats(cfg_)
