@@ -18,6 +18,7 @@ Output: results/mdl/<config>_s<seed>.json and results/mdl/summary.csv (codelengt
 uniform / online codelength, gain over the prior code; mean and sd over seeds).
 Run:    uv run python scripts/mdl.py --transcripts outputs/transcripts/w2v2_rebuild.parquet --tokens phone \
             --probe bigram --protocol speaker_split --seeds 0 1 2
+        uv run python scripts/mdl.py --summary      (rebuild summary.csv from every per-seed file, e.g. after a pull)
 """
 import argparse
 import json
@@ -113,7 +114,8 @@ def fit(probe, n_in, k, batcher, y, train_idx, val_idx, seed, device, max_epochs
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--transcripts", type=Path, required=True)
+    ap.add_argument("--transcripts", type=Path)
+    ap.add_argument("--summary", action="store_true", help="only rebuild results/mdl/summary.csv from the per-seed files")
     ap.add_argument("--tokens", choices=["char", "phone"], default="phone")
     ap.add_argument("--probe", choices=["unigram", "bigram", "gru", "shuffle"], default="bigram")
     ap.add_argument("--protocol", choices=["prism", "speaker_split"], default="speaker_split")
@@ -122,6 +124,11 @@ def main():
     ap.add_argument("--max-epochs", type=int, default=60)
     ap.add_argument("--patience", type=int, default=4)
     args = ap.parse_args()
+    if args.summary:
+        summarise(RESULTS / "mdl")
+        return
+    if args.transcripts is None:
+        ap.error("--transcripts is required unless --summary is given")
 
     meta = pd.read_parquet(DATA / "vaani_hi_rebuild" / "splits.parquet").sort_values("metadata_idx")
     tr = pd.read_parquet(args.transcripts, columns=["metadata_idx", "processed_transcript", "tokens"])
@@ -178,6 +185,11 @@ def main():
         print(f"{config} s{seed}: online {online / 1000:.1f} kbits, uniform {uniform / 1000:.1f}, "
               f"compression {uniform / online:.3f}", flush=True)
 
+    summarise(out)
+
+
+def summarise(out):
+    """summary.csv: mean and sd over seeds of every config's codelengths, from the per-seed files in `out`."""
     rows = [json.loads(p.read_text()) for p in sorted(out.glob("mdl_*_s*.json"))]
     s = pd.DataFrame(rows).groupby("config").agg(seeds=("seed", "size"), online_kbits=("online_kbits", "mean"),
                                                  online_sd=("online_kbits", "std"), prior_kbits=("prior_kbits", "mean"),
