@@ -23,6 +23,7 @@ analysis:
 	uv run python scripts/prosody_checks.py
 	uv run python scripts/mdl.py --summary
 	uv run python scripts/benchmark_eval.py
+	uv run python scripts/benchmark_checks.py
 
 # the final report: regenerate every table and figure from results/, build, then check every prose number
 final:
