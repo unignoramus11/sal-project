@@ -90,20 +90,19 @@ Appendix~\ref{app:cues} measures what each shares between training and test.
 speaker's own district. The topic of an utterance can point to its location without any dialect
 feature. The remaining utterances describe shared pictures that are not tied to a district.
 
-\paragraph{Look-alike speakers and misplaced pincodes.} Speaker codes come from file names, so one person can
+\paragraph{Look-alike speakers and misplaced pincodes.} Speaker codes come from file names, and one person can
 appear under several codes. We grouped codes of one district whose voice embeddings are as close as two halves
 of one speaker's recordings. This merges 1,570 codes into 1,327 groups. In 34.8\% of the speaker-disjoint split's
 test utterances the speaker has such a look-alike code in training. PRiSM's coordinate recipe also places two of
-our pincodes far from the densest cluster of their post offices: 454552 (Dhar) by 266\,km and 834008 (Ranchi) by
+our pincodes far from the densest cluster of their post offices, 454552 (Dhar) by 266\,km and 834008 (Ranchi) by
 61\,km.
 
 \paragraph{Benchmark.} To remove these problems we built a benchmark from our rebuild. Speaker groups, not codes,
-are assigned to five folds within each pincode. Each fold is tested by a model trained on the other four, and the
-out-of-fold predictions are pooled, so each of the 22,548 utterances is scored once, by a model that never saw its
-speaker group. Every pincode sits at the densest cluster of its post offices. A second track keeps only the shared
+are assigned to five folds within each pincode. Each fold is tested by a model trained on the other four. Pooling the
+out-of-fold predictions scores each of the 22,548 utterances once, by a model that never saw its speaker group. Every pincode sits at the densest cluster of its post offices. A second track keeps only the shared
 pictures (7,157 utterances from 650 speaker groups in 24 pincodes), where the picture says nothing about the
-location. A few speaker groups are large, so the folds differ in size (3,801 to 6,022 test utterances); pooling
-still tests each utterance exactly once.
+location. The folds differ in size (3,801 to 6,022 test utterances) because a few speaker groups
+are large; pooling still tests each utterance exactly once.
 
 \paragraph{Audio for duration.} Vaani-Hi has only 12 Haryana speakers. For RQ2 we use separate Vaani audio from
 three Haryana districts (Rohtak, Jhajjar, Charkhi Dadri) and New Delhi, 23,963 utterances in all.
@@ -140,9 +139,9 @@ with a weight chosen on validation data.
 
 \paragraph{Representation probes.} A representation probe reads the frames of one recognizer layer, or a learned
 weighted sum of three layers. PRiSM's probe pools the frames with learned attention and feeds the result to an
-MLP, so it cannot use frame order. We compare it with order-aware probes of about the same size (within 10\% of its
+MLP. It cannot use frame order. We compare it with order-aware probes of about the same size (within 10\% of its
 trainable parameters): the same attention with positional encodings added, a BiGRU, and a Transformer. A fourth
-probe runs the BiGRU on frames whose 200\,ms chunks are put in random order, which keeps order inside each chunk and
+probe runs the BiGRU on frames whose 200\,ms chunks are put in random order. This keeps order inside each chunk and
 removes it across chunks. \pending{which recognizers and layers were run (W2V2 layer 24 at least)}
 
 \paragraph{References.} Four references learn nothing about dialect. The majority baseline always predicts the
@@ -204,7 +203,7 @@ For new speakers on shared pictures, the same lookup scores 10.1, below that sub
 pictures give no location.
 
 The benchmark also removes look-alike speakers (Table~\ref{tab:bench}, Figure~\ref{fig:bench}). There the ECAPA
-voice embedding falls below the majority, by 2.8 [0.4, 5.6] points, so its small gain on the speaker-disjoint
+voice embedding falls below the majority, by 2.8 [0.4, 5.6] points. Its small gain on the speaker-disjoint
 split came from look-alike speakers. With all pictures, the picture-ID lookup is 18.4 [15.1, 22.4] points above
 the majority, more than any trained probe; the best transcript probe so far, ZIPA phone bigrams, is 6.0 [3.8, 8.1] points
 above it. On shared pictures every lookup and every probe run so far is at or below the majority, and no
@@ -320,7 +319,7 @@ cannot use it.
 \section*{Limitations}
 Vaani-Hi has only 12 Haryana speakers, and New Delhi stands for standard Hindi only approximately. On PRiSM's
 release the speakers are estimated from voice embeddings, not known. Speaker groups on the benchmark are also
-estimated from voices, so two people with similar voices can be merged, and one person recorded on two devices can
+estimated from voices. Two people with similar voices can be merged, and one person recorded on two devices can
 stay apart. The acoustic landmarks are automatic and were not checked by hand; the geminate check above is our only
 evidence that the measure tracks length. Recognizer output is not a phonetic gold standard.
 \pending{representation-probe coverage (recognizers, layers, seeds)}
