@@ -12,20 +12,34 @@
 # and a run with results is skipped, so the script can be restarted at any time.
 # Needs outputs/transcripts/{w2v2,zipa}_{rebuild,official}.parquet, outputs/features/prosody_rebuild, and
 # results/{benchmark,official} plus the existing results/runs (tools/push_pc_inputs.sh copies them).
-# Start it with the fans preheated (see the pc-delegate skill; a cold start drifts into the 25 W clamp):
-#   pc preheat nov 'cd ~/developer/sal-project && bash tools/pc_november.sh 2>&1 | tee -a outputs/logs/pc_november.log'
-# DRY=1 prints the queue and exits. The GPU's draw, limit, clock and temperature are logged once a minute to
-# outputs/logs/gpu_november.csv, so a clamp during the run shows up (limit under 35 W).
+# Start it under the GPU supervisor (pc-delegate skill), which preheats the GPU, restarts the queue after a driver
+# fault, and restarts it when the queue exits with 75:
+#   pc supervise nov 'cd ~/developer/sal-project && bash tools/pc_november.sh'
+# It appends its own output to outputs/logs/pc_november.log (no pipe on the command line: a pipe would hide the exit
+# code that tells the supervisor to restart).
+# The queue itself watches for two kinds of GPU trouble and then stops taking runs, lets the running ones finish and
+# exits with 75 (the supervisor preheats and reruns it; finished runs are skipped, so it resumes):
+#   - the power clamp: before each run, a limit under 35 W (runs would go at a fraction of the speed);
+#   - a stalled run: no log output for STALL_MIN minutes (default 20), the sign of a dead CUDA context; it is killed.
+# Exit 0: every run done. Exit 1: some runs failed for other reasons (their logs are listed). DRY=1 prints the queue.
+# The GPU's draw, limit, clock and temperature are logged once a minute to outputs/logs/gpu_november.csv.
 set -uo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/.." || exit 1
+mkdir -p outputs/logs
+exec > >(tee -a outputs/logs/pc_november.log) 2>&1
 . tools/prism_env.sh
-export PYTHONUNBUFFERED=1
+export PYTHONUNBUFFERED=1 PATH=/usr/lib/wsl/lib:$PATH
+STALL_MIN=${STALL_MIN:-20}
+STALL_SEC=${STALL_SEC:-$(( STALL_MIN * 60 ))}   # STALL_SEC and POLL_SEC exist for testing
+POLL_SEC=${POLL_SEC:-30}
 B=results/benchmark
 R=results/official
 LOCKS=/tmp/sal_locks_november
-# Only one copy runs at a time (pc preheat refuses a second session), so locks left by a stopped run are stale.
+# Only one copy runs at a time (pc supervise refuses a second session), so locks left by a stopped run are stale.
 rm -rf $LOCKS
 mkdir -p $LOCKS outputs/logs
+FAULT=$LOCKS/.gpu_trouble
+FAILED=$LOCKS/.failed
 queue=$(mktemp)
 
 # job <done-file> <log name> <command...>
@@ -78,6 +92,8 @@ done; done; done
 bench 44
 grus generic "45 46"
 
+# TEST_QUEUE=<file of done-file TAB name TAB command lines> replaces the job list (for testing the queue itself)
+[ -n "${TEST_QUEUE:-}" ] && cp "$TEST_QUEUE" "$queue"
 echo "$(date '+%d %b %H:%M') $(wc -l < "$queue") runs queued, ${WORKERS:-2} at a time"
 if [ "${DRY:-0}" = 1 ]; then cut -f2 "$queue" | awk '{n++; if (n <= 3 || n % 50 == 0) print "  " n, $0}'; rm -f "$queue"; exit 0; fi
 ( while true; do
@@ -86,21 +102,52 @@ if [ "${DRY:-0}" = 1 ]; then cut -f2 "$queue" | awk '{n++; if (n <= 3 || n % 50 
     sleep 60
   done ) &
 sampler=$!
+limit() { nvidia-smi --query-gpu=enforced.power.limit --format=csv,noheader,nounits 2>/dev/null | cut -d. -f1; }
+stop_run() {   # kill one run: its bash -c and everything below it
+  local pid=$1 kids
+  kids=$(pgrep -P "$pid" || true)
+  kill -TERM $kids "$pid" 2>/dev/null; sleep 10; kill -KILL $kids "$pid" 2>/dev/null
+}
 worker() {
-  local f n cmd
+  local f n cmd pid lim stalled rc
   while IFS=$'\t' read -r f n cmd; do
+    [ -f "$FAULT" ] && break
     [ -f "$f" ] && continue
     mkdir "$LOCKS/$n" 2>/dev/null || continue
+    lim=$(limit)
+    if [ -n "$lim" ] && [ "$lim" -lt 35 ]; then
+      echo "$(date '+%d %b %H:%M') GPU clamped at $lim W: stopping for a preheat"; touch "$FAULT"; rmdir "$LOCKS/$n"; break
+    fi
     echo "$(date '+%d %b %H:%M') start $n"
-    if eval "$cmd" > "outputs/logs/$n.log" 2>&1 && [ -f "$f" ]; then
+    bash -c "$cmd" > "outputs/logs/$n.log" 2>&1 &
+    pid=$!
+    stalled=0
+    while kill -0 "$pid" 2>/dev/null; do
+      sleep "$POLL_SEC"
+      if [ $(( $(date +%s) - $(stat -c %Y "outputs/logs/$n.log") )) -gt "$STALL_SEC" ]; then
+        echo "$(date '+%d %b %H:%M') STALLED $n (no output for $STALL_MIN min): killing it, stopping for a preheat"
+        stalled=1; touch "$FAULT"; stop_run "$pid"
+      fi
+    done
+    wait "$pid"; rc=$?
+    if [ $stalled = 1 ]; then
+      rmdir "$LOCKS/$n"
+    elif [ $rc = 0 ] && [ -f "$f" ]; then
       echo "$(date '+%d %b %H:%M') done  $n"
     else
-      echo "$(date '+%d %b %H:%M') FAILED $n (outputs/logs/$n.log)"; rmdir "$LOCKS/$n"
+      echo "$(date '+%d %b %H:%M') FAILED $n (exit $rc, outputs/logs/$n.log)"; echo "$n" >> "$FAILED"; rmdir "$LOCKS/$n"
     fi
   done < "$queue"
 }
-for w in $(seq "${WORKERS:-2}"); do worker & sleep 5; done
-wait $(jobs -p | grep -v "^$sampler$")
+workers=()
+for _ in $(seq "${WORKERS:-2}"); do worker & workers+=($!); sleep 5; done
+wait "${workers[@]}"
 kill $sampler 2>/dev/null
 rm -f "$queue"
+if [ -f "$FAULT" ]; then
+  echo "$(date '+%d %b %H:%M') GPU trouble: exiting with 75 so the supervisor preheats and restarts the queue"; exit 75
+fi
+if [ -s "$FAILED" ]; then
+  echo "$(date '+%d %b %H:%M') $(wc -l < "$FAILED") runs failed:"; sed 's/^/  /' "$FAILED"; exit 1
+fi
 echo "$(date '+%d %b %H:%M') PC_NOVEMBER_DONE"

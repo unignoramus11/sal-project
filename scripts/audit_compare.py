@@ -23,7 +23,10 @@ AUDIT, KEY = ROOT / "internal" / "audit", ROOT / "internal" / "audit_key" / "key
 
 def marked(path, tier):
     """The annotator's interval: a labelled interval if any, else the middle one of exactly three."""
-    text = path.read_text(encoding="utf-8", errors="replace")
+    raw = path.read_bytes()
+    # Praat saves a TextGrid that holds non-Latin text (the Devanagari word tier) as UTF-16 unless told otherwise
+    enc = "utf-16" if raw[:2] in (b"\xff\xfe", b"\xfe\xff") else "utf-8"
+    text = raw.decode(enc, errors="replace")
     block = next((p for p in re.split(r'\n\s*item \[\d+\]:', text) if f'name = "{tier}"' in p), "")
     ivs = [(float(a), float(b), t.strip()) for a, b, t in
            re.findall(r'xmin = ([\d.]+)\s*\n\s*xmax = ([\d.]+)\s*\n\s*text = "([^"]*)"', block)]
