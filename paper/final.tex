@@ -264,6 +264,15 @@ about the place, the bigram gain is gone. Bigrams identify words, and words name
 \pending{representation probes: order-aware against PRiSM's attention, and the BiGRU against chunk-shuffled
 frames, on new speakers, on the benchmark and under PRiSM's split}
 
+\begin{table*}[t]
+\centering\footnotesize
+\input{tables/tab_rp.tex}
+\caption{Representation probes on our rebuild: test Recall@1 (mean $\pm$ sd over seeds) and mean error in km of the
+seed ensemble, then paired differences in Recall@1 on the same test utterances with 95\% confidence intervals over
+speakers. Order-aware probes are within 10\% of the attention probe's trainable parameters.}
+\label{tab:rp}
+\end{table*}
+
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{../results/figures/fig_order.pdf}

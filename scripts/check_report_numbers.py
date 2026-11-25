@@ -234,6 +234,11 @@ for printed, computed in claims.items():
         bad += 1
         print(("MISMATCH" if inflat else "NOT IN TEXT"), "|", printed, "| computed:", computed)
 pending = len(re.findall(r"\\pending\{", tex)) - tex.count("\\newcommand{\\pending}")
+for inc in re.findall(r"\\input\{(tables/[^}]+)\}", tex):   # generated tables write \pending while their runs are missing
+    f = Path(args.tex).parent / (inc if inc.endswith(".tex") else inc + ".tex")
+    if f.exists() and "\\pending{" in f.read_text():
+        pending += 1
+        print(f"pending marker in {inc}")
 if pending:
     print(f"{pending} \\pending markers left in {Path(args.tex).name}")
 print(f"{len(claims) - bad} of {len(claims)} report numbers match results/")
