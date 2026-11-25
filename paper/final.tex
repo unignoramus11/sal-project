@@ -1,0 +1,379 @@
+\documentclass[11pt]{article}
+\usepackage[final]{acl}
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\setlist{nosep, leftmargin=*}
+\newcommand{\geov}{\textsc{Geo-v}}
+% Draft marker for text that waits on results; scripts/check_report_numbers.py fails while any remains.
+\newcommand{\pending}[1]{{\color{red}[pending: #1]}}
+\makeatletter\setlength{\@dblfptop}{0pt}\setlength{\@dblfpsep}{24pt}\makeatother
+
+\title{Order, Duration, or Melody? Probing What Phone Recognizers Use\\to Geolocate Haryanvi and Hindi-Belt Speech}
+
+\author{Mohit Kumar Singh \qquad\qquad Nidhi Vaidya \\
+  Speech Analysis and Linguistics (Monsoon 2026), IIIT Hyderabad \\
+  Final report}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\pending{abstract, written last from the final results}
+\end{abstract}
+
+\section{Introduction}
+PRiSM \citep{bharadwaj2026prism} benchmarks phone recognizers. One of its tasks, \geov{}, asks a probe to place
+an utterance from the Hindi belt on the map, using the Vaani-Hi data \citep{ghosh2025vaani}. PRiSM probes each
+recognizer in two ways. A transcript probe reads the predicted phone string; a representation probe reads the
+recognizer's hidden states. The transcript probe has the lower mean error (146\,km against 253\,km), and the
+authors suggest that phone order explains the gap.
+
+The result is surprising, because only the representation probe hears the voice, the intonation and the exact
+durations. We ask four questions. Does PRiSM's evaluation let probes score by recognising speakers or the picture
+being described, in place of dialect (RQ0)? Does order carry location beyond which units occur, in the phone string
+and in the hidden states, for seen and for new speakers (RQ1)? Do Haryana speakers lengthen consonants in the
+audio, and do the recognizers write the lengthening (RQ2)? Do pitch and intensity contours add location
+information to the transcript probe (RQ3)?
+
+To answer them we rebuilt PRiSM's data with speaker labels, audited and corrected PRiSM's own release, and built a
+benchmark in which every speaker is tested once, by a model that never heard that speaker, and in which the topic
+can be removed. On it we compare transcript, voice, prosody and representation probes with lookups that know
+nothing about dialect.
+
+\section{Related work}
+\citet{foley2024where} geolocate speech from radio broadcasts and hold out whole stations, so that a model
+cannot succeed by recognising a station. PRiSM's \geov{} split instead assigns utterances to train and test at
+random within each pincode. A probe's score mixes what a representation encodes with what the probe can learn;
+control tasks \citep{hewitt2019control} and description length \citep{voita2020mdl} separate the two. Speech
+models encode phonetic detail differently in different layers \citep{pasad2021layerwise,wells2022phonetic}.
+\citet{mishra2011dialects} compared seven Hindi dialects and found that they keep the
+same basic sound inventory and differ in allophonic variation; for Haryanvi they report more open vowels and
+retroflex /r/, /n/ and /l/. Dialects can also differ in how often phones occur and in their order
+\citep{shim2024phonotactic}. PRiSM, citing \citet{devi2021haryanvi}, notes that speakers of the Bangru dialect of
+Haryanvi double consonants that are single in standard Hindi, and Hindi geminates have longer closures than single
+consonants \citep{ohala2007geminates}. Intonation also carries dialect identity
+\citep{grabe2002intonational,vicenik2013intonation}.
+
+\section{Data}
+\label{sec:data}
+Table~\ref{tab:data} compares the two versions of Vaani-Hi we use.
+
+\paragraph{Our rebuild.} Access to PRiSM's copy came late, and that copy has no speaker labels, so most of our
+analyses use a rebuild. We reran PRiSM's selection code on the public Vaani corpus at a fixed commit and
+obtained 22,551 utterances (40.3 hours) from 26 pincodes in 9 states. A second machine produced the same files
+bit for bit. Each Vaani file name contains a speaker code, and the rebuild has 1,570 speakers, with a median of 5 and at
+most 257 utterances each.
+
+\paragraph{PRiSM's release.} PRiSM's copy has 26,385 rows but only 21,481 distinct recordings. PRiSM's sampling
+script writes the first 600 clips of each of a district's four shards to the same 600 file names, so the shards
+overwrite each other's audio, but the metadata keeps one row per shard. In the release, 4,559 recordings appear in
+two to four rows, often with different labels, and 28.0\% of test rows have their exact audio in training. The
+largest class, pincode 171202 in Shimla, is placed in Afghanistan, 844\,km from its post offices, because PRiSM
+averages the coordinates of the pincode's post offices and three of them have latitude and longitude swapped.
+
+\paragraph{Splits.} PRiSM splits utterances at random within each pincode. Under this split, 97.9\% of test
+utterances in our rebuild come from a speaker who is also in training. We add a speaker-disjoint split,
+stratified by pincode, in which no test speaker appears in training. We call its test speakers new speakers.
+Appendix~\ref{app:versions} lists every version of the data and every split we used, and
+Appendix~\ref{app:cues} measures what each shares between training and test.
+
+\paragraph{Pictures.} Vaani speakers describe pictures, and 68\% of our utterances describe a picture of the
+speaker's own district. The topic of an utterance can point to its location without any dialect
+feature. The remaining utterances describe shared pictures that are not tied to a district.
+
+\paragraph{Look-alike speakers and misplaced pincodes.} Speaker codes come from file names, so one person can
+appear under several codes. We grouped codes of one district whose voice embeddings are as close as two halves
+of one speaker's recordings. This merges 1,570 codes into 1,327 groups. In 34.8\% of the speaker-disjoint split's
+test utterances the speaker has such a look-alike code in training. PRiSM's coordinate recipe also places two of
+our pincodes far from the densest cluster of their post offices: 454552 (Dhar) by 266\,km and 834008 (Ranchi) by
+61\,km.
+
+\paragraph{Benchmark.} To remove these problems we built a benchmark from our rebuild. Speaker groups, not codes,
+are assigned to five folds within each pincode. Each fold is tested by a model trained on the other four, and the
+out-of-fold predictions are pooled, so each of the 22,548 utterances is scored once, by a model that never saw its
+speaker group. Every pincode sits at the densest cluster of its post offices. A second track keeps only the shared
+pictures (7,157 utterances from 650 speaker groups in 24 pincodes), where the picture says nothing about the
+location. A few speaker groups are large, so the folds differ in size (3,801 to 6,022 test utterances); pooling
+still tests each utterance exactly once.
+
+\paragraph{Audio for duration.} Vaani-Hi has only 12 Haryana speakers. For RQ2 we use separate Vaani audio from
+three Haryana districts (Rohtak, Jhajjar, Charkhi Dadri) and New Delhi, 23,963 utterances in all.
+
+\begin{table}[t]
+\centering\footnotesize
+\input{tables/tab_data.tex}
+\caption{The two versions of Vaani-Hi. PRiSM's release has no speaker labels; its speaker overlap is estimated
+from voice embeddings calibrated on our rebuild.}
+\label{tab:data}
+\end{table}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{../results/figures/fig_lookups.pdf}
+\caption{Under both splits the best lookup scores above every trained probe, though no lookup uses any
+information about dialect. All scores fall when test speakers are new, and the voice embedding falls to the
+majority baseline. Trained probes show the mean over seeds.}
+\label{fig:lookups}
+\end{figure*}
+
+\section{Method}
+\label{sec:method}
+\paragraph{Transcript, voice and prosody probes.} Every probe predicts a point on the globe and is trained with
+PRiSM's angular loss. The transcript probes read the phone strings of two recognizers, W2V2 and ZIPA
+\citep{zhu2025zipa}, produced with PRiSM's own code. They are PRiSM's two-layer BiGRU over characters, the same
+BiGRU over phones, the same BiGRU over phones shuffled within each utterance, and small MLPs over the relative
+frequencies of phones or characters (unigrams) or of adjacent pairs (bigrams). Shuffling keeps which phones occur
+and removes their order, so the BiGRU against the shuffled BiGRU measures what order adds. A voice probe is an MLP
+over ECAPA-TDNN embeddings \citep{desplanques2020ecapa}, which are trained to tell speakers apart and so capture the
+voice and the recording channel. A prosody probe is a BiGRU over F0, voicing and intensity contours from Praat
+\citep{jadoul2018parselmouth,boersma2024praat}, also fused with the transcript BiGRU by averaging their predictions
+with a weight chosen on validation data.
+
+\paragraph{Representation probes.} A representation probe reads the frames of one recognizer layer, or a learned
+weighted sum of three layers. PRiSM's probe pools the frames with learned attention and feeds the result to an
+MLP, so it cannot use frame order. We compare it with order-aware probes of about the same size (within 10\% of its
+trainable parameters): the same attention with positional encodings added, a BiGRU, and a Transformer. A fourth
+probe runs the BiGRU on frames whose 200\,ms chunks are put in random order, which keeps order inside each chunk and
+removes it across chunks. \pending{which recognizers and layers were run (W2V2 layer 24 at least)}
+
+\paragraph{References.} Four references learn nothing about dialect. The majority baseline always predicts the
+most common training location. A speaker-ID lookup predicts the most common training location of the test
+utterance's speaker, and a picture-ID lookup does the same for the picture. A transcript matcher finds the most
+similar training transcript (character n-grams) and copies its location. On the benchmark each is computed per
+fold from that fold's training part.
+
+\paragraph{Metrics and statistics.} Recall@1, PRiSM's metric, is the share of test utterances for which, of all
+distinct test locations, the one nearest to the prediction is the true one. We also report mean error in km.
+Probes on the rebuild's two splits have five seeds, and probes on each benchmark fold three; predictions are
+averaged over seeds. Comparisons are paired on the same test utterances, with 95\% confidence intervals from a
+bootstrap over speakers (over speaker groups on the benchmark), because utterances of one speaker are not
+independent. A probe's lift is its Recall@1 minus the majority baseline's on the same utterances. We also measure
+how many bits a probe saves when coding the pincode (minimum description length, \citealp{voita2020mdl}).
+
+\paragraph{Duration.} Forced alignment of the standard spelling \citep{pratap2024mms} locates single voiceless
+stops between vowels. Praat's voicing and burst landmarks give each stop's voiceless interval and closure. A
+mixed model compares Haryana with New Delhi, with a fixed effect per word, a control for speaking rate and a
+random intercept per speaker. Lexical geminates (e.g., \textit{acch\=a}) check that the measure tracks length.
+
+\begin{table*}[t]
+\centering\small
+\input{tables/tab_main.tex}
+\caption{Test Recall@1 (mean $\pm$ sd over seeds) and mean error in km of the seed ensemble on our rebuild.
+The picture-ID lookup has no km value because it predicts a pincode, not a point.}
+\label{tab:main}
+\end{table*}
+
+\begin{table*}[t]
+\centering\footnotesize
+\input{tables/tab_benchmark.tex}
+\caption{The benchmark: every speaker group tested once, by a model that never saw it. Recall@1 of the pooled
+out-of-fold predictions, its lift over the majority location with a 95\% confidence interval over speaker groups,
+and the km saved against the best constant location. Shared pictures carry no information about the location.}
+\label{tab:bench}
+\end{table*}
+
+\section{Results}
+\label{sec:results}
+Table~\ref{tab:main} gives every probe on our rebuild under both splits, Table~\ref{tab:bench} gives the
+benchmark, and Figure~\ref{fig:lookups} shows the main comparison on the rebuild.
+
+\subsection{RQ0: speakers and topic}
+Under PRiSM's split, a lookup that knows only the speaker reaches 98.0 Recall@1, against 10.5 for the majority
+baseline. The ECAPA voice embedding reaches 41.6. When every speaker is relabelled with another speaker's
+location, a control task that keeps speaker identity and removes dialect, ECAPA still scores 33.2 against a
+control majority of 14.0. Most of its score is speaker recognition. On new speakers ECAPA scores 10.1, the
+majority level.
+
+The transcripts identify speakers too. The transcript matcher reaches 39.6 under PRiSM's split, and for 25\% of
+test utterances its nearest training transcript comes from the same speaker; by chance this would happen for
+0.3\%. On new speakers it scores 18.2.
+
+A lookup by picture ID scores 61.8 [58.9, 64.7] under PRiSM's split, above
+PRiSM's reported 45.7, and 27.5 [20.7, 36.5] on new speakers, above every transcript probe. Each
+district-specific picture is described only by speakers of that district, so naming the picture names the place.
+For new speakers on shared pictures, the same lookup scores 10.1, below that subset's majority of 21.3, so these
+pictures give no location.
+
+The benchmark also removes look-alike speakers (Table~\ref{tab:bench}, Figure~\ref{fig:bench}). There the ECAPA
+voice embedding falls below the majority, by 2.8 [0.4, 5.6] points, so its small gain on the speaker-disjoint
+split came from look-alike speakers. With all pictures, the picture-ID lookup is 18.4 [15.1, 22.4] points above
+the majority, more than any trained probe; the best transcript probe so far, ZIPA phone bigrams, is 6.0 [3.8, 8.1] points
+above it. On shared pictures every lookup and every probe run so far is at or below the majority, and no
+transcript probe saves distance against the best constant location (every interval includes zero).
+\pending{BiGRUs and representation probes on the benchmark}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../results/figures/fig_benchmark.pdf}
+\caption{Recall@1 above the majority location on the benchmark, with 95\% confidence intervals over speaker
+groups. Every test speaker is new. With shared pictures only (hollow), no probe beats the majority.}
+\label{fig:bench}
+\end{figure}
+
+\begin{table*}[t]
+\centering\small
+\begin{minipage}{0.8\textwidth}
+\input{tables/tab_release.tex}
+\caption{Test Recall@1 on PRiSM's release (mean $\pm$ sd over seeds). The first column uses the data and split as
+released, the second the corrected rows under PRiSM's split, and the third the corrected rows with new speakers,
+found by clustering voices. The corrected rows keep one row per recording, drop conflicting labels and put Shimla
+at its post offices.}
+\label{tab:release}
+\end{minipage}
+\end{table*}
+
+\subsection{PRiSM's release}
+With PRiSM's settings and our code, PRiSM's character BiGRU scores 45.5\,$\pm$\,1.1 Recall@1 on its own data and
+split, against the 45.7 it reports (Table~\ref{tab:release}). The ECAPA voice
+embedding reaches 55.1 and the transcript matcher 58.9, though neither can know dialect.
+
+We built a corrected version with one row per recording, dropping recordings whose copies carry different
+pincodes and moving Shimla to its post offices (19,731 rows). The release has no speaker labels, so we clustered
+the ECAPA embeddings into 375 pseudo-speakers. The same clustering, applied to our rebuild where speakers are
+known, leaves 2.1\% of test speakers in training. On the corrected rows the scores stay close to the released
+ones under PRiSM's split. Under the speaker-disjoint split every probe falls to between 3.4 and 9.6 Recall@1,
+around the majority of 6.8. Removing duplicate audio changes little; removing shared speakers removes almost
+everything. \pending{ZIPA BiGRUs on the release}
+
+\subsection{RQ1: order}
+Figure~\ref{fig:order} shows what phone order adds, paired on the same test utterances. On the corrected release,
+PRiSM's BiGRU over phones beats the same BiGRU on shuffled phones by 18.6 [15.5, 22.3] points when speakers are
+shared, and by $-$0.3 [$-$3.5, 2.4] on new speakers. On our rebuild the gain is smaller with shared speakers
+(3.9 for W2V2, 4.3 for ZIPA) and absent on new speakers ($-$3.5 [$-$6.5, $-$1.0] and 0.4 [$-$1.9, 2.9]).
+\pending{rebuild BiGRU comparisons with five seeds}
+
+On our rebuild, phone bigrams beat phone unigrams on new speakers by 4.8
+[2.6, 6.9] points for W2V2 and 7.8 for ZIPA, and phones beat characters by 3.5 [2.1, 5.1] for W2V2. On the
+release with new speakers the bigram gain is 1.8 [$-$0.9, 4.7], from only 59 test pseudo-speakers. Description
+length agrees with the rebuild result: ZIPA phone bigrams save 7.9\,kbits over the location prior on new speakers,
+against 21.0\,kbits under PRiSM's split.
+
+On the benchmark, phone bigrams beat phone unigrams by 2.4 [1.3, 3.5] points for W2V2 and 5.1 [3.9, 6.4] for ZIPA
+with all pictures, and by 0.2 [$-$1.3, 1.7] and 0.3 [$-$1.6, 2.5] on shared pictures. Once the picture says nothing
+about the place, the bigram gain is gone. Bigrams identify words, and words name what is being described.
+\pending{BiGRU against shuffled BiGRU on the benchmark}
+
+\pending{representation probes: order-aware against PRiSM's attention, and the BiGRU against chunk-shuffled
+frames, on new speakers, on the benchmark and under PRiSM's split}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../results/figures/fig_order.pdf}
+\caption{Recall@1 gain from phone order, with 95\% confidence intervals. The BiGRU gains from order only when test
+speakers were seen in training.}
+\label{fig:order}
+\end{figure}
+
+\subsection{RQ2: consonant duration}
+We measured 26,033 single voiceless stops between vowels, from 3,003 speakers. In Haryana their voiceless
+interval is $\times$1.14 [1.11, 1.18] as long as in New Delhi, and their closure $\times$1.26 [1.21, 1.31]
+(Table~\ref{tab:gem}). The effect appears in each Haryana district on its own ($\times$1.13 to $\times$1.15),
+in 45 of 57 words, and in speaker means without any model ($\times$1.14). Lexical geminates are $\times$1.59
+[1.51, 1.67] as long as single stops, so the measure tracks length, and Haryana's single stops move about a quarter of
+the way to geminate length.
+
+W2V2 writes a doubled consonant for only 1.0\% of the Haryana stops and
+ZIPA for 1.9\%. W2V2's doubled stops are the longer ones (AUC 0.73 for predicting doubling from the voiceless
+interval); ZIPA's are not (0.46). Across all consonants, W2V2 doubles fewer in Haryana than in other states
+(1.00\% against 1.17\%, $p = 0.012$), and ZIPA shows no difference (1.63\% against 1.82\%, $p = 0.30$). A heuristic
+syllabification of the recognizer strings, a syllable-level view of doubling, gives Haryana a share of closed
+syllables inside the range of the other states (17.1\% against 16.4--20.0\% for W2V2, 20.0\% against
+18.2--22.4\% for ZIPA). \pending{Nidhi: whether the hidden states encode the lengthening (geminate probe by layer), if run}
+
+\begin{table*}[t]
+\centering\small
+\input{tables/tab_gemination.tex}
+\caption{Haryana against New Delhi, as multiplicative effects from mixed models with 95\% confidence intervals.
+The last row is the validity check on lexical geminates.}
+\label{tab:gem}
+\end{table*}
+
+\subsection{RQ3: intonation}
+Pooled prosody statistics score below the majority under both splits (4.8 Recall@1 on new speakers). A BiGRU over
+the contours, with one seed so far, scores 11.3 on new speakers against a majority of 10.0, a difference of 1.3
+[$-$5.1, 7.8]. Fused with the ZIPA phone BiGRU, it lowers the mean error from 441 to 426\,km ($-$14.9 [$-$21.6,
+$-$8.1]) and leaves Recall@1 unchanged within its interval ($-$1.2 [$-$3.4, 0.8]). Without look-alike speakers the
+prosody BiGRU's distance gain shrinks from 132 to 48\,km [$-$14, 123], and the fusion gain stays at $-$12.9\,km
+[$-$20.0, $-$5.1]. On the benchmark the pooled statistics are 6.5 [4.0, 9.3] points below the majority.
+\pending{Nidhi: prosody BiGRU and fusion with five seeds}
+
+\section{Discussion}
+\label{sec:discussion}
+\pending{rewrite from the final results; the mid-evaluation discussion follows as a starting point}
+On PRiSM's own data a voice embedding beats the transcript probe that PRiSM reports, and once speakers are new,
+every probe falls close to the majority. PRiSM's comparison of the two probes rests on a split that rewards
+recognising speakers. The gain from phone order that PRiSM points to appears only when test speakers were seen in
+training. A probe that memorises each speaker's phone sequences would produce this pattern.
+
+Haryana speakers lengthen voiceless stops, the recognizers rarely write the lengthening, and so a transcript probe
+cannot use it.
+
+\section*{Limitations}
+Vaani-Hi has only 12 Haryana speakers, and New Delhi stands for standard Hindi only approximately. On PRiSM's
+release the speakers are estimated from voice embeddings, not known. Speaker groups on the benchmark are also
+estimated from voices, so two people with similar voices can be merged, and one person recorded on two devices can
+stay apart. The acoustic landmarks are automatic and were not checked by hand; the geminate check above is our only
+evidence that the measure tracks length. Recognizer output is not a phonetic gold standard.
+\pending{representation-probe coverage (recognizers, layers, seeds)}
+
+\section*{Ethics}
+Vaani is released under CC-BY 4.0 with speaker consent. We report only aggregate results and make no attempt to
+identify speakers.
+
+\bibliography{custom}
+
+\appendix
+\section{Data versions and splits}
+\label{app:versions}
+Table~\ref{tab:versions} lists every version of the data and every split we used. Each row removes one more way
+to score without dialect. The probe is W2V2 phone bigrams throughout, and the majority baseline is computed on the
+same test utterances and labels, so the gap between the two columns is what the probe adds. The duration study
+(RQ2) uses separate Vaani audio and is not part of this table.
+
+The probe is far above the majority only when test speakers are also in training. On new speakers the gap shrinks
+on every version of the data, and it disappears once the topic is removed (shared pictures) or the labels carry no
+dialect (control labels).
+
+\begin{table*}[t]
+\centering\footnotesize
+\input{tables/tab_versions.tex}
+\caption{Every data version and split, from PRiSM's release to the benchmark. Recall@1 on the test set;
+probe values are mean $\pm$ sd over seeds. With control labels, both columns score the reassigned locations.}
+\label{tab:versions}
+\end{table*}
+
+\section{What training and test share}
+\label{app:cues}
+Table~\ref{tab:cues} measures, for the same data versions and splits, how often a test utterance shares its
+recording, its speaker or its picture with training. The picture lookup predicts the location where
+the test picture was most often described in training; its lift is its Recall@1 minus the majority baseline's on
+the same test utterances and labels.
+
+The speaker-disjoint split separates speaker codes but not always people. In 34.8\% of its test utterances the
+speaker has a look-alike code in training. The benchmark merges these codes and removes both.
+
+Under PRiSM's split the picture lookup also scores on control labels (43.5 against a majority of 14.0), although
+those labels carry no location. Each picture is described by few speakers, so under this split the lookup partly
+recognises speakers. Only with new speakers does the lift measure the topic alone. There the picture still gives
+away the location on all pictures and gives nothing on shared pictures, in the rebuild and in the benchmark.
+
+\begin{table*}[t]
+\centering\footnotesize
+\input{tables/tab_cues.tex}
+\caption{What each data version and split shares between training and test, as a percentage of test utterances
+(the picture columns are Recall@1). On the release the speakers are estimated from calibrated voice embeddings.
+A look-alike code is another code of the same district whose voice matches as closely as two halves of one
+speaker's recordings. ``Labels real'' is no when every speaker is given another speaker's location. The benchmark
+pools its five folds, so every utterance is tested once.}
+\label{tab:cues}
+\end{table*}
+\end{document}

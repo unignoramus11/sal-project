@@ -5,12 +5,17 @@ printed precision. A phrase that is missing from the report, or that differs fro
 and the script exits with status 1. Tables and figures need no entry: scripts/make_tables.py and
 scripts/make_figures.py generate them. When the prose changes, update the matching entry here.
 
-Run:    uv run python scripts/check_report_numbers.py   (also run by `make report`)
+The final report (--tex paper/final.tex) is checked against the same claims, less those it no longer makes
+(FINAL_DROP), plus its own (FINAL_EXTRA); it also fails while any \\pending{...} draft marker is left in it.
+
+Run:    uv run python scripts/check_report_numbers.py [--tex paper/final.tex]   (also run by `make report`, `make final`)
 """
+import argparse
 import glob
 import json
 import re
 import sys
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -19,7 +24,11 @@ import pyarrow.parquet as pq
 from sal.paths import DATA, OUTPUTS, RESULTS, ROOT
 
 R = str(RESULTS) + "/"
-tex = (ROOT / "paper" / "report.tex").read_text()
+ap = argparse.ArgumentParser()
+ap.add_argument("--tex", default=str(ROOT / "paper" / "report.tex"))
+args = ap.parse_args()
+FINAL = args.tex.endswith("final.tex")
+tex = Path(args.tex).read_text()
 flat = re.sub(r"\s+", " ", tex)
 
 cfg = pd.read_csv(R + "tables/configs.csv").set_index("config")
@@ -165,6 +174,58 @@ claims = {
  "measured 26,033 stops": "measured {:,} stops".format(int(re.search(r"tokens (\d+)", mm)[1])),
  "(17.1\\% against 16.4--20.0\\% for W2V2, 20.0\\% against 18.2--22.4\\% for ZIPA)": "({}\\% against {}--{}\\% for W2V2, {}\\% against {}--{}\\% for ZIPA)".format(*[x for m in ('w2v2','zipa') for x in (lambda d: (f"{100*d.set_index('state').loc['Haryana','closed_share']:.1f}", f"{100*d[d.state!='Haryana'].closed_share.min():.1f}", f"{100*d[d.state!='Haryana'].closed_share.max():.1f}"))(pd.read_csv(R+f'nidhi/{m}_syllables_by_state.csv'))]),
 }
+if FINAL:
+    bench = pd.read_csv(R + "benchmark/scores.csv").set_index(["track", "probe"])
+    bpair = pd.read_csv(R + "benchmark/paired.csv").set_index(["track", "a", "b"])
+    brep = open(R + "benchmark/report.txt").read()
+    fold_tests = [int(x) for x in re.findall(r"all_f\d: train \d+, val \d+, test (\d+)", brep)]
+    sh = re.search(r"shared: (\d+) utterances, \d+ speaker codes, (\d+) groups, (\d+) pincodes", brep)
+
+    def bl_(track, probe):
+        r = bench.loc[(track, probe)]
+        return r.recall1_vs_majority, r.recall1_vs_majority_lo, r.recall1_vs_majority_hi
+
+    def below(track, probe):
+        e, lo, hi = bl_(track, probe)
+        return ci(-e, -hi, -lo)
+
+    def bp(track, a, b):
+        r = bpair.loc[(track, a, b)]
+        return ci(r.recall1_diff, r.recall1_lo, r.recall1_hi)
+
+    shared_rows = [p for t, p in bench.index if t == "shared" and p not in ("majority", "best constant")]
+    tp_shared = [p for p in shared_rows if p.startswith("tp_")]
+    FINAL_DROP = {
+        # the progress report's status section
+        "trained 392 probe runs", "transcribed 72,899 utterances", "measured 26,033 stops",
+        # the abstract: restore these when the final abstract is written
+        "45.5 Recall@1", "speakers apart scores 55.1", "speaker scores 98.0", "was described scores 61.8",
+        # superseded by the benchmark (look-alike speakers merged, shared-picture track)
+        "by 13.7 [8.2, 19.1] points for W2V2 and 12.5 [7.6, 17.5] for ZIPA", "at 21.3 Recall@1, 10.6 [6.2, 15.9] points",
+        "49 of 223 test speakers", "$+$9.1 on their utterances and $-$4.2 [$-$12.1, 2.2]", "phone bigrams $+$11.6 [5.2, 17.6]",
+    }
+    FINAL_EXTRA = {
+     "each of the 22,548 utterances": "each of the {:,} utterances".format(int(re.search(r"all: (\d+) utterances", brep)[1])),
+     "(7,157 utterances from 650 speaker groups in 24 pincodes)": f"({int(sh[1]):,} utterances from {sh[2]} speaker groups in {sh[3]} pincodes)",
+     "(3,801 to 6,022 test utterances)": f"({min(fold_tests):,} to {max(fold_tests):,} test utterances)",
+     "This merges 1,570 codes into 1,327 groups": "This merges {:,} codes into {:,} groups".format(*map(int, re.search(r"(\d+) codes -> (\d+) groups", brep).groups())),
+     "In 34.8\\% of the speaker-disjoint split's": "In {:.1f}\\% of the speaker-disjoint split's".format(cues.loc[("Rebuild", "speaker_split"), "same_group"]),
+     "majority, by 2.8 [0.4, 5.6] points": "majority, by " + below("all", "dense_ecapa_rebuild") + " points",
+     "the picture-ID lookup is 18.4 [15.1, 22.4] points": "the picture-ID lookup is " + ci(*bl_("all", "picture lookup")) + " points",
+     "ZIPA phone bigrams, is 6.0 [3.8, 8.1] points": "ZIPA phone bigrams, is " + ci(*bl_("all", "tp_zipa_rebuild_phone_bigram")) + " points",
+     "by 2.4 [1.3, 3.5] points for W2V2 and 5.1 [3.9, 6.4] for ZIPA": "by {} points for W2V2 and {} for ZIPA".format(
+         bp("all", "tp_w2v2_rebuild_phone_bigram", "tp_w2v2_rebuild_phone_unigram"), bp("all", "tp_zipa_rebuild_phone_bigram", "tp_zipa_rebuild_phone_unigram")),
+     "by 0.2 [$-$1.3, 1.7] and 0.3 [$-$1.6, 2.5] on shared pictures": "by {} and {} on shared pictures".format(
+         bp("shared", "tp_w2v2_rebuild_phone_bigram", "tp_w2v2_rebuild_phone_unigram"), bp("shared", "tp_zipa_rebuild_phone_bigram", "tp_zipa_rebuild_phone_unigram")),
+     "pooled statistics are 6.5 [4.0, 9.3] points below": "pooled statistics are " + below("all", "dense_prosody_rebuild") + " points below",
+     # claims about every row, not one number
+     "every lookup and every probe run so far is at or below the majority":
+         "every lookup and every probe run so far is at or below the majority" if all(bl_("shared", p)[0] <= 0.05 for p in shared_rows) else "FALSE: some shared-picture lift is above zero",
+     "(every interval includes zero)":
+         "(every interval includes zero)" if all(bench.loc[("shared", p), "km_vs_constant_lo"] < 0 < bench.loc[("shared", p), "km_vs_constant_hi"] for p in tp_shared) else "FALSE: some km interval excludes zero",
+    }
+    claims = {k: v for k, v in claims.items() if k not in FINAL_DROP} | FINAL_EXTRA
+
 bad = 0
 for printed, computed in claims.items():
     inflat = printed in flat
@@ -172,5 +233,8 @@ for printed, computed in claims.items():
     if not ok:
         bad += 1
         print(("MISMATCH" if inflat else "NOT IN TEXT"), "|", printed, "| computed:", computed)
+pending = len(re.findall(r"\\pending\{", tex)) - tex.count("\\newcommand{\\pending}")
+if pending:
+    print(f"{pending} \\pending markers left in {Path(args.tex).name}")
 print(f"{len(claims) - bad} of {len(claims)} report numbers match results/")
-sys.exit(1 if bad else 0)
+sys.exit(1 if bad or pending else 0)
