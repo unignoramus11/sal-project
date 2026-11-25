@@ -11,6 +11,7 @@
   tab_release.tex     compact results on PRiSM's release, as released and corrected
   tab_versions.tex    appendix: every data version and split, what each removes, W2V2 phone bigrams vs majority
   tab_cues.tex        appendix: what each data version and split shares between training and test
+  tab_rp.tex          representation probes on the rebuild, both splits, and their paired order comparisons
   tab_benchmark.tex   the cross-validated benchmark, both tracks: R@1, lift over the majority (95% CI), km gain
 Output: paper/tables/*.tex
 Run:    uv run python scripts/make_tables.py
@@ -392,7 +393,57 @@ def tab_benchmark():
     write("tab_benchmark.tex", "\n".join(lines) + "\n")
 
 
+def tab_rp(cfgs=None, comps=None):
+    """Representation probes on the rebuild (results/tables/configs.csv, comparisons.csv): every RP config under both
+    splits (Recall@1 mean +- sd over seeds, km of the seed ensemble), then the paired comparisons that test order in
+    the hidden states and set them against the transcript probes. Writes a pending marker while no RP run exists."""
+    cfgs = cfg if cfgs is None else cfgs
+    comps = pd.read_csv(RESULTS / "tables" / "comparisons.csv") if comps is None else comps
+    names = {"attn": "attention (PRiSM's)", "attn_pe": "attention + positions", "gru": "BiGRU",
+             "transformer": "Transformer", "chunkshuffle": "BiGRU, 200 ms chunks shuffled"}
+    rx = re.compile(r"^rp_(w2v2|zipa|whisper)_rebuild_L([0-9-]+)_(attn_pe|attn|gru|transformer|chunkshuffle)_(prism|speaker_split)$")
+    found = {}
+    for c in cfgs.index:
+        m = rx.match(c)
+        if m:
+            found.setdefault((m[1], m[2], m[3]), {})[m[4]] = cfgs.loc[c]
+    if not found:
+        write("tab_rp.tex", "\\pending{representation-probe table: no RP runs yet}\n")
+        return
+    order = list(names)
+    lines = [r"\begin{tabular}{llrrrr}", r"\toprule",
+             r" & & \multicolumn{2}{c}{PRiSM's split} & \multicolumn{2}{c}{New speakers} \\",
+             r"\cmidrule(lr){3-4}\cmidrule(lr){5-6}", r"Recognizer, layer & Probe & R@1 & km & R@1 & km \\", r"\midrule"]
+    # W2V2 first, then single layers before weighted layer sets, then the probes in a fixed order
+    for (model, layers, probe) in sorted(found, key=lambda k: (k[0] != "w2v2", k[0], "-" in k[1], k[1], order.index(k[2]))):
+        cells = []
+        for proto in ("prism", "speaker_split"):
+            r = found[(model, layers, probe)].get(proto)
+            cells += ["--", "--"] if r is None else [f"${pm(r.recall1_mean, r.recall1_sd, int(r.seeds))}$", f"{r.ens_km:.0f}"]
+        lay = "layers " + layers.replace("-", ", ") if "-" in layers else f"layer {layers}"
+        lines.append(f"{model.upper()}, {lay} & {names[probe]} & " + " & ".join(cells) + r" \\")
+    rp_pairs = comps[comps["a"].str.startswith("rp_") | comps["b"].str.startswith("rp_")]
+    if len(rp_pairs):
+        lines += [r"\midrule", r"\multicolumn{6}{l}{\textit{Paired differences in Recall@1, a minus b (95\% CI over speakers)}} \\"]
+        strip = r"_(prism|speaker_split)$"
+        rp_pairs = rp_pairs.assign(a0=rp_pairs["a"].str.replace(strip, "", regex=True),
+                                   b0=rp_pairs["b"].str.replace(strip, "", regex=True))
+        for (what, a0, b0), rows in rp_pairs.groupby(["comparison", "a0", "b0"], sort=False):
+            cells = []
+            for proto in ("prism", "speaker_split"):
+                r = rows[rows["a"] == f"{a0}_{proto}"]
+                cells.append("--" if r.empty else
+                             f"{r.iloc[0].recall1_diff:+.1f} [{r.iloc[0].recall1_lo:.1f}, {r.iloc[0].recall1_hi:.1f}]".replace("-", "$-$"))
+            rp = a0 if a0.startswith("rp_") else b0          # label the row by the representation probe's model and layers
+            lab = f"{rp[3:].split('_rebuild_')[0].upper()} {rp.split('_rebuild_')[1].split('_')[0]}"
+            lines.append(f"\\multicolumn{{2}}{{l}}{{{what}, {lab}}} & \\multicolumn{{2}}{{r}}{{{cells[0]}}} & "
+                         f"\\multicolumn{{2}}{{r}}{{{cells[1]}}} \\\\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    write("tab_rp.tex", "\n".join(lines) + "\n")
+
+
 if __name__ == "__main__":
+    tab_rp()
     tab_benchmark()
     tab_cues()
     tab_versions()

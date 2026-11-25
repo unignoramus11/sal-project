@@ -9,17 +9,16 @@ and prompt subset) and the paired difference.
 Output: results/tables/state_level.csv
 Run:    uv run python scripts/state_level.py
 """
-import re
 
 import numpy as np
 import pandas as pd
 import torch
+from summarise import config_of, ensemble
 
 from sal.data.prompts import prompt_type
 from sal.paths import DATA, RESULTS
 from sal.probes import geo
 from sal.stats import paired_cluster_bootstrap
-from summarise import config_of, ensemble
 
 meta = pd.read_parquet(DATA / "vaani_hi_rebuild" / "vaani_hi_rebuild.parquet",
                        columns=["metadata_idx", "latitude", "longitude"])
@@ -40,7 +39,7 @@ def snapped_state(pred_xyz: np.ndarray, test_idx: pd.Index) -> np.ndarray:
 rows = []
 configs = sorted({config_of(d.name)[0] for d in (RESULTS / "runs").iterdir() if (d / "metrics.json").exists()})
 for cfg in configs:
-    if "_control" in cfg:
+    if "_control" in cfg or "_official_" in cfg or "_bench" in cfg:   # other data/splits: official_eval.py, benchmark_eval.py
         continue
     e = ensemble(cfg)
     idx = pd.Index(e["metadata_idx"])
