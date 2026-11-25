@@ -12,7 +12,8 @@ pooled the same way:
 Reported: Recall@1 over the track's pincodes, speaker-macro Recall@1 (every speaker group counts once), state
 accuracy (predicted point snapped to the nearest pincode), mean km; lifts over the majority and km gain over the
 best constant, paired per utterance; 95% CIs by bootstrap over speaker groups. Paired probe comparisons on the same
-utterances: BiGRU vs shuffled BiGRU, bigram vs unigram, phones vs characters, ZIPA vs W2V2.
+utterances (sal.comparisons): order, units and recognizer for the transcript probes; order, positions and transcripts
+vs hidden states for the representation probes.
 
 Output: results/benchmark/scores{tag}.csv, paired{tag}.csv, folds{tag}.csv (Recall@1 per fold)
 Run:    uv run python scripts/benchmark_eval.py [--tag _smoke]
@@ -25,6 +26,7 @@ import torch
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 from sal.benchmark import Scorer, find_runs, pool_folds
+from sal.comparisons import standard
 from sal.paths import OUTPUTS, RESULTS
 from sal.probes import geo
 
@@ -72,7 +74,7 @@ def baselines(track):
 for track in ("all", "shared"):
     u = d[d[f"{track}_f0"].notna()].sort_values("metadata_idx").reset_index(drop=True)
     sc = Scorer(u)
-    fold_of = u.set_index("metadata_idx").apply(lambda r: next(f for f in range(K) if r[f"{track}_f{f}"] == "test"), axis=1)
+    fold_of = u.set_index("metadata_idx").apply(lambda r, t=track: next(f for f in range(K) if r[f"{t}_f{f}"] == "test"), axis=1)
     base = baselines(track)
     sc.reference = {"majority": sc.hits(sc.align(base["majority"])), "constant": sc.hits(sc.align(base["best constant"]))}
     preds = {k: (sc.align(v), "baseline", 0) for k, v in base.items()}
@@ -90,19 +92,8 @@ for track in ("all", "shared"):
         h = sc.hits(p)["recall1"]
         per = pd.Series(h).groupby(fold_of.loc[u["metadata_idx"]].to_numpy()).mean()
         folds.append({"track": track, "probe": name, **{f"f{f}": per[f] for f in range(K)}, "sd": per.std(ddof=1)})
-    for m in ("w2v2", "zipa", "rp_w2v2", "rp_zipa", "rp_whisper"):
-        cand = [(f"tp_{m}_rebuild_phone_gru", f"tp_{m}_rebuild_phone_shuffle", "order (BiGRU vs shuffled)"),
-                (f"tp_{m}_rebuild_phone_bigram", f"tp_{m}_rebuild_phone_unigram", "order (phone bigram vs unigram)"),
-                (f"tp_{m}_rebuild_char_bigram", f"tp_{m}_rebuild_char_unigram", "order (char bigram vs unigram)"),
-                (f"tp_{m}_rebuild_phone_bigram", f"tp_{m}_rebuild_char_bigram", "units (phones vs chars, bigram)")]
-        for a, b, what in cand:
-            if a in preds and b in preds:
-                pairs.append({"track": track, "comparison": what, "a": a, "b": b, **sc.paired(preds[a][0], preds[b][0], args.boot)})
-    for tok in ("phone_bigram", "phone_gru"):
-        a, b = f"tp_zipa_rebuild_{tok}", f"tp_w2v2_rebuild_{tok}"
-        if a in preds and b in preds:
-            pairs.append({"track": track, "comparison": f"recognizer (ZIPA vs W2V2, {tok})", "a": a, "b": b,
-                          **sc.paired(preds[a][0], preds[b][0], args.boot)})
+    for a, b, what in standard(set(preds)):
+        pairs.append({"track": track, "comparison": what, "a": a, "b": b, **sc.paired(preds[a][0], preds[b][0], args.boot)})
 
 out = pd.DataFrame(rows)
 out.to_csv(B / f"scores{args.tag}.csv", index=False)

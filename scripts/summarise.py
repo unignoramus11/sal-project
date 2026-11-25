@@ -20,12 +20,12 @@ Run:    uv run python scripts/summarise.py [config_a config_b ...]   (extra args
 import json
 import re
 import sys
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import torch
 
+from sal.comparisons import standard
 from sal.data.prompts import prompt_type
 from sal.paths import DATA, RESULTS
 from sal.probes import geo
@@ -80,22 +80,9 @@ def ensemble(config: str, split: str = "test") -> pd.DataFrame:
     return df
 
 
-def default_pairs(have: set[str]) -> list[str]:
-    """The study's standard comparisons (a, b), kept where both configs exist."""
-    out = []
-    for proto in ("speaker_split", "prism"):
-        for m in ("w2v2", "zipa"):
-            tp = f"tp_{m}_rebuild"
-            out += [(f"{tp}_phone_bigram_{proto}", f"{tp}_phone_unigram_{proto}"),
-                    (f"{tp}_char_bigram_{proto}", f"{tp}_char_unigram_{proto}"),
-                    (f"{tp}_phone_bigram_{proto}", f"{tp}_char_bigram_{proto}"),
-                    (f"{tp}_phone_gru_{proto}", f"{tp}_phone_shuffle_{proto}"),
-                    (f"{tp}_phone_gru_{proto}", f"{tp}_char_gru_{proto}"),
-                    (f"{tp}_phone_gru_{proto}", f"{tp}_phone_bigram_{proto}"),
-                    (f"{tp}_phone_bigram_{proto}", f"dense_ecapa_rebuild_{proto}")]
-        for k in ("phone_bigram", "char_bigram", "phone_gru", "char_gru", "phone_shuffle"):
-            out.append((f"tp_zipa_rebuild_{k}_{proto}", f"tp_w2v2_rebuild_{k}_{proto}"))
-    return [c for a, b in out if a in have and b in have for c in (a, b)]
+def default_pairs(have: set[str]) -> list[tuple[str, str, str]]:
+    """The study's standard comparisons (sal.comparisons), under each split, kept where both configs exist."""
+    return [c for proto in ("speaker_split", "prism") for c in standard(have, f"_{proto}")]
 
 
 def main():
@@ -144,15 +131,16 @@ def main():
     t.to_csv(out / "configs.csv", index=False)
     print(t.round(1).to_string(index=False))
 
-    pairs = sys.argv[1:] or default_pairs(set(t["config"]))
+    args = sys.argv[1:]
+    pairs = [(a, b, "") for a, b in zip(args[0::2], args[1::2], strict=True)] if args else default_pairs(set(t["config"]))
     comps = []
-    for a, b in zip(pairs[0::2], pairs[1::2]):
+    for a, b, what in pairs:
         ea, eb = ensemble(a).set_index("metadata_idx"), ensemble(b).set_index("metadata_idx")
         common = ea.index.intersection(eb.index)
         ea, eb = ea.loc[common], eb.loc[common]
         rh = paired_cluster_bootstrap(100 * ea["hit"], 100 * eb["hit"], ea["speaker"].to_numpy(), n=2000)
         rk = paired_cluster_bootstrap(ea["km"], eb["km"], ea["speaker"].to_numpy(), n=2000)
-        comps.append({"a": a, "b": b, "n": len(common), "recall1_diff": rh["diff"], "recall1_lo": rh["lo"],
+        comps.append({"a": a, "b": b, "comparison": what, "n": len(common), "recall1_diff": rh["diff"], "recall1_lo": rh["lo"],
                       "recall1_hi": rh["hi"], "recall1_p": rh["p"], "km_diff": rk["diff"], "km_lo": rk["lo"],
                       "km_hi": rk["hi"], "km_p": rk["p"]})
     if comps:
