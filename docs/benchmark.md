@@ -42,15 +42,16 @@ November, after the mid evaluation.
 | all | 10.6 | 29.0 (+18.4 [15.1, 22.1]) | 15.7 / 18.1 |
 | shared | 20.3 | 10.1 (-10.2) | 17.6 / 18.7 |
 
-## Runs (November, all on Ada)
-| What | Jobs | Script |
+## Runs (November)
+| What | Where | Script |
 |---|---|---|
-| bag probes {W2V2, ZIPA} x {phone, char} x {unigram, bigram}, ECAPA, prosody statistics; 2 tracks x 5 folds x 3 seeds (300 runs, CPU) | 10 | `slurm/bench_light.sbatch` |
-| transcript BiGRUs {W2V2, ZIPA} x {char GRU, phone GRU, shuffled phone GRU}; 2 tracks x 5 folds x 3 seeds (180 runs, GPU) | 8 | `slurm/bench_gru.sbatch` |
-| RP-Attn, 3 models x 2 tracks x 5 folds x 3 seeds (90 runs, GPU) | 12 | `slurm/rp_benchmark.sh` |
+| bag probes {W2V2, ZIPA} x {phone, char} x {unigram, bigram}, ECAPA, prosody statistics; 2 tracks x 5 folds x 3 seeds (300 runs, CPU, ~40 min) | Mac | `tools/bench_mac.sh` |
+| transcript BiGRUs {W2V2, ZIPA} x {char GRU, phone GRU, shuffled phone GRU}; 2 tracks x 5 folds x 3 seeds (180 runs, GPU) | PC | `tools/pc_november.sh` (started with `pc preheat`) |
+| representation probes, W2V2 L24 attn / gru / chunkshuffle; 2 tracks x 5 folds x 3 seeds (90 runs, GPU) | Ada | `slurm/rp_plan.sh 2` |
 
-The first two are submitted by `slurm/november.sh` (docs/ada.md step 13), the third is docs/ada.md step 12.
-`tools/bench_mac.sh` and `tools/pc_bench.sh` run the same probes locally and are kept as a fallback.
+These are the machines every earlier run of the same probes used. `slurm/november_cpu.sh` and
+`slurm/november_gpu.sh` run the first two on Ada as a fallback.
+
 Then `uv run python scripts/benchmark_eval.py` -> `results/benchmark/{scores,paired,folds}.csv`.
 
 ## Tests

@@ -31,3 +31,14 @@ use_frames() {
   python scripts/extract_features.py --model "$model" --data "$src" --out-dir "$FEAT" --frame-layers $layers
   echo "frames: done ($(date +%H:%M)); $(du -sh "$FEAT" | cut -f1)"
 }
+
+# rp_todo <model> <rebuild|official> "<layers>" <probe> <protocol+tag+suffix> "<seeds>"
+# prints the seeds whose run rp_<model>_<data>_L<layers>_<probe>_<protocol...>_s<seed> has no results yet, naming
+# layers as scripts/run_rp.py does (sorted, resolved, joined by "-"). A job calls it before use_frames, so a
+# resubmitted job whose seeds are all done exits without spending 1-2 h on extraction.
+rp_todo() {
+  local model=$1 data=$2 layers=$3 probe=$4 suffix=$5 seeds=$6 n_layers tag
+  case $model in w2v2) n_layers=25 ;; whisper) n_layers=13 ;; zipa) n_layers=8 ;; esac
+  tag=$(for l in $layers; do echo $(( (l % n_layers + n_layers) % n_layers )); done | sort -n | uniq | paste -sd- -)
+  todo "rp_${model}_${data}_L${tag}_${probe}_${suffix}" $seeds
+}

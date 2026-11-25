@@ -6,9 +6,10 @@ step; the scripts submit the SLURM jobs themselves. You are welcome to do more t
 end), but everything below is needed for the study.
 
 Why Ada: the representation probes (RPs) need hidden-state frames (~15 GB per layer per model) and ~150-300
-GPU-hours in total, which Mohit's laptop GPU (6 GB, power-capped) cannot do in time. From November every probe
-runs on Ada, the transcript probes and the benchmark included, so all final numbers come from one cluster and one
-environment; the Mac only runs the analyses (tables, figures, report). Results meet in this repo under `results/`.
+GPU-hours in total, which Mohit's laptop GPU (6 GB) cannot do in time. **Since 25 Nov Ada runs only the
+representation probes.** The transcript probes, prosody probes, MDL and the CPU benchmark run on Mohit's PC and Mac,
+where every earlier run of those probes was made (`tools/pc_november.sh`, `tools/bench_mac.sh`); step 13 is kept as a
+fallback. Results meet in this repo under `results/`.
 
 **Storage.** `/home2` has a 50 GB quota and `/share1` is not mounted on compute nodes, so frames are never kept
 between jobs. Every RP job extracts the layers it needs into the node's local scratch (`/ssd_scratch`, else
@@ -18,28 +19,31 @@ job log prints `df -h` of both scratch folders and stops early if less than ~20 
 
 ## At a glance
 
-**Now (final evaluation, 4 Dec).** The mid-evaluation steps (2, 3, 5, 6) were not run on Ada before 3 Nov; they
-are folded into the order below. Step 6 is replaced by step 13.
+**Now (final evaluation).** Ada runs the representation probes, W2V2 first, in the tiers of `slurm/rp_plan.sh`:
 
-| Step | What | Jobs | Time (wall) | Priority |
-|---|---|---|---|---|
-| 0, 1 | Accounts and environment | login node | 30 min | first |
-| 2 | Rebuild the dataset, checksum check | 1 CPU | 1-2 h | first |
-| 13 | Transcript, prosody and benchmark runs (moved from the Mac and the PC) | 18 CPU/GPU benchmark + 32 GPU | 1-10 h each | 1 (needs step 2 only) |
-| 3 | Time-averaged features (W2V2, Whisper, ZIPA) | 3 GPU | 1-2 h each | 1 |
-| 5 | RP baselines (last layer, PRiSM's probe) | 6 GPU | 5-7 h each | 2 (needs step 2) |
-| 12 | RP-Attn on the cross-validated benchmark | 12 GPU | 4-10 h each | 2 |
-| 4 | Layer sweep | 3 GPU | < 1 h each | 3 (needs step 3) |
-| 7 | RP sweep (order x layers), W2V2 first | 19 GPU per model | 5-7 h each | 3 (RQ1, the core result) |
-| 8 | RP topic check and control task | 12 GPU | 4-7 h each | 4 (RQ0) |
-| 11 | PRiSM's release: download, RP-Attn as released and corrected | 6 GPU | 5-8 h each | 4 |
-| 10 | Geminate probe by layer, all three models | 3 GPU | 2-6 h each | 5 (RQ2) |
-| 9 | Send results back | – | minutes | after every batch |
+| Step | What | Jobs | Priority |
+|---|---|---|---|
+| 0-2 | Accounts, environment, rebuilt dataset (done) | – | done |
+| 2b | Check the rebuilt audio row by row against ours (`python scripts/audio_hashes.py`) | login node, 5 min | **first** |
+| 3, 4 | W2V2 time-averaged features and layer sweep (done: top layers 2, 4, 1) | – | done |
+| RP tier 1 | RQ1 on new speakers: attn, gru, chunkshuffle, attn_pe, transformer (attn and gru done) | 5 GPU | 1 |
+| RP tier 2 | The same three order probes on the cross-validated benchmark | 9 GPU | 2 |
+| RP tier 3 | The same three under PRiSM's random split (shared speakers) | 3 GPU | 3 |
+| RP tier 4 | Control task and shared pictures, attn and gru | 4 GPU | 4 |
+| RP tier 5 | Weighted top-3 layers, attn / gru / chunkshuffle | 3 GPU | 5 |
+| RP tier 6 | ZIPA and Whisper last layer, attn and gru, both splits | 8 GPU | 6 |
+| RP tier 7 | PRiSM's release, W2V2 RP-Attn (needs step 11's download) | 2 GPU | 7 |
+| 10 | Geminate probe by layer (RQ2), W2V2 first | 1-3 GPU | after tier 4 |
+| 9 | Send results back | – | after every tier |
 
-Order: 0 → 1 → 2, then submit 13, 3 and 5 together; then 12 and 4; then 7 (W2V2, then ZIPA, then Whisper), 8, 11,
-10. Every script submits the speaker-disjoint jobs first, and every job skips runs that already have results, so
-resubmitting after a failure is always safe. If time runs short, step 7 for Whisper and step 10 are the ones to
-drop.
+```bash
+DRY=1 bash slurm/rp_plan.sh 1        # shows what it would submit
+bash slurm/rp_plan.sh 1              # then 2, 3, ... as the queue allows
+```
+
+Every RP job skips seeds that already have results (also before extracting frames), so a tier that overlaps runs
+you have already made submits only what is left. Steps 5, 7, 8 and 12 below are the same jobs grouped the old
+way; use the tiers instead.
 
 ## 0. Before starting
 
@@ -76,6 +80,21 @@ Please report once (so the scripts fit the cluster):
 2. `nvidia-smi` on a GPU node: GPU model and driver (needs CUDA 12.6 support, driver 560 or newer).
 3. Whether compute nodes reach huggingface.co (`curl -sI https://huggingface.co | head -1` inside a job).
 4. Disk quota of the directory you use.
+
+## 2b. Check the rebuilt audio row by row
+
+The dataset file's sha256 can differ for reasons that do not touch the data (parquet writer, row groups). What the
+probes see is each row's audio and labels, so compare those with the reference from our rebuild:
+
+```bash
+git pull
+python scripts/audio_hashes.py           # needs data/vaani_hi_rebuild/vaani_hi_rebuild.parquet
+```
+
+It hashes every row's audio bytes and compares them, and the pincode, speaker and coordinates, with
+`results/rebuild_checks/audio_hashes.csv`. The last line is `SAME DATA` or `DIFFERENT DATA`, with the differing rows
+listed above it. Send the output either way: if the audio differs, RP results on your rebuild are not on the same
+recordings as the transcript probes.
 
 ## 2. Rebuild the dataset and check it (1 CPU job, 1-2 h)
 
@@ -243,16 +262,18 @@ bash slurm/rp_benchmark.sh                            # 3 models x {all, shared}
 Each job extracts the last layer's frames into scratch once and runs two or three folds. Results land in `results/runs/rp_<model>_rebuild_L-1_attn_<track>_f<fold>_bench_s<seed>/`;
 `scripts/benchmark_eval.py` (Mac) pools the folds.
 
-## 13. Transcript, prosody and benchmark runs (moved from the Mac and the PC)
+## 13. Transcript, prosody and benchmark runs (fallback only)
 
-Everything that used to wait for the Mac and the PC, so that all final probes run in one place. Needs step 2 (the
+Since 25 Nov these run on the Mac and the PC; do not submit them unless Mohit asks. Kept so that everything can run
+on Ada if the PC is unavailable. Needs step 2 (the
 dataset, for coordinates) and four files from Mohit's bundle, copied into the repo:
 `outputs/transcripts/{w2v2,zipa}_rebuild.parquet` (you have these), `outputs/transcripts/{w2v2,zipa}_official.parquet`,
 `outputs/features/ecapa_rebuild/` and `outputs/features/prosody_rebuild/` (you have this one).
 
 ```bash
 git pull
-bash slurm/november.sh
+bash slurm/november_cpu.sh      # 10 CPU jobs
+bash slurm/november_gpu.sh      # 40 GPU jobs
 ```
 
 Submits 50 jobs:

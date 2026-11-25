@@ -3,12 +3,13 @@
 # (docs/benchmark.md), 9 runs at a time with one thread each, then the pooled evaluation.
 # Bags: {W2V2, ZIPA} x {phone, char} x {unigram, bigram}; dense: ECAPA, prosody statistics (z-scored);
 # x {all, shared} tracks x 5 folds x seeds 42-44. Finished runs are skipped.
+# TRACKS="all" FOLDS="0" restricts the grid (e.g. to time one fold); EVAL=0 skips the pooled evaluation.
 set -uo pipefail
 cd "$(dirname "$0")/.."
 export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 PYTHONUNBUFFERED=1
 B=results/benchmark
 jobs=$(mktemp)
-for s in 42 43 44; do for track in all shared; do for f in 0 1 2 3 4; do
+for s in 42 43 44; do for track in ${TRACKS:-all shared}; do for f in ${FOLDS:-0 1 2 3 4}; do
   P=${track}_f$f
   for m in w2v2 zipa; do for tok in phone char; do for probe in unigram bigram; do
     [ -f results/runs/tp_${m}_rebuild_${tok}_${probe}_${P}_bench_s$s/metrics.json ] || \
@@ -22,5 +23,5 @@ done; done; done
 echo "$(wc -l < $jobs) runs"
 tr '\n' '\0' < $jobs | xargs -0 -P 9 -n 1 sh -c 'eval "$1" 2>&1 | grep -E "^(tp|dense)_|Error|Traceback"' _
 rm -f $jobs
-uv run python scripts/benchmark_eval.py
+[ "${EVAL:-1}" = 1 ] && uv run python scripts/benchmark_eval.py
 echo BENCH_MAC_DONE

@@ -49,6 +49,7 @@ ap.add_argument("--control", action="store_true",
 ap.add_argument("--device", default="cuda")
 ap.add_argument("--out-root", type=Path, default=RESULTS / "runs")
 ap.add_argument("--tag", default="")
+ap.add_argument("--overwrite", action="store_true", help="rerun seeds that already have results")
 args = ap.parse_args()
 
 meta = pd.read_parquet(args.dataset, columns=["metadata_idx", "latitude", "longitude"])
@@ -67,7 +68,7 @@ n_layers = len(store.layers)
 size = M.match_size(args.probe, store.dim, n_layers)
 feat_tag = args.features.name
 layer_tag = "L" + "-".join(map(str, store.layers))
-info = {"features": str(args.features), "layers": store.layers, "layer_names": [store.meta["layers"][l] for l in store.layers],
+info = {"features": str(args.features), "layers": store.layers, "layer_names": [store.meta["layers"][i] for i in store.layers],
         "probe": args.probe, "protocol": args.protocol, "dim": store.dim, "size": size}
 
 for seed in args.seeds:
@@ -78,6 +79,9 @@ for seed in args.seeds:
                            chunk_shuffle_ms=200 if args.probe == "chunkshuffle" else None, seed=seed)
     make = lambda: M.build_rp(args.probe, store.dim, n_layers, size)  # noqa: E731
     name = f"rp_{feat_tag}_{layer_tag}_{args.probe}_{args.protocol}{args.tag}{'_generic' if args.prompts == 'generic' else ''}_s{seed}"
+    if (args.out_root / name / "metrics.json").exists() and not args.overwrite:
+        print(name, "already done, skipped", flush=True)
+        continue
     res = train_probe(make, batcher, targets, splits, cfg)
     save_run(res, args.out_root / name, meta=meta[["metadata_idx", "speaker", "pincode", "state", "district"]])
     print(name, json.dumps(res["metrics"]["test"]), flush=True)
