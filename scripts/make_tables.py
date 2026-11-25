@@ -11,6 +11,7 @@
   tab_release.tex     compact results on PRiSM's release, as released and corrected
   tab_versions.tex    appendix: every data version and split, what each removes, W2V2 phone bigrams vs majority
   tab_cues.tex        appendix: what each data version and split shares between training and test
+  tab_benchmark.tex   the cross-validated benchmark, both tracks: R@1, lift over the majority (95% CI), km gain
 Output: paper/tables/*.tex
 Run:    uv run python scripts/make_tables.py
 """
@@ -344,7 +345,52 @@ def tab_cues():
     write("tab_cues.tex", "\n".join(lines) + "\n")
 
 
+def tab_benchmark():
+    """The cross-validated benchmark (results/benchmark/scores.csv): every speaker group tested once, look-alike speaker
+    codes merged, corrected coordinates; all pictures and shared pictures only. Rows without runs yet say pending."""
+    f = RESULTS / "benchmark" / "scores.csv"
+    if not f.exists():
+        return
+    sc = pd.read_csv(f).set_index(["track", "probe"])
+
+    def cells(track, key):
+        if (track, key) not in sc.index:
+            return [r"\multicolumn{3}{c}{pending}"]
+        r = sc.loc[(track, key)]
+        lift = ("--" if key == "majority" else
+                f"{r.recall1_vs_majority:+.1f} [{r.recall1_vs_majority_lo:.1f}, {r.recall1_vs_majority_hi:.1f}]".replace("-", "$-$"))
+        return [f"{r.recall1:.1f}", lift, f"{r.km_vs_constant:+.0f}".replace("-", "$-$")]
+
+    groups = [("References that learn nothing about dialect", [
+                  ("Majority location", "majority"), ("Picture-ID lookup", "picture lookup"),
+                  ("Transcript match (W2V2)", "1-NN transcript (W2V2)"), ("Transcript match (ZIPA)", "1-NN transcript (ZIPA)")]),
+              ("Voice and prosody", [("ECAPA voice embedding", "dense_ecapa_rebuild"),
+                                     ("Pooled prosody statistics", "dense_prosody_rebuild")])]
+    for rec in ("W2V2", "ZIPA"):
+        groups.append((f"Transcript probes, {rec}", [(lab, f"tp_{rec.lower()}_rebuild_{k}") for lab, k in
+                       [("phone unigram", "phone_unigram"), ("phone bigram", "phone_bigram"),
+                        ("character BiGRU (PRiSM's)", "char_gru"), ("phone BiGRU", "phone_gru"),
+                        ("shuffled phone BiGRU", "phone_shuffle")]]))
+    rp = sorted({k for _, k in sc.index if str(k).startswith("rp_")})
+    if rp:
+        names = {"attn": "attention (PRiSM's)", "gru": "BiGRU", "chunkshuffle": "BiGRU on shuffled 200 ms chunks",
+                 "attn_pe": "attention with positions", "transformer": "Transformer"}
+        groups.append(("Representation probes", [(f"{k.split('_rebuild_')[0][3:].upper()} {k.split('_rebuild_')[1].split('_', 1)[0]} "
+                                                    f"{names.get(k.split('_rebuild_')[1].split('_', 1)[1], k)}", k) for k in rp]))
+    lines = [r"\begin{tabular}{lrrrrrr}", r"\toprule",
+             r" & \multicolumn{3}{c}{All pictures} & \multicolumn{3}{c}{Shared pictures} \\",
+             r"\cmidrule(lr){2-4}\cmidrule(lr){5-7}",
+             r"Probe & R@1 & vs majority & km gain & R@1 & vs majority & km gain \\"]
+    for title, items in groups:
+        lines += [r"\midrule", f"\\multicolumn{{7}}{{l}}{{\\textit{{{title}}}}} \\\\"]
+        for lab, key in items:
+            lines.append(f"\\quad {lab} & " + " & ".join(cells("all", key) + cells("shared", key)) + r" \\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    write("tab_benchmark.tex", "\n".join(lines) + "\n")
+
+
 if __name__ == "__main__":
+    tab_benchmark()
     tab_cues()
     tab_versions()
     tab_data()

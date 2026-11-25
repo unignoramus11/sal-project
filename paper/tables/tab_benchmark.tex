@@ -1,0 +1,31 @@
+\begin{tabular}{lrrrrrr}
+\toprule
+ & \multicolumn{3}{c}{All pictures} & \multicolumn{3}{c}{Shared pictures} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}
+Probe & R@1 & vs majority & km gain & R@1 & vs majority & km gain \\
+\midrule
+\multicolumn{7}{l}{\textit{References that learn nothing about dialect}} \\
+\quad Majority location & 10.6 & -- & $-$51 & 20.3 & -- & +1 \\
+\quad Picture-ID lookup & 29.0 & +18.4 [15.1, 22.4] & +99 & 10.1 & $-$10.2 [$-$14.8, $-$5.8] & $-$208 \\
+\quad Transcript match (W2V2) & 15.7 & +5.1 [2.0, 7.9] & $-$10 & 17.6 & $-$2.7 [$-$7.8, 1.9] & $-$105 \\
+\quad Transcript match (ZIPA) & 18.1 & +7.5 [4.2, 10.4] & +14 & 18.7 & $-$1.6 [$-$7.0, 3.3] & $-$114 \\
+\midrule
+\multicolumn{7}{l}{\textit{Voice and prosody}} \\
+\quad ECAPA voice embedding & 7.8 & $-$2.8 [$-$5.6, $-$0.4] & +87 & 13.6 & $-$6.7 [$-$10.0, $-$3.7] & +24 \\
+\quad Pooled prosody statistics & 4.1 & $-$6.5 [$-$9.3, $-$4.0] & +7 & 15.6 & $-$4.8 [$-$7.2, $-$2.4] & $-$12 \\
+\midrule
+\multicolumn{7}{l}{\textit{Transcript probes, W2V2}} \\
+\quad phone unigram & 11.6 & +1.1 [$-$0.9, 2.8] & +109 & 16.8 & $-$3.5 [$-$5.7, $-$1.6] & +10 \\
+\quad phone bigram & 14.0 & +3.5 [1.0, 5.7] & +134 & 17.0 & $-$3.3 [$-$6.3, $-$0.6] & +19 \\
+\quad character BiGRU (PRiSM's) & \multicolumn{3}{c}{pending} & \multicolumn{3}{c}{pending} \\
+\quad phone BiGRU & \multicolumn{3}{c}{pending} & \multicolumn{3}{c}{pending} \\
+\quad shuffled phone BiGRU & \multicolumn{3}{c}{pending} & \multicolumn{3}{c}{pending} \\
+\midrule
+\multicolumn{7}{l}{\textit{Transcript probes, ZIPA}} \\
+\quad phone unigram & 11.4 & +0.8 [$-$1.2, 2.7] & +112 & 18.1 & $-$2.2 [$-$4.0, $-$0.5] & +5 \\
+\quad phone bigram & 16.5 & +6.0 [3.8, 8.1] & +149 & 18.5 & $-$1.8 [$-$4.9, 1.4] & +15 \\
+\quad character BiGRU (PRiSM's) & \multicolumn{3}{c}{pending} & \multicolumn{3}{c}{pending} \\
+\quad phone BiGRU & \multicolumn{3}{c}{pending} & \multicolumn{3}{c}{pending} \\
+\quad shuffled phone BiGRU & \multicolumn{3}{c}{pending} & \multicolumn{3}{c}{pending} \\
+\bottomrule
+\end{tabular}

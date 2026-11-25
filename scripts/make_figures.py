@@ -9,13 +9,17 @@ fig_lookups    rebuilt Vaani-Hi: test Recall@1 of lookups and probes, with test 
                and on new speakers; drawn at full page width for the report.
 fig_order      Recall@1 gain from phone order (BiGRU vs shuffled BiGRU, bigram vs unigram bags) with seen and new
                speakers, on the release and the rebuild, paired 95% CIs; drawn at column width.
+fig_benchmark  cross-validated benchmark: Recall@1 lift over the majority with 95% CIs per probe, all pictures
+               (filled) and shared pictures only (hollow); every test speaker is new; column width.
 Run: uv run python scripts/make_figures.py
 """
+import os
 import re
 
 import matplotlib
 
 matplotlib.use("Agg")
+os.environ.setdefault("SOURCE_DATE_EPOCH", "0")   # fixed PDF creation date: same figure, same bytes
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -66,12 +70,12 @@ def fig_probes():
     t[["label", "proto", "generic"]] = t["config"].apply(lambda c: pd.Series(family(c) or (None, None, None)))
     t = t.dropna(subset=["label"])
     main = t[~t["generic"].astype(bool)]
-    labels = sorted(main["label"].unique(), key=lambda l: -main[main.label == l]["lift_recall1"].max())
+    labels = sorted(main["label"].unique(), key=lambda x: -main[main.label == x]["lift_recall1"].max())
     panels = [("lift_recall1", "lift_recall1_lo", "lift_recall1_hi", "generic_lift_recall1",
                "Recall@1 above majority (points)"),
               ("km_gain", "km_gain_lo", "km_gain_hi", "generic_km_gain", "km better than best constant")]
     fig, axes = plt.subplots(1, 2, figsize=(6.8, 0.28 * len(labels) + 0.8), sharey=True)
-    for ax, (col, lo, hi, _, xlabel) in zip(axes, panels):
+    for ax, (col, lo, hi, _, xlabel) in zip(axes, panels, strict=True):
         for i, lab in enumerate(labels):
             for proto, color, marker, dy in (("prism", BLUE, "o", -0.14), ("speaker_split", ORANGE, "s", 0.14)):
                 r = main[(main.label == lab) & (main.proto == proto)]
@@ -110,8 +114,8 @@ def fig_dpr():
         y = np.arange(len(d))
         ax.errorbar(100 * d.dpr, y, xerr=[100 * (d.dpr - d.lo), 100 * (d.hi - d.dpr)], fmt="o", ms=4, color=BLUE,
                     elinewidth=1, capsize=0)
-        ax.set_yticks(y, [f"{s} ({n})" for s, n in zip(d.state, d.speakers)])
-        for tick, s in zip(ax.get_yticklabels(), d.state):
+        ax.set_yticks(y, [f"{s} ({n})" for s, n in zip(d.state, d.speakers, strict=True)])
+        for tick, s in zip(ax.get_yticklabels(), d.state, strict=True):
             if s == "Haryana":
                 tick.set_fontweight("bold")
         ax.set_xlabel(f"Doubled-phone rate, % of consonants ({model.upper()})")
@@ -138,7 +142,7 @@ def _clean(ax):
 
 def _legend(ax, labels):
     from matplotlib.lines import Line2D
-    h = [Line2D([], [], marker="o", ls="", ms=5, color=c, label=lab) for c, lab in zip((DARK, LIGHT), labels)]
+    h = [Line2D([], [], marker="o", ls="", ms=5, color=c, label=lab) for c, lab in zip((DARK, LIGHT), labels, strict=True)]
     ax.legend(handles=h, loc="lower left", bbox_to_anchor=(0, 1.0), ncol=2, frameon=False, handletextpad=0.2,
               columnspacing=1.2, borderaxespad=0.2)
 
@@ -164,7 +168,7 @@ def fig_lookups():
             ("Majority location", bl("majority", "prism"), bl("majority", "speaker_split"))]
     fig, ax = plt.subplots(figsize=(6.3, 2.15))
     y = np.arange(len(rows))[::-1]
-    for yi, (_, a, b) in zip(y, rows):
+    for yi, (_, a, b) in zip(y, rows, strict=True):
         ax.plot([min(a, b), max(a, b)], [yi, yi], color=LINK, lw=2, zorder=1, solid_capstyle="round")
         ax.scatter([a], [yi], s=26, color=DARK, zorder=3, edgecolor="white", linewidth=0.8)
         ax.scatter([b], [yi], s=26, color=LIGHT, zorder=3, edgecolor="white", linewidth=0.8)
@@ -205,7 +209,7 @@ def fig_order():
                      cp(f"tp_{m}_rebuild_phone_bigram_speaker_split", f"tp_{m}_rebuild_phone_unigram_speaker_split")))
     fig, ax = plt.subplots(figsize=(3.15, 3.2))
     y = np.arange(len(rows))[::-1] * 1.0
-    for yi, (_, a, b) in zip(y, rows):
+    for yi, (_, a, b) in zip(y, rows, strict=True):
         for (e, lo, hi), c, dy in ((a, DARK, 0.17), (b, LIGHT, -0.17)):
             ax.plot([lo, hi], [yi + dy] * 2, color=c, lw=1.4, solid_capstyle="round", zorder=2)
             ax.scatter([e], [yi + dy], s=16, color=c, zorder=3, edgecolor="white", linewidth=0.6)
@@ -229,9 +233,67 @@ def fig_order():
     plt.close(fig)
 
 
+def fig_benchmark():
+    """Cross-validated benchmark: Recall@1 lift over the majority (95% CI over speaker groups) per probe; every test
+    speaker is new, so all marks use the new-speaker colour; filled = all pictures, hollow = shared pictures only."""
+    f = RESULTS / "benchmark" / "scores.csv"
+    if not f.exists():
+        return
+    sc = pd.read_csv(f).set_index(["track", "probe"])
+    groups = [[("Picture-ID lookup", "picture lookup"), ("Transcript match, W2V2", "1-NN transcript (W2V2)"),
+               ("Transcript match, ZIPA", "1-NN transcript (ZIPA)")],
+              [("ECAPA voice", "dense_ecapa_rebuild"), ("Prosody statistics", "dense_prosody_rebuild")]]
+    for rec in ("W2V2", "ZIPA"):
+        groups.append([(f"{rec} {lab}", f"tp_{rec.lower()}_rebuild_{k}") for lab, k in
+                       [("phone unigram", "phone_unigram"), ("phone bigram", "phone_bigram"), ("char BiGRU", "char_gru"),
+                        ("phone BiGRU", "phone_gru"), ("shuffled BiGRU", "phone_shuffle")]])
+    rp = sorted({k for _, k in sc.index if str(k).startswith("rp_")})
+    if rp:
+        names = {"attn": "attention", "gru": "BiGRU", "chunkshuffle": "chunk-shuffled", "attn_pe": "attn + pos.",
+                 "transformer": "Transformer"}
+        groups.append([(f"RP {k.split('_rebuild_')[0][3:].upper()} {names.get(k.split('_rebuild_')[1].split('_', 1)[1], k)}", k)
+                       for k in rp])
+    groups = [[(lab, k) for lab, k in g if ("all", k) in sc.index] for g in groups]
+    groups = [g for g in groups if g]
+    rows, ys, y, seps = [], [], 0.0, []
+    for g in groups:
+        for lab, k in g:
+            rows.append((lab, k))
+            ys.append(y)
+            y -= 1
+        seps.append(y + 0.5)
+        y -= 0.4
+    fig, ax = plt.subplots(figsize=(3.15, 0.2 * len(rows) + 0.75))
+    for yi, (_, k) in zip(ys, rows, strict=True):
+        for track, dy, face in (("all", 0.17, LIGHT), ("shared", -0.17, "white")):
+            if (track, k) not in sc.index:
+                continue
+            r = sc.loc[(track, k)]
+            ax.plot([r.recall1_vs_majority_lo, r.recall1_vs_majority_hi], [yi + dy] * 2, color=LIGHT, lw=1.3,
+                    solid_capstyle="round", zorder=2)
+            ax.scatter([r.recall1_vs_majority], [yi + dy], s=18, facecolor=face, edgecolor=LIGHT, linewidth=1.0, zorder=3)
+    for sy in seps[:-1]:
+        ax.axhline(sy - 0.2, color=GRID, lw=0.6)
+    ax.axvline(0, color=INK2, lw=0.6)
+    ax.set_yticks(ys, [r[0] for r in rows])
+    ax.set_ylim(min(ys) - 0.7, 0.7)
+    ax.set_xlabel("Recall@1 above the majority location (points)")
+    _clean(ax)
+    from matplotlib.lines import Line2D
+    h = [Line2D([], [], marker="o", ls="", ms=5, markerfacecolor=fc, markeredgecolor=LIGHT, label=lab)
+         for fc, lab in ((LIGHT, "all pictures"), ("white", "shared pictures only"))]
+    ax.legend(handles=h, loc="lower left", bbox_to_anchor=(0, 1.0), ncol=2, frameon=False, handletextpad=0.2,
+              columnspacing=1.2, borderaxespad=0.2)
+    fig.tight_layout(pad=0.2)
+    for ext in ("pdf", "png"):
+        fig.savefig(out / f"fig_benchmark.{ext}", dpi=300, bbox_inches="tight", pad_inches=0.02)
+    plt.close(fig)
+
+
 if __name__ == "__main__":
     fig_probes()
     fig_dpr()
     fig_lookups()
     fig_order()
+    fig_benchmark()
     print(sorted(p.name for p in out.iterdir()))
