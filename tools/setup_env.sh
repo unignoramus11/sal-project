@@ -11,10 +11,6 @@ ICEFALL_COMMIT=1c388ad9be94c0ee9de76f7a6ed45b1cff677d13
 command -v uv >/dev/null || { curl -LsSf https://astral.sh/uv/install.sh | sh; export PATH="$HOME/.local/bin:$PATH"; }
 # keep uv's cache next to the repo (home quotas on clusters are small)
 export UV_CACHE_DIR="${UV_CACHE_DIR:-$PWD/envs/.uv-cache}"
-# The CUDA wheels are large and NVIDIA's server can stall for minutes: wait longer, download fewer at once, and
-# retry the whole install (finished wheels stay in the cache, so each try resumes where the last one stopped).
-export UV_HTTP_TIMEOUT="${UV_HTTP_TIMEOUT:-300}" UV_CONCURRENT_DOWNLOADS="${UV_CONCURRENT_DOWNLOADS:-4}"
-retry() { local k; for k in 1 2 3; do "$@" && return 0; echo "install failed (try $k of 3); retrying in $((30 * k)) s"; sleep $((30 * k)); done; return 1; }
 mkdir -p envs external
 
 [ -d external/prism ] || git clone -q https://github.com/changelinglab/prism.git external/prism
@@ -23,7 +19,7 @@ git -C external/prism checkout -q "$PRISM_COMMIT"
 [ -d envs/prism ] || uv venv -q -p 3.10 envs/prism
 # The lock is the exact package set of the working PC environment. Install it as-is (--no-deps): the
 # ESPnet fork's metadata conflicts with versions that are known to work together (e.g. pypinyin).
-retry uv pip install -q --python envs/prism/bin/python --no-deps \
+uv pip install -q --python envs/prism/bin/python --no-deps \
   --index-strategy unsafe-best-match \
   --extra-index-url https://download.pytorch.org/whl/cu126 \
   --find-links https://k2-fsa.github.io/k2/cuda.html \
@@ -31,10 +27,10 @@ retry uv pip install -q --python envs/prism/bin/python --no-deps \
 
 [ -d envs/icefall ] || git clone -q https://github.com/k2-fsa/icefall envs/icefall
 git -C envs/icefall checkout -q "$ICEFALL_COMMIT"
-retry uv pip install -q --python envs/prism/bin/python --no-deps -e envs/icefall
+uv pip install -q --python envs/prism/bin/python --no-deps -e envs/icefall
 
 # this project (analysis extras that the PRiSM environment lacks)
-retry uv pip install -q --python envs/prism/bin/python scipy scikit-learn duckdb panphon praat-parselmouth matplotlib
+uv pip install -q --python envs/prism/bin/python scipy scikit-learn duckdb panphon praat-parselmouth matplotlib
 uv pip install -q --python envs/prism/bin/python --no-deps -e .
 echo "declared dependency conflicts (informational; the same set runs on the PC):"
 uv pip check --python envs/prism/bin/python || true
