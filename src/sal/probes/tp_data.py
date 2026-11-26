@@ -19,10 +19,10 @@ from __future__ import annotations
 from collections import Counter
 
 import numpy as np
-
-from sal.phones import segment
 import torch
 from torch.nn.utils.rnn import pad_sequence
+
+from sal.phones import segment
 
 SPECIALS = ("<pad>", "<unk>", "<s>", "</s>")
 PAD, UNK = 0, 1
@@ -78,31 +78,40 @@ class SequenceBatcher:
         return pad_sequence(out, batch_first=True, padding_value=PAD), lengths, self.targets[idx]
 
 
-def bag_features(seqs: list[np.ndarray], vocab_size: int, train_idx: np.ndarray, bigrams: bool,
-                 min_bigram: int = 5) -> tuple[np.ndarray, dict]:
-    """Relative unigram (and bigram) frequencies per utterance; bigram vocabulary from train only."""
+def bigram_vocab(seqs: list[np.ndarray], train_idx: np.ndarray, min_bigram: int = 5) -> list[tuple[int, int]]:
+    """Bigrams (token-id pairs) seen at least `min_bigram` times in the training utterances, sorted."""
+    c = Counter()
+    for i in train_idx:
+        s = seqs[i]
+        c.update(zip(s[:-1].tolist(), s[1:].tolist(), strict=False))
+    return sorted(b for b, n in c.items() if n >= min_bigram)
+
+
+def bag_matrix(seqs: list[np.ndarray], vocab_size: int, bigrams: list[tuple[int, int]] | None) -> np.ndarray:
+    """Relative unigram frequencies, then (if `bigrams` is given) relative frequencies of those bigrams."""
     uni = np.zeros((len(seqs), vocab_size), dtype=np.float32)
     for i, s in enumerate(seqs):
         if len(s):
             np.add.at(uni[i], s, 1.0 / len(s))
-    info = {"unigrams": vocab_size, "bigrams": 0}
-    if not bigrams:
-        return uni, info
-    c = Counter()
-    for i in train_idx:
-        s = seqs[i]
-        c.update(zip(s[:-1].tolist(), s[1:].tolist()))
-    keep = {bg: j for j, bg in enumerate(sorted(b for b, n in c.items() if n >= min_bigram))}
+    if bigrams is None:
+        return uni
+    keep = {bg: j for j, bg in enumerate(bigrams)}
     bi = np.zeros((len(seqs), len(keep)), dtype=np.float32)
     for i, s in enumerate(seqs):
-        pairs = list(zip(s[:-1].tolist(), s[1:].tolist()))
-        if pairs:
-            for p in pairs:
-                j = keep.get(p)
-                if j is not None:
-                    bi[i, j] += 1.0 / len(pairs)
-    info["bigrams"] = len(keep)
-    return np.concatenate([uni, bi], axis=1), info
+        pairs = list(zip(s[:-1].tolist(), s[1:].tolist(), strict=False))
+        for p in pairs:
+            j = keep.get(p)
+            if j is not None:
+                bi[i, j] += 1.0 / len(pairs)
+    return np.concatenate([uni, bi], axis=1)
+
+
+def bag_features(seqs: list[np.ndarray], vocab_size: int, train_idx: np.ndarray, bigrams: bool,
+                 min_bigram: int = 5) -> tuple[np.ndarray, dict]:
+    """Relative unigram (and bigram) frequencies per utterance; bigram vocabulary from train only."""
+    keep = bigram_vocab(seqs, train_idx, min_bigram) if bigrams else None
+    info = {"unigrams": vocab_size, "bigrams": len(keep) if keep is not None else 0}
+    return bag_matrix(seqs, vocab_size, keep), info
 
 
 class DenseBatcher:

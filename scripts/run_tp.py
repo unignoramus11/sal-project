@@ -42,6 +42,9 @@ ap.add_argument("--prompts", choices=["all", "generic"], default="all",
                 help="generic: train and test only on utterances about shared pictures (no topic cue)")
 ap.add_argument("--device", default="cpu")
 ap.add_argument("--tag", default="")
+ap.add_argument("--save-model", type=Path, default=None,
+                help="directory for a self-contained checkpoint per seed (weights, vocabulary, bigram list, "
+                     "training locations), read by scripts/infer.py")
 args = ap.parse_args()
 
 meta = pd.read_parquet(args.dataset, columns=["metadata_idx", "latitude", "longitude"])
@@ -63,9 +66,11 @@ model_tag = Path(args.transcripts).stem
 info = {"vocab_size": len(vocab), "tokens": args.tokens, "probe": args.probe, "protocol": args.protocol,
         "transcripts": str(args.transcripts), "mean_len": float(np.mean([len(s) for s in seqs]))}
 
+bigram_list = None
 if args.probe in ("unigram", "bigram"):
-    x, bag = T.bag_features(seqs, len(vocab), splits["train"], bigrams=args.probe == "bigram")
-    info.update(bag)
+    bigram_list = T.bigram_vocab(seqs, splits["train"]) if args.probe == "bigram" else None
+    x = T.bag_matrix(seqs, len(vocab), bigram_list)
+    info.update({"unigrams": len(vocab), "bigrams": len(bigram_list) if bigram_list is not None else 0})
 
 for seed in args.seeds:
     cfg = TrainConfig(lr=1e-3, batch_size=64, min_epochs=10, max_epochs=args.max_epochs, patience=args.patience,
@@ -78,6 +83,17 @@ for seed in args.seeds:
         make = lambda: M.BagMLP(x.shape[1])  # noqa: E731
     name = f"tp_{model_tag}_{args.tokens}_{args.probe}_{args.protocol}{args.tag}{'_generic' if args.prompts == 'generic' else ''}_s{seed}"
     res = train_probe(make, batcher, targets, splits, cfg, checkpoint=checkpoint_for(name))
-    out = RESULTS / "runs" / name
-    save_run(res, out, meta=df[["metadata_idx", "speaker", "pincode", "state", "district"]])
+    if args.save_model is None:
+        save_run(res, RESULTS / "runs" / name, meta=df[["metadata_idx", "speaker", "pincode", "state", "district"]])
+    else:   # a checkpoint run: results/runs stays untouched, the test metrics go into the checkpoint
+        import torch
+        places = (df.iloc[splits["train"]].groupby("pincode")[["latitude", "longitude"]].first()
+                  .reset_index().to_dict("list"))
+        args.save_model.mkdir(parents=True, exist_ok=True)
+        torch.save({"kind": "transcript_probe", "name": name, "recognizer": model_tag, "tokens": args.tokens,
+                    "probe": args.probe, "vocab": vocab, "bigrams": bigram_list,
+                    "input_dim": int(x.shape[1]) if args.probe in ("unigram", "bigram") else None,
+                    "state_dict": res["model_state"], "train_places": places, "protocol": args.protocol,
+                    "prompts": args.prompts, "seed": seed, "test_metrics": res["metrics"]["test"]},
+                   args.save_model / f"{name}.pt")
     print(name, json.dumps(res["metrics"]["test"]))

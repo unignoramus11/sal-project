@@ -232,11 +232,10 @@ $RECYCLE.BIN/
 /internal/
 
 ### Project ###
-# Datasets, features, checkpoints, run outputs
-# (anchored to the repo root so that e.g. src/sal/data/ is not ignored)
+# Datasets, features, run outputs (anchored to the repo root so that e.g. src/sal/data/ is not ignored).
+# checkpoints/ holds the released probe checkpoints and is tracked; resume files go to outputs/ckpt.
 /data/
 /features/
-/checkpoints/
 /outputs/
 /logs/
 /wandb/
@@ -277,3 +276,6 @@ paper/*.fdb_latexmk
 paper/*.fls
 paper/*.log
 paper/*.out
+
+# released probe checkpoints (scripts/run_tp.py --save-model checkpoints)
+!/checkpoints/*.pt

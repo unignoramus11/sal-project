@@ -211,7 +211,8 @@ def train_probe(
     result = {"config": asdict(cfg), "best_epoch": best["epoch"], "best_check": best["check"],
               "epochs_run": epoch + 1, "seconds": time.time() - t0, "history": history,
               "n_params": sum(p.numel() for p in model.parameters() if p.requires_grad),
-              "metrics": {}, "predictions": {}}
+              "metrics": {}, "predictions": {},
+              "model_state": {k: v.detach().cpu() for k, v in model.state_dict().items()}}
     for name, idx in splits.items():
         p = predict(model, batcher, idx, cfg)
         result["metrics"][name] = evaluate(p, targets[idx])
@@ -237,5 +238,5 @@ def save_run(result: dict, out_dir: Path, meta: pd.DataFrame | None = None,
         pred = pred.join(meta, on="example")
     pred.to_parquet(out_dir / "predictions.parquet", index=False)
     pd.DataFrame(result["history"]).to_csv(out_dir / "history.csv", index=False)
-    summary = {k: v for k, v in result.items() if k not in ("history", "predictions")}
+    summary = {k: v for k, v in result.items() if k not in ("history", "predictions", "model_state")}
     (out_dir / "metrics.json").write_text(json.dumps(summary, indent=2))
