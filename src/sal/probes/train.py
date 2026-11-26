@@ -138,7 +138,9 @@ def train_probe(
     stop = False
     start = 0
     if checkpoint is not None and checkpoint.exists():
-        ck = torch.load(checkpoint, map_location=device, weights_only=False)
+        # load on the CPU: torch restores RNG states only from CPU tensors (a GPU map_location breaks the resume);
+        # model and optimiser states are copied to the model's device by load_state_dict
+        ck = torch.load(checkpoint, map_location="cpu", weights_only=False)
         if ck["config"] != _resume_key(cfg):
             raise ValueError(f"{checkpoint} was written with a different configuration; delete it to start over")
         model.load_state_dict(ck["model"])

@@ -101,3 +101,20 @@ def test_resume_ignores_extra_and_device(tmp_path):
         go({"features": "/scratch/me/sal_101/w2v2_rebuild"}, stop_after=2)
     r = go({"features": "/scratch/me/sal_202/w2v2_rebuild"})
     assert r["epochs_run"] == 4 and not ck.exists()
+
+
+def test_checkpoint_loaded_on_cpu(tmp_path, monkeypatch):
+    """A run on CUDA must resume: the checkpoint is loaded with map_location='cpu' (RNG states must stay on the CPU)."""
+    import sal.probes.train as tr
+    ck = tmp_path / "run.pt"
+    with pytest.raises(Interrupt):
+        _run(tmp_path, ck, stop_after=2)
+    seen = {}
+    real = torch.load
+
+    def spy(*a, **k):
+        seen.update(k)
+        return real(*a, **k)
+    monkeypatch.setattr(tr.torch, "load", spy)
+    _run(tmp_path, ck)
+    assert seen.get("map_location") == "cpu"
