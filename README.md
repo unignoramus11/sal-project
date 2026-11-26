@@ -20,14 +20,16 @@ Both are MLPs over phone unigram and bigram frequencies, our best transcript pro
 
 ## Setup
 
-Main environment (Mac or Linux, Python 3.10 to 3.12), for everything except running the recognizers:
+Main environment (Mac or Linux, Python 3.10 to 3.12), for everything except transcribing audio:
 
 ```sh
 uv sync                                   # or: pip install -r requirements.txt && pip install -e .
 ```
 
-Recognizer environment (Linux with an NVIDIA GPU), only needed to transcribe audio or extract hidden states. It
-fetches PRiSM's code at the commit we used and installs the exact package versions we ran (torch 2.6, k2):
+Transcription environment (Linux with an NVIDIA GPU). The probes read phone strings, not audio. Turning audio into
+phone strings runs the W2V2 and ZIPA recognizers with PRiSM's code, which needs torch 2.6 and k2, so it has its own
+environment. You need it only for new audio: the test set already includes the transcripts. The script fetches
+PRiSM's code at the commit we used and installs the exact package versions we ran:
 
 ```sh
 bash tools/setup_env.sh                   # creates envs/prism; ends with "environment OK"
