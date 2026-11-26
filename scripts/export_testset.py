@@ -20,6 +20,7 @@ from pathlib import Path
 import pandas as pd
 import pyarrow.parquet as pq
 
+from sal import testset
 from sal.paths import DATA, OUTPUTS
 
 ap = argparse.ArgumentParser()
@@ -90,3 +91,10 @@ sums = [f"{hashlib.sha256((args.out / f).read_bytes()).hexdigest()}  {f}"
         for f in ("testset.parquet", "transcripts_w2v2.parquet", "transcripts_zipa.parquet", "README.txt")]
 (args.out / "SHA256SUMS").write_text("\n".join(sums) + "\n")
 print(f"wrote {args.out}: {len(test):,} utterances, {hours:.1f} h")
+changed = testset.failures(args.out)
+if changed:
+    print(f"NOTE: {changed} differ from the published test set (sal.testset.SHA256). Publishing these files means "
+          "replacing them on Drive and updating SHA256 in src/sal/testset.py in the same commit; otherwise "
+          "scripts/infer.py refuses the download.")
+else:
+    print("identical to the published test set")

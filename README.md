@@ -37,15 +37,16 @@ bash tools/setup_env.sh                   # creates envs/prism; ends with "envir
 
 ## Inference
 
-On the test set's transcripts (no GPU needed), after downloading the Drive folder to `sal_testset/`:
+On the test set (no GPU needed):
 
 ```sh
-uv run python scripts/infer.py --checkpoint checkpoints/tp_zipa_rebuild_phone_bigram_speaker_split_s42.pt \
-    --transcripts sal_testset/transcripts_zipa.parquet --labels sal_testset/testset.parquet --out predictions.csv
+uv run python scripts/infer.py --checkpoint checkpoints/tp_zipa_rebuild_phone_bigram_speaker_split_s42.pt
 ```
 
-This writes the predicted latitude, longitude and nearest pincode per utterance, and prints Recall@1 and mean error
-(the numbers in the table above).
+On first use this downloads the test set from Drive into `data/testset/` (about 700 MB) and checks every data file
+against SHA-256 digests fixed in `src/sal/testset.py` before running. It writes the predicted latitude, longitude
+and nearest pincode per utterance to `outputs/inference/`, and prints Recall@1 and mean error (the numbers in the
+table above).
 
 On your own audio, transcribe with the checkpoint's recognizer first:
 

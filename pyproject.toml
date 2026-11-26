@@ -27,6 +27,8 @@ dependencies = [
     "panphon>=0.22",
     "speechbrain>=1.0",
     "statsmodels>=0.14",
+    "gdown>=5.2",
+    "filelock>=3.12",
 ]
 
 [dependency-groups]

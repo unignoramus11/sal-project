@@ -1,5 +1,11 @@
 """Predict locations with a saved transcript probe, and score them if the true locations are known.
 
+With only --checkpoint, the script scores the checkpoint on the public test set with that recognizer's transcripts.
+The test set is downloaded on first use (about 700 MB, into data/testset/) and every file is checked against fixed
+SHA-256 digests before anything runs (sal.testset). Only checkpoints trained on the training part of the
+speaker-disjoint split of our rebuild are accepted there, since any other training data contains test speakers:
+    uv run python scripts/infer.py --checkpoint checkpoints/tp_zipa_rebuild_phone_bigram_speaker_split_s42.pt
+
 Inference has two steps, because the recognizers run in PRiSM's environment (envs/prism) and the probes in ours:
 
   1. Transcribe the audio with the probe's recognizer (W2V2 or ZIPA), using PRiSM's own model code:
@@ -15,7 +21,8 @@ Inference has two steps, because the recognizers run in PRiSM's environment (env
 The output has one row per utterance: the predicted latitude and longitude, and the training pincode nearest to the
 prediction. With --labels (a parquet with the id column, latitude and longitude), the script also prints Recall@1
 and mean error in km, computed exactly as in training (sal.probes.geo; Recall@1 ranks the distinct locations of the
-scored utterances).
+scored utterances). A shuffled-order checkpoint (probe "shuffle") draws its own fixed permutations, so its predictions
+are not identical to those of the training run; every other probe reproduces them exactly.
 """
 import argparse
 import json
@@ -25,16 +32,19 @@ import numpy as np
 import pandas as pd
 import torch
 
+from sal import testset
+from sal.paths import OUTPUTS
 from sal.probes import geo
 from sal.probes import models as M
 from sal.probes import tp_data as T
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--checkpoint", type=Path, required=True)
-ap.add_argument("--transcripts", type=Path, required=True, help="output of scripts/transcribe.py")
+ap.add_argument("--transcripts", type=Path, default=None,
+                help="output of scripts/transcribe.py (default: the public test set, downloaded if needed)")
 ap.add_argument("--labels", type=Path, default=None, help="parquet with the id column, latitude and longitude")
 ap.add_argument("--id-col", default="metadata_idx")
-ap.add_argument("--out", type=Path, required=True)
+ap.add_argument("--out", type=Path, default=None, help="default: outputs/inference/<checkpoint name>.csv")
 ap.add_argument("--device", default="cpu")
 ap.add_argument("--batch-size", type=int, default=256)
 args = ap.parse_args()
@@ -42,7 +52,29 @@ args = ap.parse_args()
 ck = torch.load(args.checkpoint, map_location="cpu", weights_only=False)
 if ck.get("kind") != "transcript_probe":
     raise SystemExit(f"{args.checkpoint} is not a transcript-probe checkpoint written by scripts/run_tp.py")
-tr = pd.read_parquet(args.transcripts, columns=[args.id_col, "processed_transcript", "tokens"])
+if args.transcripts is None:
+    recognizer, _, data = ck["recognizer"].partition("_")
+    if data != "rebuild" or ck["protocol"] != "speaker_split":
+        raise SystemExit(f"{ck['name']} was trained on {ck['recognizer']} with protocol {ck['protocol']}, whose "
+                         "training data includes speakers of the public test set; pass --transcripts to run it on "
+                         "other data")
+    try:
+        args.transcripts = testset.transcripts(recognizer)
+    except testset.TestSetError as e:
+        raise SystemExit(str(e)) from e
+    if args.id_col != "metadata_idx":
+        raise SystemExit("the test set's id column is metadata_idx")
+    args.labels = args.labels or args.transcripts.parent / "testset.parquet"
+args.out = args.out or OUTPUTS / "inference" / f"{ck['name']}.csv"
+cols = [args.id_col, "processed_transcript", "tokens"]
+try:
+    tr = pd.read_parquet(args.transcripts, columns=cols)
+except (KeyError, ValueError, OSError) as e:
+    raise SystemExit(f"{args.transcripts} needs the columns {cols} (scripts/transcribe.py writes them): {e}") from e
+if tr.empty:
+    raise SystemExit(f"{args.transcripts} has no utterances")
+if tr[args.id_col].duplicated().any():
+    raise SystemExit(f"{args.transcripts} repeats ids in {args.id_col}")
 vocab = ck["vocab"]
 seqs = [T.encode(T.units(t, list(k), ck["tokens"]), vocab)
         for t, k in zip(tr["processed_transcript"], tr["tokens"], strict=True)]
@@ -79,7 +111,11 @@ res.to_csv(args.out, index=False)
 print(f"wrote {args.out} ({len(res)} utterances) with {ck['name']}")
 
 if args.labels is not None:
-    lab = pd.read_parquet(args.labels, columns=[args.id_col, "latitude", "longitude"])
+    try:
+        lab = pd.read_parquet(args.labels, columns=[args.id_col, "latitude", "longitude"])
+    except (KeyError, ValueError, OSError) as e:
+        raise SystemExit(f"{args.labels} needs the columns {args.id_col}, latitude, longitude: {e}") from e
+    lab = lab.drop_duplicates(args.id_col)
     lab = res[[args.id_col]].merge(lab, on=args.id_col, how="left")
     if lab["latitude"].isna().any():
         raise SystemExit(f"{lab['latitude'].isna().sum()} transcribed utterances have no label in {args.labels}")

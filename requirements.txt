@@ -13,6 +13,8 @@ annotated-doc==0.0.5
     # via typer
 anyio==4.15.1 ; sys_platform != 'emscripten'
     # via httpx2
+beautifulsoup4==4.15.0
+    # via gdown
 certifi==2026.7.22
     # via requests
 cffi==2.1.1
@@ -49,11 +51,15 @@ exceptiongroup==1.3.1 ; python_full_version < '3.11' and sys_platform != 'emscri
     # via anyio
 filelock==4.1.0 ; python_full_version < '3.11'
     # via
+    #   gdown
     #   huggingface-hub
+    #   sal
     #   torch
 filelock==4.2.1 ; python_full_version >= '3.11'
     # via
+    #   gdown
     #   huggingface-hub
+    #   sal
     #   torch
 fonttools==4.65.0 ; python_full_version < '3.11'
     # via matplotlib
@@ -65,6 +71,8 @@ fsspec==2026.9.0
     # via
     #   huggingface-hub
     #   torch
+gdown==6.5.2
+    # via sal
 h11==0.16.0 ; sys_platform != 'emscripten'
     # via httpcore2
 hf-xet==1.7.0 ; platform_machine == 'AMD64' or platform_machine == 'ARM64' or platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'arm64' or platform_machine == 'x86_64'
@@ -251,6 +259,8 @@ pygments==2.21.0
     # via rich
 pyparsing==3.3.3
     # via matplotlib
+pysocks==1.7.1
+    # via requests
 python-dateutil==2.9.0.post0
     # via
     #   matplotlib
@@ -269,7 +279,9 @@ regex==2026.9.29
     #   panphon
     #   transformers
 requests==2.34.2
-    # via speechbrain
+    # via
+    #   gdown
+    #   speechbrain
 rich==15.0.0
     # via typer
 ruamel-yaml==0.18.17
@@ -317,6 +329,10 @@ soundfile==0.14.0
     # via
     #   sal
     #   speechbrain
+soupsieve==2.10 ; python_full_version < '3.11.5'
+    # via beautifulsoup4
+soupsieve==4.1.3 ; python_full_version >= '3.11.5'
+    # via beautifulsoup4
 speechbrain==1.1.2
     # via sal
 statsmodels==0.15.0
@@ -339,6 +355,7 @@ torchaudio==2.11.0
     #   speechbrain
 tqdm==4.70.1
     # via
+    #   gdown
     #   huggingface-hub
     #   sal
     #   speechbrain
@@ -356,8 +373,10 @@ typer==0.27.3
 typing-extensions==4.16.0
     # via
     #   anyio
+    #   beautifulsoup4
     #   exceptiongroup
     #   formulaic
+    #   gdown
     #   httpx2
     #   huggingface-hub
     #   soundfile
@@ -367,6 +386,8 @@ tzdata==2026.5 ; python_full_version < '3.11' or sys_platform == 'emscripten' or
 unicodecsv==0.14.1
     # via panphon
 urllib3==2.8.0
-    # via requests
+    # via
+    #   gdown
+    #   requests
 wrapt==2.5.1
     # via formulaic
