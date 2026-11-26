@@ -8,13 +8,14 @@
 #   5  prosody BiGRU, seeds 43-46, both splits
 #   6  description length (MDL) of the ZIPA phone BiGRU and shuffled BiGRU, seeds 0-2, both splits
 #   7  benchmark BiGRUs seed 44; topic check seeds 45-46
-# Runs WORKERS jobs at once on the GPU (default 2); a lock directory per run stops two workers taking the same run,
+# Runs WORKERS jobs at once on the GPU (default 3: one BiGRU run keeps one CPU core busy and the GPU about half busy;
+# three fill the GPU to about 90%); a lock directory per run stops two workers taking the same run,
 # and a run with results is skipped, so the script can be restarted at any time.
 # Needs outputs/transcripts/{w2v2,zipa}_{rebuild,official}.parquet, outputs/features/prosody_rebuild, and
 # results/{benchmark,official} plus the existing results/runs (tools/push_pc_inputs.sh copies them).
 # Start it under the GPU supervisor (pc-delegate skill), which preheats the GPU, restarts the queue after a driver
 # fault, and restarts it when the queue exits with 75:
-#   pc supervise nov 'cd ~/developer/sal-project && bash tools/pc_november.sh'
+#   GPU_MAX_CLOCK=1800 pc supervise nov 'cd ~/developer/sal-project && bash tools/pc_november.sh'
 # It appends its own output to outputs/logs/pc_november.log (no pipe on the command line: a pipe would hide the exit
 # code that tells the supervisor to restart).
 # The queue itself watches for two kinds of GPU trouble and then stops taking runs, lets the running ones finish and
@@ -96,7 +97,7 @@ grus generic "45 46"
 
 # TEST_QUEUE=<file of done-file TAB name TAB command lines> replaces the job list (for testing the queue itself)
 [ -n "${TEST_QUEUE:-}" ] && cp "$TEST_QUEUE" "$queue"
-echo "$(date '+%d %b %H:%M') $(wc -l < "$queue") runs queued, ${WORKERS:-2} at a time"
+echo "$(date '+%d %b %H:%M') $(wc -l < "$queue") runs queued, ${WORKERS:-3} at a time"
 if [ "${DRY:-0}" = 1 ]; then cut -f2 "$queue" | awk '{n++; if (n <= 3 || n % 50 == 0) print "  " n, $0}'; rm -f "$queue"; exit 0; fi
 ( while true; do
     nvidia-smi --query-gpu=timestamp,power.draw,enforced.power.limit,clocks.sm,temperature.gpu,utilization.gpu \
@@ -142,7 +143,7 @@ worker() {
   done < "$queue"
 }
 workers=()
-for _ in $(seq "${WORKERS:-2}"); do worker & workers+=($!); sleep 5; done
+for _ in $(seq "${WORKERS:-3}"); do worker & workers+=($!); sleep 5; done
 wait "${workers[@]}"
 kill $sampler 2>/dev/null
 rm -f "$queue"
