@@ -96,3 +96,16 @@ Recall@1 and mean error in km follow PRiSM's definitions (`src/sal/probes/geo.py
 `src/sal/` library code · `scripts/` one script per step · `results/` every run and table · `checkpoints/` released
 probes · `paper/` report · `docs/` design notes and data audits · `slurm/`, `tools/` cluster and GPU job scripts ·
 `tests/` unit tests.
+
+## Who did what
+
+**Nidhi Vaidya** ran everything on the Ada cluster. She verified that our rebuild of Vaani-Hi matches bit for bit
+(all 22,551 recordings and labels), extracted the W2V2 hidden states, ran the layer sweep and every
+representation-probe run (attention, order-aware and chunk-shuffled probes, on new speakers and on the benchmark),
+added the test-time order ablation, and fixed the Ada job setup. She also trained the prosody BiGRU and its fusion
+with the transcript probe (RQ3, `results/nidhi/FINAL_RQ3.md`), wrote the syllable analysis of the recognizers'
+output (RQ2, `results/nidhi/`), and edited the proposal.
+
+**Mohit Kumar Singh** rebuilt the dataset and the splits, audited PRiSM's release, built the benchmark, ran the
+phone transcription and the transcript, voice, channel and prosody-statistics probes, measured consonant duration
+(RQ2), and wrote the analysis, the report and the slides.
