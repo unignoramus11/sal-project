@@ -21,13 +21,14 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import torch
 
 from sal.data.control import control_targets
 from sal.data.prompts import restrict
 from sal.paths import DATA, RESULTS
 from sal.probes import models as M
 from sal.probes.rp_data import FeatureStore, FrameBatcher
-from sal.probes.train import TrainConfig, checkpoint_for, save_run, train_probe
+from sal.probes.train import TrainConfig, checkpoint_for, evaluate, predict, save_run, train_probe
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--features", type=Path, required=True)
@@ -49,8 +50,12 @@ ap.add_argument("--control", action="store_true",
 ap.add_argument("--device", default="cuda")
 ap.add_argument("--out-root", type=Path, default=RESULTS / "runs")
 ap.add_argument("--tag", default="")
+ap.add_argument("--order-ablation", action="store_true",
+                help="save the best model and score it on test frames shuffled in 200, 100 and 20 ms chunks")
 ap.add_argument("--overwrite", action="store_true", help="rerun seeds that already have results")
 args = ap.parse_args()
+if args.order_ablation and not args.tag:
+    ap.error("--order-ablation requires --tag to avoid overwriting earlier runs")
 
 meta = pd.read_parquet(args.dataset, columns=["metadata_idx", "latitude", "longitude"])
 meta = meta.merge(pd.read_parquet(args.splits), on="metadata_idx").sort_values("metadata_idx").reset_index(drop=True)
@@ -82,6 +87,22 @@ for seed in args.seeds:
     if (args.out_root / name / "metrics.json").exists() and not args.overwrite:
         print(name, "already done, skipped", flush=True)
         continue
-    res = train_probe(make, batcher, targets, splits, cfg, checkpoint=checkpoint_for(name))
+    def post_eval(model, name=name, seed=seed, cfg=cfg):
+        # Called with the best-validation weights after the normal evaluation: the same model, tested on frames whose
+        # order is shuffled in chunks of 200, 100 and 20 ms (test-time order ablation).
+        outdir = args.out_root / name
+        outdir.mkdir(parents=True, exist_ok=True)
+        torch.save({k: v.detach().cpu() for k, v in model.state_dict().items()}, outdir / "best_model.pt")
+        scores = {}
+        for ms in (None, 200, 100, 20):
+            test_batcher = FrameBatcher(store, meta["metadata_idx"].to_numpy(), targets, chunk_shuffle_ms=ms, seed=seed)
+            pred = predict(model, test_batcher, splits["test"], cfg)
+            condition = "original" if ms is None else f"shuffle_{ms}ms"
+            scores[condition] = evaluate(pred, targets[splits["test"]])
+            print("ABLATION", condition, json.dumps(scores[condition]), flush=True)
+        return scores
+
+    res = train_probe(make, batcher, targets, splits, cfg, checkpoint=checkpoint_for(name),
+                      post_eval=post_eval if args.order_ablation else None)
     save_run(res, args.out_root / name, meta=meta[["metadata_idx", "speaker", "pincode", "state", "district"]])
     print(name, json.dumps(res["metrics"]["test"]), flush=True)
