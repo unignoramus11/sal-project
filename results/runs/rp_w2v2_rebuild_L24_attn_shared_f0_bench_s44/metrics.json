@@ -1,0 +1,61 @@
+{
+  "config": {
+    "lr": 0.0002,
+    "batch_size": 48,
+    "min_epochs": 10,
+    "max_epochs": 100,
+    "patience": 5,
+    "val_per_epoch": 4,
+    "warmup_steps": 200,
+    "warmup_start_factor": 0.3333333333333333,
+    "grad_clip": 1.0,
+    "weight_decay": 0.0,
+    "seed": 44,
+    "device": "cuda",
+    "eval_batch_size": 64,
+    "extra": {
+      "features": "/ssd_scratch/nidhiv/sal_102435/w2v2_rebuild",
+      "layers": [
+        24
+      ],
+      "layer_names": [
+        "layer24"
+      ],
+      "probe": "attn",
+      "protocol": "shared_f0",
+      "dim": 1024,
+      "size": {
+        "params": 4725763,
+        "target": 4725763
+      }
+    }
+  },
+  "best_epoch": 7,
+  "best_check": 30,
+  "epochs_run": 10,
+  "seconds": 233.9678144454956,
+  "n_params": 4725763,
+  "metrics": {
+    "train": {
+      "recall1": 20.975719392299652,
+      "recall5": 52.203238010406494,
+      "mean_km": 389.41049959831287,
+      "median_km": 308.6266143288272,
+      "n": 4448
+    },
+    "val": {
+      "recall1": 9.781021624803543,
+      "recall5": 33.72262716293335,
+      "mean_km": 533.3367321949997,
+      "median_km": 525.4972616872742,
+      "n": 685
+    },
+    "test": {
+      "recall1": 9.832015633583069,
+      "recall5": 33.053359389305115,
+      "mean_km": 596.490376616407,
+      "median_km": 581.3167414001392,
+      "n": 2024
+    }
+  }
+}
