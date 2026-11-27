@@ -55,4 +55,5 @@ def standard(configs: set[str], suffix: str = "") -> list[tuple[str, str, str]]:
             tp = f"tp_{model}_rebuild"
             add(f"{tp}_char_gru", f"{rp}_attn", "PRiSM's comparison (transcript char BiGRU vs RP-Attn)")
             add(f"{tp}_phone_gru", f"{rp}_gru", "transcripts vs hidden states (BiGRU on both)")
+            add(f"{tp}_phone_bigram", f"{rp}_gru", "transcripts vs hidden states (best of each: phone bigram vs BiGRU)")
     return out

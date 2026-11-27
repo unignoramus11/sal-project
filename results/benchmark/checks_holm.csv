@@ -1,21 +1,49 @@
 track,comparison,a,b,recall1_diff,recall1_lo,recall1_hi,recall1_p,recall1_p_holm
 all,order (phone bigram vs unigram),tp_w2v2_rebuild_phone_bigram,tp_w2v2_rebuild_phone_unigram,2.399325882561646,1.274389822621721,3.519294075984759,0.0,0.0
+all,PRiSM's comparison (transcript char BiGRU vs RP-Attn),tp_w2v2_rebuild_char_gru,rp_w2v2_rebuild_L24_attn,2.8339542309739225,1.7611944171935954,4.008046113890879,0.0,0.0
 all,"units (phones vs chars, bigram)",tp_w2v2_rebuild_phone_bigram,tp_w2v2_rebuild_char_bigram,1.6985985453255277,0.7672783035507141,2.6694106382400085,0.0,0.0
+all,RP order-aware vs order-free (BiGRU vs PRiSM's attention),rp_w2v2_rebuild_L24_gru,rp_w2v2_rebuild_L24_attn,6.741174383537342,4.771481064715302,8.655576783420566,0.0,0.0
+all,"recognizer (ZIPA vs W2V2, phone_bigram)",tp_zipa_rebuild_phone_bigram,tp_w2v2_rebuild_phone_bigram,2.5057654780911833,1.4010391658824233,3.7017878776059905,0.0,0.0
+all,sequence model vs bigram bag,tp_w2v2_rebuild_phone_gru,tp_w2v2_rebuild_phone_bigram,-1.8848678375022176,-3.0572360271449988,-0.8423508213276851,0.0,0.0
 all,transcripts vs voice (phone bigram vs ECAPA),tp_w2v2_rebuild_phone_bigram,dense_ecapa_rebuild,6.253326237360298,4.36768725841432,8.23704487424354,0.0,0.0
 all,order (phone bigram vs unigram),tp_zipa_rebuild_phone_bigram,tp_zipa_rebuild_phone_unigram,5.149015433741352,3.926508674799102,6.397997194287179,0.0,0.0
 all,order (char bigram vs unigram),tp_zipa_rebuild_char_bigram,tp_zipa_rebuild_char_unigram,1.94252261841405,0.7991374573031493,3.259146046083263,0.0,0.0
 all,"units (phones vs chars, bigram)",tp_zipa_rebuild_phone_bigram,tp_zipa_rebuild_char_bigram,2.904913961326947,1.9790764372403868,3.880651131674475,0.0,0.0
 all,transcripts vs voice (phone bigram vs ECAPA),tp_zipa_rebuild_phone_bigram,dense_ecapa_rebuild,8.759091715451481,6.7901086312624965,10.767573206855351,0.0,0.0
-all,"recognizer (ZIPA vs W2V2, phone_bigram)",tp_zipa_rebuild_phone_bigram,tp_w2v2_rebuild_phone_bigram,2.5057654780911833,1.4010391658824233,3.7017878776059905,0.0,0.0
-all,"recognizer (ZIPA vs W2V2, char_bigram)",tp_zipa_rebuild_char_bigram,tp_w2v2_rebuild_char_bigram,1.299450062089764,0.2902050274190677,2.366334811548691,0.012,0.024
-all,order (char bigram vs unigram),tp_w2v2_rebuild_char_bigram,tp_w2v2_rebuild_char_unigram,1.0510910058541778,0.0311262015847168,2.0942482278467853,0.046,0.046
+all,transcripts vs hidden states (BiGRU on both),tp_w2v2_rebuild_phone_gru,rp_w2v2_rebuild_L24_gru,-3.814085506475075,-5.340748009969733,-2.3166107665618445,0.0,0.0
+all,sequence model vs bigram bag,tp_zipa_rebuild_phone_gru,tp_zipa_rebuild_phone_bigram,-3.587901365974809,-4.608778941966138,-2.476854708743161,0.0,0.0
+all,transcripts vs hidden states (best of each: phone bigram vs BiGRU),tp_w2v2_rebuild_phone_bigram,rp_w2v2_rebuild_L24_gru,-1.929217668972858,-3.1616019933725656,-0.5838590840097942,0.006,0.066
+all,"recognizer (ZIPA vs W2V2, char_bigram)",tp_zipa_rebuild_char_bigram,tp_w2v2_rebuild_char_bigram,1.299450062089764,0.2902050274190677,2.366334811548691,0.012,0.12
+all,"recognizer (ZIPA vs W2V2, char_gru)",tp_zipa_rebuild_char_gru,tp_w2v2_rebuild_char_gru,1.144225651942523,0.2264976362114392,2.048563781722017,0.014,0.126
+all,order (char bigram vs unigram),tp_w2v2_rebuild_char_bigram,tp_w2v2_rebuild_char_unigram,1.0510910058541778,0.0311262015847168,2.0942482278467853,0.046,0.368
+all,"recognizer (ZIPA vs W2V2, phone_gru)",tp_zipa_rebuild_phone_gru,tp_w2v2_rebuild_phone_gru,0.8027319496185914,-0.2069736045546052,1.8903521251943056,0.126,0.882
+all,RP order (BiGRU vs chunk-shuffled BiGRU),rp_w2v2_rebuild_L24_gru,rp_w2v2_rebuild_L24_chunkshuffle,1.290580095795636,-0.5598974330097436,2.828611590009123,0.16,0.96
+all,"recognizer (ZIPA vs W2V2, phone_shuffle)",tp_zipa_rebuild_phone_shuffle,tp_w2v2_rebuild_phone_shuffle,0.545502927088877,-0.6170902336686975,1.78535639760164,0.358,1.0
+all,"units (phones vs chars, BiGRU)",tp_zipa_rebuild_phone_gru,tp_zipa_rebuild_char_gru,-0.2483590562355863,-0.9186572336838258,0.4260257131773389,0.478,1.0
+all,order (BiGRU vs shuffled BiGRU),tp_zipa_rebuild_phone_gru,tp_zipa_rebuild_phone_shuffle,0.2084442079120099,-0.9741123177034294,1.4166917119011666,0.71,1.0
+all,"units (phones vs chars, BiGRU)",tp_w2v2_rebuild_phone_gru,tp_w2v2_rebuild_char_gru,0.0931346460883448,-0.6642864478647951,0.7994764557883579,0.884,1.0
+all,order (BiGRU vs shuffled BiGRU),tp_w2v2_rebuild_phone_gru,tp_w2v2_rebuild_phone_shuffle,-0.0487848146177044,-1.2651638624546424,1.118338478145837,0.896,1.0
+shared,RP order-aware vs order-free (BiGRU vs PRiSM's attention),rp_w2v2_rebuild_L24_gru,rp_w2v2_rebuild_L24_attn,4.429230124353779,2.6353781118639477,6.698706994759626,0.0,0.0
+shared,order (BiGRU vs shuffled BiGRU),tp_w2v2_rebuild_phone_gru,tp_w2v2_rebuild_phone_shuffle,-5.071957524102277,-7.114972451771124,-3.2734127863553377,0.0,0.0
+shared,sequence model vs bigram bag,tp_w2v2_rebuild_phone_gru,tp_w2v2_rebuild_phone_bigram,-2.291462903451167,-3.7154916692397473,-0.9554832950022598,0.0,0.0
+shared,order (BiGRU vs shuffled BiGRU),tp_zipa_rebuild_phone_gru,tp_zipa_rebuild_phone_shuffle,-6.287550649713567,-8.502692183079297,-4.251390394110007,0.0,0.0
+shared,sequence model vs bigram bag,tp_zipa_rebuild_phone_gru,tp_zipa_rebuild_phone_bigram,-4.638815146010899,-6.819126048648444,-2.581622631209453,0.0,0.0
 shared,transcripts vs voice (phone bigram vs ECAPA),tp_zipa_rebuild_phone_bigram,dense_ecapa_rebuild,4.8763448372223,2.6605640486931135,7.635144556121747,0.0,0.0
-shared,transcripts vs voice (phone bigram vs ECAPA),tp_w2v2_rebuild_phone_bigram,dense_ecapa_rebuild,3.43719435517675,1.4227854805969715,5.758459770886608,0.002,0.018000000000000002
-shared,"units (phones vs chars, bigram)",tp_zipa_rebuild_phone_bigram,tp_zipa_rebuild_char_bigram,1.6068184993712449,0.4919634794162463,2.836651614724517,0.01,0.08
-shared,"recognizer (ZIPA vs W2V2, phone_bigram)",tp_zipa_rebuild_phone_bigram,tp_w2v2_rebuild_phone_bigram,1.43915048204555,0.0992027657176402,2.8425102777438944,0.032,0.224
+shared,transcripts vs voice (phone bigram vs ECAPA),tp_w2v2_rebuild_phone_bigram,dense_ecapa_rebuild,3.43719435517675,1.4227854805969715,5.758459770886608,0.002,0.036000000000000004
+shared,transcripts vs hidden states (BiGRU on both),tp_w2v2_rebuild_phone_gru,rp_w2v2_rebuild_L24_gru,-2.8922732988682407,-4.71291675380233,-1.1345568777698278,0.002,0.036000000000000004
+shared,"units (phones vs chars, bigram)",tp_zipa_rebuild_phone_bigram,tp_zipa_rebuild_char_bigram,1.6068184993712449,0.4919634794162463,2.836651614724517,0.01,0.16
+shared,"recognizer (ZIPA vs W2V2, phone_bigram)",tp_zipa_rebuild_phone_bigram,tp_w2v2_rebuild_phone_bigram,1.43915048204555,0.0992027657176402,2.8425102777438944,0.032,0.48
+shared,RP order (BiGRU vs chunk-shuffled BiGRU),rp_w2v2_rebuild_L24_gru,rp_w2v2_rebuild_L24_chunkshuffle,1.229565460388431,-0.1908180262590182,2.7938386045407246,0.098,1.0
+shared,"units (phones vs chars, BiGRU)",tp_zipa_rebuild_phone_gru,tp_zipa_rebuild_char_gru,-1.187648456057007,-2.4718645232999026,0.1974028899979979,0.114,1.0
+shared,PRiSM's comparison (transcript char BiGRU vs RP-Attn),tp_w2v2_rebuild_char_gru,rp_w2v2_rebuild_L24_attn,1.2575101299427134,-0.5044094466664837,3.179154857195041,0.182,1.0
 shared,order (char bigram vs unigram),tp_zipa_rebuild_char_bigram,tp_zipa_rebuild_char_unigram,-1.0898421126170184,-2.9908867789242968,0.8864381980835297,0.292,1.0
+shared,"recognizer (ZIPA vs W2V2, phone_gru)",tp_zipa_rebuild_phone_gru,tp_w2v2_rebuild_phone_gru,-0.908201760514182,-2.606531443162877,0.6081895134729838,0.332,1.0
+shared,"recognizer (ZIPA vs W2V2, char_gru)",tp_zipa_rebuild_char_gru,tp_w2v2_rebuild_char_gru,0.5588933910856504,-0.9900652403138908,2.257080309713527,0.51,1.0
+shared,transcripts vs hidden states (best of each: phone bigram vs BiGRU),tp_w2v2_rebuild_phone_bigram,rp_w2v2_rebuild_L24_gru,-0.6008103954170742,-2.4270951488268517,1.100190614561894,0.572,1.0
 shared,"recognizer (ZIPA vs W2V2, char_bigram)",tp_zipa_rebuild_char_bigram,tp_w2v2_rebuild_char_bigram,-0.3912253737599553,-1.6681380258850806,0.9466980070481512,0.606,1.0
 shared,"units (phones vs chars, bigram)",tp_w2v2_rebuild_phone_bigram,tp_w2v2_rebuild_char_bigram,-0.2235573564342601,-1.091227517975321,0.7449450471137052,0.608,1.0
+shared,"recognizer (ZIPA vs W2V2, phone_shuffle)",tp_zipa_rebuild_phone_shuffle,tp_w2v2_rebuild_phone_shuffle,0.3073913650971077,-1.2553975489546048,1.9857198824538629,0.678,1.0
 shared,order (phone bigram vs unigram),tp_zipa_rebuild_phone_bigram,tp_zipa_rebuild_phone_unigram,0.3353360346513902,-1.5670488732737633,2.4567445418379776,0.692,1.0
 shared,order (phone bigram vs unigram),tp_w2v2_rebuild_phone_bigram,tp_w2v2_rebuild_phone_unigram,0.2235573564342601,-1.339174421927317,1.713854309450116,0.762,1.0
+shared,"units (phones vs chars, BiGRU)",tp_w2v2_rebuild_phone_gru,tp_w2v2_rebuild_char_gru,0.2794466955428252,-1.2408261172139718,1.9884987804519672,0.792,1.0
 shared,order (char bigram vs unigram),tp_w2v2_rebuild_char_bigram,tp_w2v2_rebuild_char_unigram,-0.2654743607656839,-1.9018302533317863,1.3800874872022597,0.864,1.0

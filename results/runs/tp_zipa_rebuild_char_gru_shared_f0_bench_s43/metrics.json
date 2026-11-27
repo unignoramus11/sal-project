@@ -1,0 +1,53 @@
+{
+  "config": {
+    "lr": 0.001,
+    "batch_size": 64,
+    "min_epochs": 10,
+    "max_epochs": 200,
+    "patience": 100,
+    "val_per_epoch": 4,
+    "warmup_steps": 200,
+    "warmup_start_factor": 0.3333333333333333,
+    "grad_clip": 1.0,
+    "weight_decay": 0.0,
+    "seed": 43,
+    "device": "cuda",
+    "eval_batch_size": 256,
+    "extra": {
+      "vocab_size": 62,
+      "tokens": "char",
+      "probe": "gru",
+      "protocol": "shared_f0",
+      "transcripts": "outputs/transcripts/zipa_rebuild.parquet",
+      "mean_len": 76.25656377505766
+    }
+  },
+  "best_epoch": 4,
+  "best_check": 19,
+  "epochs_run": 30,
+  "seconds": 221.46134543418884,
+  "n_params": 1786115,
+  "metrics": {
+    "train": {
+      "recall1": 19.379496574401855,
+      "recall5": 42.3561155796051,
+      "mean_km": 443.26455187326576,
+      "median_km": 387.3943354419075,
+      "n": 4448
+    },
+    "val": {
+      "recall1": 10.218977928161621,
+      "recall5": 34.16058421134949,
+      "mean_km": 521.9771363789979,
+      "median_km": 483.6376928503173,
+      "n": 685
+    },
+    "test": {
+      "recall1": 9.93082970380783,
+      "recall5": 29.990118741989136,
+      "mean_km": 616.2569617433757,
+      "median_km": 599.9733203706445,
+      "n": 2024
+    }
+  }
+}
