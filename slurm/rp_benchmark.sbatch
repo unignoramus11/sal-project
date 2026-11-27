@@ -10,5 +10,5 @@ B=results/benchmark
 use_frames "$1" rebuild "-1"
 for f in $3; do
   python scripts/run_rp.py --features "$FEAT" --dataset $B/meta.parquet --splits $B/splits.parquet \
-    --protocol "${2}_f${f}" --tag _bench --probe attn --layers -1 --seeds 42 43 44 --device cuda --in-memory ${RP_ARGS:-}
+    --protocol "${2}_f${f}" --tag _bench --probe "${4:?Missing probe argument}" --layers -1 --seeds 42 43 44 --device cuda --in-memory ${RP_ARGS:-}
 done

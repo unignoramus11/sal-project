@@ -77,6 +77,7 @@ def train_probe(
     splits: dict[str, np.ndarray],            # name -> example indices; needs "train" and "val"
     cfg: TrainConfig,
     log: Callable[[str], None] = print,
+    post_eval: Callable[[torch.nn.Module], dict] | None = None,
 ) -> dict:
     seed_everything(cfg.seed)          # before construction, so initial weights depend on the seed
     device = torch.device(cfg.device)
@@ -143,6 +144,8 @@ def train_probe(
         p = predict(model, batcher, idx, cfg)
         result["metrics"][name] = evaluate(p, targets[idx])
         result["predictions"][name] = (idx, p)
+    if post_eval is not None:
+        result["order_ablation"] = post_eval(model)
     return result
 
 
