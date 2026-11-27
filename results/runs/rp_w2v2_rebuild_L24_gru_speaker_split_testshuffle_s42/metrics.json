@@ -1,0 +1,93 @@
+{
+  "config": {
+    "lr": 0.0002,
+    "batch_size": 48,
+    "min_epochs": 10,
+    "max_epochs": 100,
+    "patience": 5,
+    "val_per_epoch": 4,
+    "warmup_steps": 200,
+    "warmup_start_factor": 0.3333333333333333,
+    "grad_clip": 1.0,
+    "weight_decay": 0.0,
+    "seed": 42,
+    "device": "cuda",
+    "eval_batch_size": 64,
+    "extra": {
+      "features": "/ssd_scratch/nidhiv/sal_101146/w2v2_rebuild",
+      "layers": [
+        24
+      ],
+      "layer_names": [
+        "layer24"
+      ],
+      "probe": "gru",
+      "protocol": "speaker_split",
+      "dim": 1024,
+      "size": {
+        "proj": 768,
+        "hidden": 320,
+        "params": 4729219,
+        "target": 4725763
+      }
+    }
+  },
+  "best_epoch": 10,
+  "best_check": 41,
+  "epochs_run": 12,
+  "seconds": 1563.8324196338654,
+  "n_params": 4729219,
+  "metrics": {
+    "train": {
+      "recall1": 38.584133982658386,
+      "recall5": 81.04817271232605,
+      "mean_km": 194.9330188227144,
+      "median_km": 127.7216070723769,
+      "n": 16753
+    },
+    "val": {
+      "recall1": 18.08750629425049,
+      "recall5": 54.578256607055664,
+      "mean_km": 378.7156058305503,
+      "median_km": 285.73188664518335,
+      "n": 2217
+    },
+    "test": {
+      "recall1": 18.43060553073883,
+      "recall5": 53.47668528556824,
+      "mean_km": 388.8267664308182,
+      "median_km": 278.2439759208682,
+      "n": 3581
+    }
+  },
+  "order_ablation": {
+    "original": {
+      "recall1": 18.43060553073883,
+      "recall5": 53.47668528556824,
+      "mean_km": 388.8267664308182,
+      "median_km": 278.2439759208682,
+      "n": 3581
+    },
+    "shuffle_200ms": {
+      "recall1": 13.878804445266724,
+      "recall5": 44.09382939338684,
+      "mean_km": 439.9895912076714,
+      "median_km": 377.3624322634106,
+      "n": 3581
+    },
+    "shuffle_100ms": {
+      "recall1": 12.678022682666779,
+      "recall5": 39.79335427284241,
+      "mean_km": 468.2607295797965,
+      "median_km": 428.7176396248445,
+      "n": 3581
+    },
+    "shuffle_20ms": {
+      "recall1": 9.941357374191284,
+      "recall5": 33.230942487716675,
+      "mean_km": 532.53312182026,
+      "median_km": 486.75721385929967,
+      "n": 3581
+    }
+  }
+}
