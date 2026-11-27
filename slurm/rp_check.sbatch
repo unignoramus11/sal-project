@@ -6,5 +6,5 @@
 . slurm/frames.sh
 if [ "$3" = generic ]; then extra="--prompts generic"; else extra="--control"; fi
 use_frames "$1" rebuild "-1"
-python scripts/run_rp.py --features "$FEAT" --probe attn --protocol "$2" --layers -1 \
+python scripts/run_rp.py --features "$FEAT" --probe "${5:-attn}" --protocol "$2" --layers -1 \
   --seeds $4 --device cuda --in-memory $extra ${RP_ARGS:-}
