@@ -11,8 +11,11 @@
 # Runs WORKERS jobs at once on the GPU (default 3: one BiGRU run keeps one CPU core busy and the GPU about half busy;
 # three fill the GPU to about 90%); a lock directory per run stops two workers taking the same run,
 # and a run with results is skipped, so the script can be restarted at any time.
-# Needs outputs/transcripts/{w2v2,zipa}_{rebuild,official}.parquet, outputs/features/prosody_rebuild, and
-# results/{benchmark,official} plus the existing results/runs (tools/push_pc_inputs.sh copies them).
+# Needs outputs/transcripts/{w2v2,zipa}_{rebuild,official}.parquet, outputs/features/prosody_rebuild,
+# data/vaani_hi_rebuild/{vaani_hi_rebuild,splits,prompts}.parquet, results/{benchmark,official} and the existing
+# results/runs (tools/push_pc_inputs.sh copies all but the transcripts, features and the large dataset file). It checks
+# them before starting and exits with 2 if any is missing: otherwise every run needing one would fail within seconds,
+# the idle GPU would read as a power clamp, and the supervisor would restart the queue again and again.
 # Start it under the GPU supervisor (pc-delegate skill), which preheats the GPU, restarts the queue after a driver
 # fault, and restarts it when the queue exits with 75:
 #   GPU_MAX_CLOCK=1800 pc supervise nov 'cd ~/developer/sal-project && bash tools/pc_november.sh'
@@ -22,7 +25,11 @@
 # exits with 75 (the supervisor preheats and reruns it; finished runs are skipped, so it resumes):
 #   - the power clamp: before each run, a limit under 35 W (runs would go at a fraction of the speed);
 #   - a stalled run: no log output for STALL_MIN minutes (default 20), the sign of a dead CUDA context; it is killed.
-# Exit 0: every run done. Exit 1: some runs failed for other reasons (their logs are listed). DRY=1 prints the queue.
+# A run that fails is retried once, on the next start (a failure leaves the queue exiting with 75); a run that has
+# failed on two starts is skipped from then on, so one broken run cannot hold up the rest. Failures are counted in
+# outputs/logs/pc_november_failed.txt (delete a line to allow another try).
+# Exit 0: every run done. Exit 1: some runs failed twice (their logs are listed). Exit 2: inputs missing.
+# DRY=1 checks the inputs and prints the queue without touching the running queue's locks.
 # The GPU's draw, limit, clock and temperature are logged once a minute to outputs/logs/gpu_november.csv.
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 1
@@ -37,12 +44,11 @@ STALL_SEC=${STALL_SEC:-$(( STALL_MIN * 60 ))}   # STALL_SEC and POLL_SEC exist f
 POLL_SEC=${POLL_SEC:-30}
 B=results/benchmark
 R=results/official
-LOCKS=/tmp/sal_locks_november
-# Only one copy runs at a time (pc supervise refuses a second session), so locks left by a stopped run are stale.
-rm -rf $LOCKS
-mkdir -p $LOCKS outputs/logs
+LOCKS=${LOCKS:-/tmp/sal_locks_november}   # LOCKS and FAIL_LOG exist for testing next to a live queue
 FAULT=$LOCKS/.gpu_trouble
 FAILED=$LOCKS/.failed
+FAIL_LOG=${FAIL_LOG:-outputs/logs/pc_november_failed.txt}
+touch "$FAIL_LOG"
 queue=$(mktemp)
 
 # job <done-file> <log name> <command...>
@@ -97,8 +103,25 @@ grus generic "45 46"
 
 # TEST_QUEUE=<file of done-file TAB name TAB command lines> replaces the job list (for testing the queue itself)
 [ -n "${TEST_QUEUE:-}" ] && cp "$TEST_QUEUE" "$queue"
-echo "$(date '+%d %b %H:%M') $(wc -l < "$queue") runs queued, ${WORKERS:-3} at a time"
+
+# Every input the queued runs read, explicit (--transcripts, --dataset, --splits, --features) or default.
+D=data/vaani_hi_rebuild
+inputs=$( { cut -f3 "$queue" | grep -oE -- '--(transcripts|dataset|splits|features) [^ ]+' | cut -d' ' -f2
+  if [ -s "$queue" ]; then echo $D/vaani_hi_rebuild.parquet; echo $D/splits.parquet; fi
+  if cut -f3 "$queue" | grep -q -- '--prompts generic'; then echo $D/prompts.parquet; fi
+  if cut -f3 "$queue" | grep -q 'scripts/run_prosody.py'; then
+    for f in frames_L0.npy index.parquet meta.json; do echo outputs/features/prosody_rebuild/$f; done; fi
+} | sort -u )
+missing=$(for f in $inputs; do [ -s "$f" ] || [ -d "$f" ] || echo "$f"; done)
+if [ -n "$missing" ]; then
+  echo "$(date '+%d %b %H:%M') inputs missing, not starting (copy them, e.g. tools/push_pc_inputs.sh):"
+  echo "$missing" | sed 's/^/  /'; rm -f "$queue"; exit 2
+fi
+echo "$(date '+%d %b %H:%M') $(wc -l < "$queue") runs queued, ${WORKERS:-3} at a time; $(echo "$inputs" | wc -l) inputs present"
 if [ "${DRY:-0}" = 1 ]; then cut -f2 "$queue" | awk '{n++; if (n <= 3 || n % 50 == 0) print "  " n, $0}'; rm -f "$queue"; exit 0; fi
+# Only one copy runs at a time (pc supervise refuses a second session), so locks left by a stopped run are stale.
+rm -rf "$LOCKS"
+mkdir -p "$LOCKS"
 ( while true; do
     nvidia-smi --query-gpu=timestamp,power.draw,enforced.power.limit,clocks.sm,temperature.gpu,utilization.gpu \
       --format=csv,noheader >> outputs/logs/gpu_november.csv 2>/dev/null
@@ -117,6 +140,9 @@ worker() {
     [ -f "$FAULT" ] && break
     [ -f "$f" ] && continue
     mkdir "$LOCKS/$n" 2>/dev/null || continue
+    if [ "$(grep -cx "$n" "$FAIL_LOG")" -ge 2 ]; then
+      echo "$(date '+%d %b %H:%M') skip  $n (failed on two starts, outputs/logs/$n.log)"; echo "$n" >> "$FAILED"; continue
+    fi
     lim=$(limit)
     if [ -n "$lim" ] && [ "$lim" -lt 35 ]; then
       echo "$(date '+%d %b %H:%M') GPU clamped at $lim W: stopping for a preheat"; touch "$FAULT"; rmdir "$LOCKS/$n"; break
@@ -138,7 +164,8 @@ worker() {
     elif [ $rc = 0 ] && [ -f "$f" ]; then
       echo "$(date '+%d %b %H:%M') done  $n"
     else
-      echo "$(date '+%d %b %H:%M') FAILED $n (exit $rc, outputs/logs/$n.log)"; echo "$n" >> "$FAILED"; rmdir "$LOCKS/$n"
+      # the lock stays, so the other worker does not run it again in this pass; the next start clears all locks
+      echo "$(date '+%d %b %H:%M') FAILED $n (exit $rc, outputs/logs/$n.log)"; echo "$n" >> "$FAILED"; echo "$n" >> "$FAIL_LOG"
     fi
   done < "$queue"
 }
@@ -151,6 +178,10 @@ if [ -f "$FAULT" ]; then
   echo "$(date '+%d %b %H:%M') GPU trouble: exiting with 75 so the supervisor preheats and restarts the queue"; exit 75
 fi
 if [ -s "$FAILED" ]; then
-  echo "$(date '+%d %b %H:%M') $(wc -l < "$FAILED") runs failed:"; sed 's/^/  /' "$FAILED"; exit 1
+  retry=$(while read -r n; do [ "$(grep -cx "$n" "$FAIL_LOG")" -lt 2 ] && echo "$n"; done < "$FAILED")
+  if [ -n "$retry" ]; then
+    echo "$(date '+%d %b %H:%M') $(echo "$retry" | wc -l) runs failed once: exiting with 75 to try them again"; exit 75
+  fi
+  echo "$(date '+%d %b %H:%M') $(wc -l < "$FAILED") runs failed on two starts:"; sed 's/^/  /' "$FAILED"; exit 1
 fi
 echo "$(date '+%d %b %H:%M') PC_NOVEMBER_DONE"
